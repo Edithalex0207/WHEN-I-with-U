@@ -1211,7 +1211,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
             <button
               type="button"
               onClick={() => setDraftShowTitle(!draftShowTitle)}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                 draftShowTitle ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/20'
               }`}
             >
@@ -1468,7 +1468,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
             <button
               type="button"
               onClick={() => setAutoMessage(!autoMessage)}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                 autoMessage ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/20'
               }`}
             >
@@ -1570,7 +1570,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
             <button
               type="button"
               onClick={() => setNpcAutoPost(!npcAutoPost)}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                 npcAutoPost ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/20'
               }`}
             >
@@ -1592,7 +1592,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
             <button
               type="button"
               onClick={() => setCharacterAutoPost(!characterAutoPost)}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                 characterAutoPost ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/20'
               }`}
             >
@@ -1616,7 +1616,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
             <button
               type="button"
               onClick={() => setParallelOrbitAutoSchedule(!parallelOrbitAutoSchedule)}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                 parallelOrbitAutoSchedule ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/20'
               }`}
             >
@@ -1823,7 +1823,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
             <button
               type="button"
               onClick={handleToggleCompanion}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
                 isCompanionEnabled ? 'bg-black dark:bg-white' : 'bg-black/10'
               }`}
             >
