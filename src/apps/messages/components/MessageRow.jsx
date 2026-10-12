@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Quote,
   Trash2,
+  ImageOff,
   CheckCheck,
   Check,
   User,
@@ -82,6 +83,7 @@ const MessageRow = ({
   isAiTyping,
   onReroll,
   onDelete,
+  onClearPhotoMedia,
   onQuote,
   onSwitchVersion,
     onResolvedInteraction,
@@ -738,6 +740,17 @@ const MessageRow = ({
               title="重 roll 此回复"
             >
               <RotateCw className="h-3 w-3" />
+            </button>
+          )}
+
+          {msg.type === 'photo' && msg.metadata?.blob instanceof Blob && (
+            <button
+              type="button"
+              onClick={() => onClearPhotoMedia?.(msg.id)}
+              className="p-1 opacity-50 hover:opacity-100"
+              title="清除原图（保留文字记录，释放内存）"
+            >
+              <ImageOff className="h-3 w-3" />
             </button>
           )}
 

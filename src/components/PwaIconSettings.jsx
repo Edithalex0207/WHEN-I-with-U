@@ -13,8 +13,8 @@ const PRESET_ICONS = [
   { url: 'https://u2.fukit.cn/cerzbXmOR', label: '万圣节版1' },
   { url: 'https://u2.fukit.cn/decElgZJw', label: '万圣节版3' },
   { url: 'https://u2.fukit.cn/ZYmw9r9II', label: '万圣节版2' },
-];
 
+];
 export const PwaIconSettings = ({ value = '', onChange }) => {
   const [customUrl, setCustomUrl] = useState(
     value && !PRESET_ICONS.some((p) => p.url === value) ? value : '',

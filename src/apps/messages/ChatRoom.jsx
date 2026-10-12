@@ -41,6 +41,8 @@ import {
 
 import Dexie from 'dexie';
 import db from '../../db';
+import { clearPhotoMessageMedia } from './chatMediaCleanupService';
+import { releasePhotoObjectUrl } from './components/cards/PhotoCard';
 import {
   triggerAiResponse,
   rerollAiResponse,
@@ -1662,6 +1664,31 @@ useLayoutEffect(() => {
     );
   }, []);
 
+    // 清除单张真实照片消息的图片本体（保留文字记录），用于发送后
+  // 想释放内存、又不想把整条消息删掉的场景。
+  const handleClearPhotoMedia = useCallback(async (messageId) => {
+    const cleared = await clearPhotoMessageMedia(messageId);
+    if (!cleared) return;
+
+    releasePhotoObjectUrl(messageId);
+
+    setMessages((previous) => (
+      previous.map((message) => {
+        if (message.id !== messageId) return message;
+
+        const { blob, ...restMetadata } = message.metadata || {};
+        return {
+          ...message,
+          metadata: {
+            ...restMetadata,
+            mediaCleared: true,
+            mediaClearedAt: new Date().toISOString(),
+          },
+        };
+      })
+    ));
+  }, []);
+
   // 从反应面板的"选择"按钮进入多选：把当前这条消息作为第一条
   // 选中项，同时打开多选模式。
   const handleEnterSelectionMode = useCallback((messageId) => {
@@ -2543,8 +2570,9 @@ useLayoutEffect(() => {
           typingText={chat.typingText || ''}
           typingStyle={chat.typingStyle || 'default'}
           hasMoreOlderMessages={hasMoreOlderMessages}
-          onReroll={handleRerollMessage}
+                   onReroll={handleRerollMessage}
           onDelete={handleDeleteMessage}
+          onClearPhotoMedia={handleClearPhotoMedia}
           onQuote={setQuotedMsg}
           onSwitchVersion={handleSwitchVersion}
                    onResolvedInteraction={loadChatData}

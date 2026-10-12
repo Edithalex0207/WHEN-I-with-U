@@ -35,6 +35,7 @@ export default function RealVoiceCard({
 
   const status = metadata?.generationStatus || 'pending';
   const audioBlob = metadata?.audioBlob;
+  const mediaCleared = Boolean(metadata?.mediaCleared);
 
   useEffect(() => {
     if (!audioBlob || !audioRef.current) {
@@ -81,6 +82,28 @@ export default function RealVoiceCard({
             <p className="mt-0.5 text-[10px] opacity-55">
               这一段话正在变成可以保存的声音。
             </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (mediaCleared) {
+    return (
+      <div className="w-[254px] rounded-[18px] border border-black/10 bg-black/[0.035] p-3 dark:border-white/10 dark:bg-white/[0.05]">
+        <div className="flex items-center gap-2">
+          <AudioLines className="h-4 w-4 opacity-45" />
+
+          <div>
+            <p className="text-[11px] font-semibold opacity-70">
+              声音已清理
+            </p>
+
+            {content && (
+              <p className="mt-0.5 text-[10px] leading-relaxed opacity-55">
+                {content}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -194,4 +217,3 @@ export default function RealVoiceCard({
     </div>
   );
 }
-

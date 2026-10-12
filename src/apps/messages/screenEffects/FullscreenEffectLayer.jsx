@@ -390,6 +390,9 @@ const FullscreenEffectLayer = ({ chatId = null, preview = false }) => {
         <FocusScene layout={layout} />
       ) : (
         <>
+          {/* 暗号核验通过的一瞬：一圈光从画面中心荡开再消失，
+              给"接上了"这件事一点仪式感，而不是动画无声无息就开始了。 */}
+          <div className="sfx-unlock-ring" aria-hidden="true" />
           <AmbientScene presetId={presetId} particles={particles} />
           {caption && (
             <div

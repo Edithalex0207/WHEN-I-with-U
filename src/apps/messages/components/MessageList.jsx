@@ -19,6 +19,7 @@ const MessageList = ({
   hasMoreOlderMessages,
   onReroll,
   onDelete,
+  onClearPhotoMedia,
   onQuote,
     onSwitchVersion,
       onResolvedInteraction,
@@ -75,6 +76,7 @@ const MessageList = ({
           isAiTyping={isAiTyping}
           onReroll={onReroll}
           onDelete={onDelete}
+          onClearPhotoMedia={onClearPhotoMedia}
           onQuote={onQuote}
                     onSwitchVersion={onSwitchVersion}
                 onResolvedInteraction={onResolvedInteraction}

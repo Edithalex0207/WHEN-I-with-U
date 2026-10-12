@@ -33,6 +33,7 @@ import {
 import { BUILTIN_WORLD_BOOK_METAS } from '../builtinWorldBook';
 
 import { triggerGlobalToast } from '../../../components/NotificationToast';
+import { clearChatRealVoiceMedia } from '../chatMediaCleanupService';
 import { getLocationSettings, setLocationEnabled } from '../../../apps/location/placeService';
 
 
@@ -60,6 +61,36 @@ export const ChatSettingsModal = ({
   const userAvatarInputRef = useRef(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showVoiceMediaClearConfirm, setShowVoiceMediaClearConfirm] = useState(false);
+  const [isClearingVoiceMedia, setIsClearingVoiceMedia] = useState(false);
+
+  const handleClearVoiceMedia = async () => {
+    if (!chat?.id) return;
+
+    setIsClearingVoiceMedia(true);
+    try {
+      const { clearedCount } = await clearChatRealVoiceMedia(chat.id);
+      triggerGlobalToast(
+        clearedCount > 0
+          ? `已清理 ${clearedCount} 条语音的音频本体，文字转写已保留。`
+          : '这个聊天里暂时没有可以清理的语音本体。',
+      );
+
+      if (clearedCount > 0) {
+        window.dispatchEvent(
+          new CustomEvent('new-local-message-inserted', {
+            detail: { chatId: chat.id },
+          }),
+        );
+      }
+    } catch (error) {
+      console.warn('[ChatSettingsModal] 清理语音缓存失败：', error);
+      triggerGlobalToast('清理失败，请稍后再试。');
+    } finally {
+      setIsClearingVoiceMedia(false);
+      setShowVoiceMediaClearConfirm(false);
+    }
+  };
 
   // 本聊天窗独立拥有的 User 属性
   const [userName, setUserName] = useState(chat?.userName || character?.userName || '');
@@ -2036,8 +2067,23 @@ const handleToggleLocation = async () => {
               border: '1px solid var(--card-border)'
             }}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+                       <Trash2 className="w-3.5 h-3.5" />
             <span>清空本窗消息</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowVoiceMediaClearConfirm(true)}
+            disabled={isClearingVoiceMedia}
+            className="w-full py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
+            style={{
+              background: 'var(--control-soft-bg)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--card-border)'
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{isClearingVoiceMedia ? '清理中...' : '清理本窗语音缓存'}</span>
           </button>
 
           <button
@@ -2067,6 +2113,16 @@ const handleToggleLocation = async () => {
           onClearHistory();
           onClose();
         }}
+      />
+
+            <ConfirmModal
+        isOpen={showVoiceMediaClearConfirm}
+        title="清理语音缓存"
+        message="清空这个聊天里所有 MiniMax 生成语音的音频本体，释放占用的内存/存储空间。每条消息的文字转写会原样保留，之后翻记录还能看到说过什么，只是听不到原声了。操作后不可恢复。"
+        confirmText="清理"
+        cancelText="保留"
+        onCancel={() => setShowVoiceMediaClearConfirm(false)}
+        onConfirm={handleClearVoiceMedia}
       />
 
       <ConfirmModal
