@@ -123,6 +123,7 @@ const PebblingApp = lazyWithRetry(() => import('./apps/pebbling/PebblingApp'), '
 const ImaginariumApp = lazyWithRetry(() => import('./apps/imaginarium/ImaginariumApp'), 'ImaginariumApp');
 const BubbleApp = lazyWithRetry(() => import('./apps/bubble/BubbleApp'), 'BubbleApp');
 const RpApp = lazyWithRetry(() => import('./apps/rp/RpApp'), 'RpApp');
+  const ImageStudioApp = lazyWithRetry(() => import('./apps/imagestudio/ImageStudioApp'), 'ImageStudioApp');
 const HabitatApp = lazyWithRetry(() => import('./apps/habitat/HabitatApp'), 'HabitatApp');
 const EphemeraApp = lazyWithRetry(() => import('./apps/ephemera/EphemeraApp'), 'EphemeraApp');
 
@@ -211,8 +212,9 @@ const REGISTERED_APPS = [
   'ensemble',
   'bubble',
   'habitat',
-  'rp',
-  'ephemera',
+     'rp',
+    'imagestudio',
+    'ephemera',
   'askbox',
   'shell',
   'emotionkit',
@@ -1212,6 +1214,16 @@ const isTextGameHallApp = currentApp === 'textgames';
             </React.Suspense>
           </ErrorBoundary>
         )}
+
+          {currentApp === 'imagestudio' && (
+    <ErrorBoundary>
+      <React.Suspense fallback={<AppLoadingFallback />}>
+        <ImageStudioApp
+          onBackHub={() => openApp('hub')}
+        />
+      </React.Suspense>
+    </ErrorBoundary>
+  )}
 
         {currentApp === 'habitat' && (
           <ErrorBoundary>

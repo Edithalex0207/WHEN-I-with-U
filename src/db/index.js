@@ -4846,4 +4846,8 @@ db.version(81).stores({
   }
 });
 
+db.version(82).stores({
+  artistTagPresets: '++id, name, createdAt, updatedAt',
+});
+
 export default db;
