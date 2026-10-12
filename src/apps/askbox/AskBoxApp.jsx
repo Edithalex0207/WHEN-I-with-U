@@ -21,7 +21,9 @@ import { triggerGlobalToast } from '../../components/NotificationToast';
 import {
   generateNpcReply,
   generateNpcToNpcQAPairs,
-  generateNpcToUserQuestion
+  generateNpcToUserQuestion,
+  ensureAskBoxQaPairs,
+  regenerateAskBoxQaPairs
 } from './askBoxAiService';
 
 export default function AskBoxApp({ onBackHub }) {
@@ -99,12 +101,19 @@ export default function AskBoxApp({ onBackHub }) {
     setIncomingQuestions(list);
   };
 
+  // 2026-10 缓存修复：之前每次进入/切换角色主页都会重新调一次 AI 生成
+  // 公开问答。现在改成"有缓存就用缓存，没有才生成"——缓存写在
+  // character.askBoxQaPairs 上（见 askBoxAiService.ensureAskBoxQaPairs）。
+  // 这里额外从数据库重新读一次最新的 character 记录，而不是直接用传入的
+  // （可能是内存里旧状态的）character 对象，避免本次会话里刚写入的缓存
+  // 没被读到、又触发一次多余生成。
   const loadNpcQAPairs = async (character) => {
     setLoadingNpcMain(true);
 
     try {
+      const freshCharacter = await db.characters.get(character.id);
       const otherChars = characters.filter((c) => c.id !== character.id);
-      const pairs = await generateNpcToNpcQAPairs(character, otherChars);
+      const pairs = await ensureAskBoxQaPairs(freshCharacter || character, otherChars);
       setNpcQAPairs(pairs);
     } finally {
       setLoadingNpcMain(false);
@@ -218,9 +227,19 @@ export default function AskBoxApp({ onBackHub }) {
     }
   };
 
-  const handleRerollNpcMain = () => {
-    if (selectedChar) {
-      loadNpcQAPairs(selectedChar);
+  // 「重新生成」按钮：强制重新生成并覆盖缓存（跟上面"有缓存就用缓存"的
+  // 自动加载路径是两件独立的事）。
+  const handleRerollNpcMain = async () => {
+    if (!selectedChar) return;
+
+    setLoadingNpcMain(true);
+    try {
+      const freshCharacter = await db.characters.get(selectedChar.id);
+      const otherChars = characters.filter((c) => c.id !== selectedChar.id);
+      const pairs = await regenerateAskBoxQaPairs(freshCharacter || selectedChar, otherChars);
+      setNpcQAPairs(pairs);
+    } finally {
+      setLoadingNpcMain(false);
     }
   };
 

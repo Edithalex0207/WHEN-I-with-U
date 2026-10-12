@@ -189,7 +189,18 @@ export const CharacterEditor = ({ characterData, onBack, onSaved }) => {
     if (!character.name.trim()) return;
 
     try {
-      const payload = { ...character };
+            // 2026-10 修复：character 这个 state 是按表单字段白名单初始化的，
+      // 任何后续追加到 character 表记录上、但表单不认识的额外存储
+      // 字段（比如情绪急救盒的 emotionKit、提问箱缓存等，这类功能普遍
+      // 约定直接往现有表记录上加字段、不升级 Dexie 版本）都不在这个白
+      // 名单里。`db.characters.put(payload)` 是整条记录覆盖写入，不是
+      // 增量 patch，所以只要用户编辑并保存过一次角色，这些"表单不认识"
+      // 的字段就会被整条覆盖掉——表现为"这个功能的缓存内容莫名其妙没了，
+      // 又要重新生成一次"。
+      // 这里先把 characterData（打开编辑器时拿到的完整原始记录）铺一层
+      // 在底下，再叠上表单真正改过的字段，这样任何表单不认识的字段都会
+      // 原样保留，不会被这次保存覆盖掉。
+      const payload = { ...characterData, ...character };
       
       if (!payload.id) {
         delete payload.id;

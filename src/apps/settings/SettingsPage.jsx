@@ -42,7 +42,6 @@ import PetWidgetSettings from '../pet/PetWidgetSettings';
 import ConfirmModal from '../../components/ConfirmModal';
 import DailyOfferingSettings from '../daily-offering/DailyOfferingSettings';
 import GitHubBackupSettings from './github-backup/GitHubBackupSettings';
-import ScreenEffectSettings from '../messages/screenEffects/ScreenEffectSettings';
 import BondConnection from './mcp/BondConnection';
 import { requestNotificationPermission } from '../../services/aiService';
 import { Send, Cloud, Radio } from 'lucide-react'; // 补上图标
@@ -98,8 +97,6 @@ export const SettingsPage = ({
   onOpenManual,
   currentTheme,
   onChangeTheme,
-  currentGlassStyle,
-  onChangeGlassStyle,
   showTitle,
   onToggleTitle,
   currentHubBackground,
@@ -110,7 +107,6 @@ export const SettingsPage = ({
   const saveToastTimerRef = useRef(null);
 
   const [draftTheme, setDraftTheme] = useState(currentTheme);
-  const [draftGlassStyle, setDraftGlassStyle] = useState(currentGlassStyle);
 const [draftShowTitle, setDraftShowTitle] = useState(showTitle);
 const [draftHubBackground, setDraftHubBackground] = useState(
   currentHubBackground || '',
@@ -145,6 +141,13 @@ const [newCategoryQuoteInputs, setNewCategoryQuoteInputs] = useState({});
   const [autoMessage, setAutoMessage] = useState(false);
   const [frequency, setFrequency] = useState('moderate');
   const [npcAutoPost, setNpcAutoPost] = useState(true);
+  // 角色本人的生活动态圈主动发帖：跟上面 NPC 那个开关是两件独立的事，
+  // 默认开启（不改变老用户已有的行为）。
+  const [characterAutoPost, setCharacterAutoPost] = useState(true);
+  // 平行轨迹后台静默扫描：默认关闭——平行轨迹改成只在用户打开那个页面
+  // 时才检查/生成，不想要这个新默认行为的话可以在这里打开，恢复成
+  // "App 开着就每小时在背后自动补写"的旧行为。
+  const [parallelOrbitAutoSchedule, setParallelOrbitAutoSchedule] = useState(false);
   const [quietHours, setQuietHours] = useState({
     enabled: true,
     start: '23:00',
@@ -351,10 +354,6 @@ const [isCompanionLoading, setIsCompanionLoading] = useState(true);
           setDraftTheme(settingMap.theme);
         }
 
-        if (typeof settingMap.glassStyle === 'string') {
-          setDraftGlassStyle(settingMap.glassStyle);
-        }
-
         if (typeof settingMap.showTitle === 'boolean') {
           setDraftShowTitle(settingMap.showTitle);
         }
@@ -395,6 +394,12 @@ const [isCompanionLoading, setIsCompanionLoading] = useState(true);
 
         if (typeof settingMap.snapshotNpcAutoPostEnabled === 'boolean') {
           setNpcAutoPost(settingMap.snapshotNpcAutoPostEnabled);
+        }
+        if (typeof settingMap.snapshotCharacterAutoPostEnabled === 'boolean') {
+          setCharacterAutoPost(settingMap.snapshotCharacterAutoPostEnabled);
+        }
+        if (typeof settingMap.parallelOrbitAutoScheduleEnabled === 'boolean') {
+          setParallelOrbitAutoSchedule(settingMap.parallelOrbitAutoScheduleEnabled);
         }
         if (
           settingMap.quietHours &&
@@ -483,7 +488,6 @@ setIsCompanionLoading(false);
 
   const hasUnsavedChanges =
   draftTheme !== currentTheme ||
-  draftGlassStyle !== currentGlassStyle ||
   draftShowTitle !== showTitle ||
    draftHubBackground !== (currentHubBackground || '') ||
   draftAppNameDisplayMode !== initialAppNameDisplayMode ||
@@ -808,7 +812,6 @@ const handleDeletePreloaderQuote = (categoryId, quoteIndex) => {
       await db.transaction('rw', db.settings, async () => {
         await db.settings.bulkPut([
           { key: 'theme', value: draftTheme },
-          { key: 'glassStyle', value: draftGlassStyle },
           { key: 'showTitle', value: draftShowTitle },
                  {
   key: 'hubBackground',
@@ -829,6 +832,8 @@ const handleDeletePreloaderQuote = (categoryId, quoteIndex) => {
                  { key: 'autoMessage', value: autoMessage },
           { key: 'frequency', value: frequency },
           { key: 'snapshotNpcAutoPostEnabled', value: npcAutoPost },
+          { key: 'snapshotCharacterAutoPostEnabled', value: characterAutoPost },
+          { key: 'parallelOrbitAutoScheduleEnabled', value: parallelOrbitAutoSchedule },
           { key: 'quietHours', value: quietHours },
                    { key: 'apiConfig', value: apiConfig },
           { key: 'apiConfigBackup', value: apiConfigBackup },
@@ -847,10 +852,6 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
 
       if (draftTheme !== currentTheme) {
         onChangeTheme(draftTheme);
-      }
-
-      if (draftGlassStyle !== currentGlassStyle) {
-        onChangeGlassStyle(draftGlassStyle);
       }
 
       if (draftShowTitle !== showTitle) {
@@ -988,7 +989,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
       downloadLink.href = downloadUrl;
       downloadLink.download = `when-i-with-u-backup-${timestamp}.json`;
 
-            document.body.appendChild(downloadLink);
+      document.body.appendChild(downloadLink);
       downloadLink.click();
 
       const warningCount = backup.exportWarnings?.length || 0;
@@ -1048,7 +1049,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
     setIsProcessing(true);
     setConfirmDialog(null);
 
-       try {
+    try {
       const { restoreWarnings } = await restoreBackupData(pendingImport);
       const warningCount = restoreWarnings?.length || 0;
 
@@ -1195,29 +1196,6 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
                   }`}
                 >
                   {theme.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t border-black/5 pt-3 dark:border-white/5">
-            <label className="mb-2 block opacity-60">质感风格 (Glass Style)</label>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {[
-                { id: 'frosted', name: '白色毛玻璃 (Frosted)' },
-                { id: 'liquid', name: '液态玻璃 (Liquid)' },
-              ].map((style) => (
-                <button
-                  key={style.id}
-                  type="button"
-                  onClick={() => setDraftGlassStyle(style.id)}
-                  className={`rounded-xl py-3 font-medium transition-all ${
-                    draftGlassStyle === style.id
-                      ? 'bg-black text-white dark:bg-white dark:text-black font-semibold'
-                      : 'bg-black/5 dark:bg-white/10 hover:bg-black/10'
-                  }`}
-                >
-                  {style.name}
                 </button>
               ))}
             </div>
@@ -1599,6 +1577,52 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
               <span
                 className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform dark:bg-black ${
                   npcAutoPost ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-black/5 pt-3.5 dark:border-white/5">
+            <div>
+              <p className="font-medium">角色本人主动发帖</p>
+              <p className="mt-0.5 text-[10px] opacity-50">
+                关闭后，角色不会再自己往动态圈发帖；上面的 NPC 开关不受影响
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCharacterAutoPost(!characterAutoPost)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${
+                characterAutoPost ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/20'
+              }`}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform dark:bg-black ${
+                  characterAutoPost ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-black/5 pt-3.5 dark:border-white/5">
+            <div>
+              <p className="font-medium">平行轨迹后台静默扫描</p>
+              <p className="mt-0.5 text-[10px] opacity-50">
+                默认关闭：平行轨迹只在你打开那个页面时才检查/生成这一次。打开后恢复成
+                App 开着就每小时在背后自动补写独处记录的旧行为（"今日安排"和"碎碎念"
+                不受这个开关影响，一直都会跟着每小时的节奏走）
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setParallelOrbitAutoSchedule(!parallelOrbitAutoSchedule)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${
+                parallelOrbitAutoSchedule ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/20'
+              }`}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform dark:bg-black ${
+                  parallelOrbitAutoSchedule ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -2100,8 +2124,6 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
       <BondConnection />
 
       {/* 6. GitHub 备份云端抽屉组件（全新装配） */}
-      <ScreenEffectSettings />
-
       <GitHubBackupSettings />
 
       {/* 7. 本地数据与存储卡片 */}

@@ -20,7 +20,13 @@
 //
 import db from '../../../db';
 import { generateCharacterPost, generateNpcPost, generateNewsPost, NEWS_ACCOUNT } from './snapshotAiService';
-import { getNpcsByChatId, ensureAutoNpcPool, ensureNpcPersona, isNpcAutoPostEnabled } from './snapshotNpcService';
+import {
+  getNpcsByChatId,
+  ensureAutoNpcPool,
+  ensureNpcPersona,
+  isNpcAutoPostEnabled,
+  isCharacterAutoPostEnabled,
+} from './snapshotNpcService';
 import { autoGenerateNpcComments } from './snapshotAutoCommentService';
 
 // 2026-09 频率调整：NPC命中概率 60% -> 70%（冷却时间不变），跟
@@ -105,7 +111,17 @@ class SnapshotScheduler {
       await ensureAutoNpcPool(this.activeChatId, char, chat);
 
       // 1. 检查 Char 是否该主动发生活动态 (角色开启了主动消息，冷却 4 小时)
-      if (char && char.isAutoMessageActive && postsThisRound < MAX_POSTS_PER_ROUND) {
+      // 2026-10 新增：角色本人的主动发帖现在也受一个全局开关控制
+      // （跟下面 NPC 那个开关是两件独立的事），关掉之后角色本人不会再
+      // 自己往动态圈发帖。
+      const characterAutoPostEnabled = await isCharacterAutoPostEnabled();
+
+      if (
+        char
+        && char.isAutoMessageActive
+        && characterAutoPostEnabled
+        && postsThisRound < MAX_POSTS_PER_ROUND
+      ) {
         const lastCharPost = await db.snapshots
           .where('chatId')
           .equals(this.activeChatId)

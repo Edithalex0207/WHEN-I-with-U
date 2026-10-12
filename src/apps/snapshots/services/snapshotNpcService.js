@@ -168,6 +168,23 @@ export const deleteNpc = async (npcId) => {
   }
 };
 
+
+// 2026-10 新增：全局设置键——角色本人是否允许「主动」发帖（后台调度器
+// 自动触发的那种）。跟上面 NPC 的开关是两件独立的事：关掉 NPC 的，角色
+// 本人照常发；关掉角色本人的，NPC 照常发。默认 true，不改变老用户已有
+// 的行为。UI 入口同样在 SettingsPage.jsx 的「陪伴频率」卡片里。
+const CHARACTER_AUTO_POST_SETTING_KEY = 'snapshotCharacterAutoPostEnabled';
+
+export const isCharacterAutoPostEnabled = async () => {
+  try {
+    const setting = await db.settings.get(CHARACTER_AUTO_POST_SETTING_KEY);
+    return setting?.value !== false;
+  } catch (err) {
+    console.error('[snapshotNpcService] 读取角色主动发帖开关失败:', err);
+    return true;
+  }
+};
+
 export default {
   getNpcsByChatId,
   getNpcById,
@@ -175,5 +192,6 @@ export default {
   deleteNpc,
   ensureAutoNpcPool,
   ensureNpcPersona,
-  isNpcAutoPostEnabled
+  isNpcAutoPostEnabled,
+  isCharacterAutoPostEnabledpara
 };

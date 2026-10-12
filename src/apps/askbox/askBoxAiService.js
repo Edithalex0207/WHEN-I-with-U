@@ -362,3 +362,51 @@ ${characterNotes}
   return getFallbackIncomingQuestion();
 }
 
+/**
+ * 2026-10 新增：提问箱主页"角色间公开问答"的缓存。
+ *
+ * 以前 AskBoxApp.jsx 每次打开提问箱、或者在里面切换角色，都会直接调
+ * generateNpcToNpcQAPairs 重新生成一次——内容只存在组件 state 里，没有
+ * 落库，相当于"每次进这个子 App 都会触发一次 AI"。现在改成跟情绪急救盒
+ * 同一套"生成一次、缓存住，只有用户主动点'Reroll'才重新生成"的写法，
+ * 缓存直接存进 character.askBoxQaPairs（不是 Dexie 索引字段，不需要
+ * 升级数据库版本）。
+ */
+const hasCachedQaPairs = (askBoxQaPairs) => (
+  Array.isArray(askBoxQaPairs?.pairs) && askBoxQaPairs.pairs.length > 0
+);
+
+const saveQaPairsCache = async (characterId, pairs) => {
+  if (!characterId) return;
+
+  try {
+    await db.characters.update(characterId, {
+      askBoxQaPairs: { pairs, generatedAt: new Date().toISOString() }
+    });
+  } catch (error) {
+    console.warn('[AskBox] 缓存公开问答失败（不影响本次展示）:', error);
+  }
+};
+
+/**
+ * 第一次打开提问箱、或者切换到这个角色时调用：已经生成过就直接用缓存，
+ * 不重新调 AI；没生成过才真的调一次。
+ */
+export async function ensureAskBoxQaPairs(character, otherCharacters = []) {
+  if (hasCachedQaPairs(character?.askBoxQaPairs)) {
+    return character.askBoxQaPairs.pairs;
+  }
+
+  const pairs = await generateNpcToNpcQAPairs(character, otherCharacters);
+  await saveQaPairsCache(character?.id, pairs);
+  return pairs;
+}
+
+/**
+ * 点击"Reroll"手动重新生成：无视缓存，强制重新调用一次并覆盖缓存。
+ */
+export async function regenerateAskBoxQaPairs(character, otherCharacters = []) {
+  const pairs = await generateNpcToNpcQAPairs(character, otherCharacters);
+  await saveQaPairsCache(character?.id, pairs);
+  return pairs;
+}
