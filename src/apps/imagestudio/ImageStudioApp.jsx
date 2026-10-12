@@ -1,9 +1,9 @@
 // src/apps/imagestudio/ImageStudioApp.jsx
 //
-// 生图室（Image Studio）顶层 app。切片A只做数据模型 + 设置 + 画师串 + 外貌锁定，
-// 「生成」和「画廊」两页先放占位说明：
-//   - 切片B：打通真实生图（第三方接口 + NovelAI），生成面板上线。
-//   - 切片C：画廊（重 roll / 打包下载 / 删除）。
+// 生图室（Image Studio）顶层 app。
+//   - 切片A：数据模型 + 设置 + 画师串 + 外貌锁定。
+//   - 切片B：打通真实生图（第三方接口 + NovelAI），「生成」页上线。
+//   - 切片C：「画廊」页（重 roll / 打包下载 / 保存到相册 / 删除），目前还是占位说明。
 //   - 切片D：聊天里 AI 用 [AI_IMAGE: ...] 标签触发生图。
 //
 // 这不是聊天室类 app，所以不接收也不调用 onChatRoomStateChange，
@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
 
+import GeneratePanel from './GeneratePanel';
 import ImageStudioSettingsPanel from './ImageStudioSettingsPanel';
 import ArtistTagPanel from './ArtistTagPanel';
 import AppearancePanel from './AppearancePanel';
@@ -24,11 +25,8 @@ const TABS = [
   { id: 'settings', label: '设置' },
 ];
 
-const PLACEHOLDER_TEXT = {
-  generate:
-    '生成面板会在下一轮开放。现在可以先在「设置」里填好生图后端，在「画师串」和「外貌」里把素材准备好。',
-  gallery: '画廊会在后续轮次开放，届时支持重 roll、打包下载和删除。',
-};
+const GALLERY_PLACEHOLDER_TEXT =
+  '画廊会在下一轮开放，届时支持重 roll、打包下载、保存到相册和删除。生成的图已经在本机保存了。';
 
 const ComingSoonPanel = ({ text }) => (
   <div
@@ -88,9 +86,10 @@ const ImageStudioApp = ({ onBackHub }) => {
         })}
       </div>
 
-      {activeTab === 'generate' || activeTab === 'gallery' ? (
-        <ComingSoonPanel text={PLACEHOLDER_TEXT[activeTab]} />
+      {activeTab === 'generate' ? (
+        <GeneratePanel onGoSettings={() => setActiveTab('settings')} />
       ) : null}
+      {activeTab === 'gallery' ? <ComingSoonPanel text={GALLERY_PLACEHOLDER_TEXT} /> : null}
       {activeTab === 'artist' ? <ArtistTagPanel /> : null}
       {activeTab === 'appearance' ? <AppearancePanel /> : null}
       {activeTab === 'settings' ? <ImageStudioSettingsPanel /> : null}

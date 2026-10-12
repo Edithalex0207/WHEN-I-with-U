@@ -2,6 +2,7 @@ import db from '../db';
 
 const BACKUP_FORMAT = 'when-i-with-u-backup';
 const BACKUP_VERSION = 1;
+const BACKUP_EXCLUDED_TABLES = ['imageGenerationFiles'];
 
 const readBlobAsDataUrl = (blob) =>
   new Promise((resolve, reject) => {
@@ -116,7 +117,9 @@ export const restoreBackupValue = async (value, warnings = null) => {
 export const generateBackupData = async () => {
   const data = {};
   const warnings = [];
-  const allTables = db.tables.map((t) => t.name);
+ const allTables = db.tables
+  .map((t) => t.name)
+  .filter((name) => !BACKUP_EXCLUDED_TABLES.includes(name));
 
   for (const tableName of allTables) {
     try {

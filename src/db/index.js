@@ -4850,4 +4850,9 @@ db.version(82).stores({
   artistTagPresets: '++id, name, createdAt, updatedAt',
 });
 
+db.version(83).stores({
+  imageGenerations: '++id, source, chatId, characterId, createdAt, [source+createdAt]',
+  imageGenerationFiles: 'generationId',
+});
+
 export default db;
