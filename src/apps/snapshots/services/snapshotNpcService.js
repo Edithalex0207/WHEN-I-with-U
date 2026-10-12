@@ -193,5 +193,5 @@ export default {
   ensureAutoNpcPool,
   ensureNpcPersona,
   isNpcAutoPostEnabled,
-  isCharacterAutoPostEnabledpara
+    isCharacterAutoPostEnabled
 };
