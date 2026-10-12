@@ -343,7 +343,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Studio" zh="生图室" mode={nameMode} />
+          <AppTitle en="Studio（施工）" zh="生图室" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Image Studio
           </p>
