@@ -74,7 +74,7 @@ const shareManyFiles = async (files) => {
   return 'unsupported';
 };
 
-const GalleryPanel = ({ onGoSettings }) => {
+const GalleryPanel = ({ onGoSettings, refreshSignal = 0 }) => {
   const [items, setItems] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -112,6 +112,14 @@ const GalleryPanel = ({ onGoSettings }) => {
   useEffect(() => {
     void loadFirstPage();
   }, [loadFirstPage]);
+
+  // 停在画廊页时后台刚好生成完一张：重读第一页，让新图立刻出现。
+  const firstSignalRef = useRef(refreshSignal);
+  useEffect(() => {
+    if (refreshSignal === firstSignalRef.current) return;
+    firstSignalRef.current = refreshSignal;
+    void loadFirstPage();
+  }, [refreshSignal, loadFirstPage]);
 
   const handleLoadMore = async () => {
     try {

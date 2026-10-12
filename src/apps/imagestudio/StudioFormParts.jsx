@@ -19,22 +19,39 @@ const INPUT_CLASS = 'w-full p-2 rounded-xl text-xs border outline-none';
 
 export const SectionCard = ({ title, subtitle, dimmed = false, children }) => (
   <section
-    className="rounded-3xl border p-4 space-y-3 shadow-sm"
+    className="space-y-3 rounded-[26px] border p-4 shadow-md"
     style={{
-      backgroundColor: 'var(--card-bg)',
+      backgroundColor: 'color-mix(in srgb, var(--card-bg) 62%, transparent)',
+      backdropFilter: 'blur(18px) saturate(1.3)',
+      WebkitBackdropFilter: 'blur(18px) saturate(1.3)',
       borderColor: 'var(--card-border)',
       color: 'var(--text-main)',
       opacity: dimmed ? 0.65 : 1,
     }}
   >
-    <div>
-      <h3 className="text-xs font-bold tracking-wide">{title}</h3>
-      {subtitle ? (
-        <p className="mt-0.5 text-[10px] leading-relaxed opacity-60">{subtitle}</p>
-      ) : null}
-    </div>
+    {title ? (
+      <div>
+        <h3 className="font-serif text-[15px] font-semibold tracking-wide">{title}</h3>
+        {subtitle ? (
+          <p className="mt-0.5 text-[10px] leading-relaxed opacity-60">{subtitle}</p>
+        ) : null}
+      </div>
+    ) : null}
     {children}
   </section>
+);
+
+/** 杂志式章节标题：编号 + 衬线标题 + 右侧小注。 */
+export const StudioSectionHead = ({ no, title, note }) => (
+  <div className="mb-3 flex items-baseline gap-2.5">
+    {no ? (
+      <span className="text-[10px] uppercase tracking-[0.18em] opacity-50">{no}</span>
+    ) : null}
+    <h2 className="font-serif text-[15px] font-semibold">{title}</h2>
+    {note ? (
+      <span className="ml-auto text-[9px] uppercase tracking-[0.14em] opacity-50">{note}</span>
+    ) : null}
+  </div>
 );
 
 export const Field = ({ label, hint, children }) => (
