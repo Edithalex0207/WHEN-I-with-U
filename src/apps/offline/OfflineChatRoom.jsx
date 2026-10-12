@@ -17,7 +17,7 @@ import {
 
 import db from '../../db';
 import MessageList from '../messages/components/MessageList'
-import { triggerOfflineAiResponse, subscribeOfflineAiEvents } from '../../services/offlineAiService';
+import { triggerOfflineAiResponse, rerollOfflineAiResponse, subscribeOfflineAiEvents } from '../../services/offlineAiService';
 import { getOfflineSession, completeOfflineSession } from './offlineSessionService';
 import { maybeUpdateOfflineSceneStatus } from './offlineSceneStatusService';
 import OfflineSceneSettingsSheet from './OfflineSceneSettingsSheet';
@@ -59,6 +59,7 @@ const OfflineChatRoom = ({ chatId, offlineSessionId, onBack, readonly = false })
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [isEditingSignature, setIsEditingSignature] = useState(false);
   const [signatureDraft, setSignatureDraft] = useState('');
+  const [quotedMsg, setQuotedMsg] = useState(null);
 
   const scrollAreaRef = useRef(null);
   const hasScrolledToLatestRef = useRef(false);
@@ -173,6 +174,7 @@ const OfflineChatRoom = ({ chatId, offlineSessionId, onBack, readonly = false })
       metadata: {},
       userAvatar,
       userName,
+      quotedMessageId: quotedMsg?.id || null,
       isRead: true,
       timestamp: nowIso,
     };
@@ -182,9 +184,41 @@ const OfflineChatRoom = ({ chatId, offlineSessionId, onBack, readonly = false })
 
     setMessages((previous) => [...previous, newMsg]);
     setInputText('');
+    setQuotedMsg(null);
 
     await db.chats.update(chatId, { updatedAt: nowIso });
   };
+
+  const handleRerollMessage = useCallback((messageId) => {
+    if (isAiTyping) return;
+    void rerollOfflineAiResponse(chatId, offlineSessionId, messageId);
+  }, [isAiTyping, chatId, offlineSessionId]);
+
+  const handleSwitchVersion = useCallback(async (msg, direction) => {
+    if (!msg.versions || msg.versions.length <= 1) return;
+
+    const currentIndex = msg.currentVersionIndex ?? (msg.versions.length - 1);
+    const nextIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
+
+    if (nextIndex < 0 || nextIndex >= msg.versions.length) return;
+
+    const targetVersion = msg.versions[nextIndex];
+
+    await db.messages.update(msg.id, {
+      currentVersionIndex: nextIndex,
+      type: targetVersion.type,
+      content: targetVersion.content,
+      metadata: targetVersion.metadata || {},
+    });
+
+    await loadData();
+  }, [loadData]);
+
+  const handleDeleteMessage = useCallback(async (messageId) => {
+    await db.messages.delete(messageId);
+
+    setMessages((previous) => previous.filter((message) => message.id !== messageId));
+  }, []);
 
   const handleTriggerAi = () => {
     if (!character || isAiTyping || isReadonly) return;
@@ -454,20 +488,57 @@ const OfflineChatRoom = ({ chatId, offlineSessionId, onBack, readonly = false })
           typingText={`${character?.name || '对方'} 正在回应...`}
           typingStyle="default"
           hasMoreOlderMessages={false}
-          onReroll={() => {}}
-          onDelete={() => {}}
-          onQuote={() => {}}
-          onSwitchVersion={() => {}}
+                   onReroll={handleRerollMessage}
+          onDelete={handleDeleteMessage}
+          onQuote={setQuotedMsg}
+          onSwitchVersion={handleSwitchVersion}
           onResolvedInteraction={loadData}
           onEnterOfflineScene={() => {}}
         />
       </section>
 
       {!isReadonly && (
-        <footer
+               <footer
           className="z-20 shrink-0 px-4 pt-1"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
         >
+          {quotedMsg && (
+            <div
+              className="mb-2 flex items-start justify-between rounded-2xl p-2 px-3 text-[10px] shadow-md"
+              style={{
+                background: 'var(--control-soft-bg)',
+                color: 'var(--text-main)',
+              }}
+            >
+              <div
+                className="pr-2"
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                }}
+              >
+                <span className="font-bold">
+                  引用 {quotedMsg.sender === 'user'
+                    ? (chat?.userName || character?.userName || '你')
+                    : character?.name}:
+                </span>{' '}
+                {quotedMsg.content}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setQuotedMsg(null)}
+                className="shrink-0 p-1 opacity-60 hover:opacity-100"
+              >
+                &times;
+              </button>
+            </div>
+          )}
+
           <div
             className="flex items-center gap-2 rounded-full px-3 py-2 shadow-2xl backdrop-blur-2xl"
             style={{ background: 'var(--card-bg-gradient)', color: 'var(--text-main)' }}

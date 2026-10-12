@@ -1,5 +1,44 @@
 import db from '../db';
 
+const dispatchLocalMessageEvent = (chatId) => {
+  if (typeof window === 'undefined') return;
+
+  window.dispatchEvent(
+    new CustomEvent('new-local-message-inserted', {
+      detail: { chatId },
+    })
+  );
+};
+
+// 2026-10 新增：后台静默扫描（parallelOrbitAutoScheduleEnabled 开着时）
+// 偷偷生成了新轨迹，往聊天里插一条可点击卡片提示用户——跟 ChatParcelArrivedNotice
+// 同一个"点我进去看"套路，渲染在 ChatParallelOrbitNotice.jsx 里。
+// 只在 source === 'scheduler'（真正的后台静默检查）时调用；用户自己打开
+// ParallelOrbit 页面触发的那次检查（source: 'page-open'/'manual'）不需要
+// 再弹一条提示——人已经在那个页面上了。
+const postParallelOrbitNotice = async ({ chatId, character, count = 1 }) => {
+  const nowIso = new Date().toISOString();
+
+  const text = count > 1
+    ? `${character.name} 的平行轨迹悄悄更新了 ${count} 段。`
+    : `${character.name} 的平行轨迹悄悄更新了一段。`;
+
+  await db.messages.add({
+    chatId,
+    characterId: character.id,
+    sender: 'character',
+    type: 'parallel_orbit_update',
+    content: text,
+    metadata: {},
+    isRead: false,
+    timestamp: nowIso,
+  });
+
+  await db.chats.update(chatId, { updatedAt: nowIso });
+
+  dispatchLocalMessageEvent(chatId);
+};
+
 const IDLE_THRESHOLD_MS = 10 * 60 * 1000;
 const NORMAL_GENERATION_COOLDOWN_MS = 2 * 60 * 60 * 1000;
 const BACKFILL_THRESHOLD_MS = 10 * 60 * 60 * 1000;
@@ -816,7 +855,8 @@ const buildBackfillMoments = (startTimestamp, endTimestamp) => {
     .slice(-MAX_BACKFILL_LOGS_PER_RUN);
 };
 
-export const backfillParallelOrbits = async (chatId) => {
+export const backfillParallelOrbits = async (chatId, options = {}) => {
+  const { source = 'manual' } = options;
   const chat = await db.chats.get(chatId);
 
   if (!chat) {
@@ -911,6 +951,22 @@ export const backfillParallelOrbits = async (chatId) => {
     createdLogs.push(log);
   }
 
+  // 后台静默扫描补写出来的几条，合并成一条通知，而不是一条条轰炸用户。
+  if (source === 'scheduler' && createdLogs.length > 0) {
+    try {
+      await postParallelOrbitNotice({
+        chatId,
+        character,
+        count: createdLogs.length
+      });
+    } catch (noticeErr) {
+      console.error(
+        '[parallelOrbitService] 补写通知插入失败：',
+        noticeErr
+      );
+    }
+  }
+
   return {
     status: 'backfill_success',
     logs: createdLogs,
@@ -988,7 +1044,7 @@ export const checkAndTriggerParallelOrbit = async (
       lastUserTimestamp > 0 &&
       idleDuration >= BACKFILL_THRESHOLD_MS
     ) {
-      return backfillParallelOrbits(chatId);
+      return backfillParallelOrbits(chatId, { source });
     }
 
     // 正在高频聊天时，不自动生成独处轨迹。
@@ -1030,6 +1086,20 @@ export const checkAndTriggerParallelOrbit = async (
       generationType: source === 'scheduler' ? 'live' : 'manual',
       timePeriod: getTimePeriod(now)
     });
+
+    // 只有后台静默扫描自己查出来的这一条才需要提醒用户——用户自己打开
+    // 平行轨迹页面触发的那次（source: 'page-open'/'manual'）不需要，
+    // 人已经在那个页面上了。
+    if (source === 'scheduler') {
+      try {
+        await postParallelOrbitNotice({ chatId, character, count: 1 });
+      } catch (noticeErr) {
+        console.error(
+          '[parallelOrbitService] 平行轨迹通知插入失败：',
+          noticeErr
+        );
+      }
+    }
 
     return {
       status: 'success',

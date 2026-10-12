@@ -19,6 +19,7 @@ import ChatDiyUpdateNotice from '../diy/ChatDiyUpdateNotice';
 import ChallengeCompletionNotice from '../../challenges/ChallengeCompletionNotice';
 import TextGameResultNotice from '../../textgames/TextGameResultNotice';
 import ChatParcelArrivedNotice from '../parcel/ChatParcelArrivedNotice';
+import ChatParallelOrbitNotice from './ChatParallelOrbitNotice';
 import ProfileTraceCard from '../profile/ProfileTraceCard';
 import ChatTrickNotice from '../interactions/halloween/ChatTrickNotice';
 import SpiderEgg from '../interactions/halloween/SpiderEgg';
@@ -88,6 +89,7 @@ const MessageRow = ({
   onToggleReaction,
   onOpenCompanionOffer,
   onOpenParcel,
+  onOpenParallelOrbit,
   onRespondToConfirmCard,
   onPokeAvatar,
   onOpenProfileCard,
@@ -305,6 +307,17 @@ const MessageRow = ({
   // 才能真正拆开看里面是什么。
   if (msg.type === 'parcel_arrived') {
     return <ChatParcelArrivedNotice message={msg} onOpenParcel={onOpenParcel} />;
+  }
+
+  // 平行轨迹后台静默扫描偷偷生成了新一段的提示：同样可点，点进去跳转
+  // 到平行轨迹页面查看具体内容。
+  if (msg.type === 'parallel_orbit_update') {
+    return (
+      <ChatParallelOrbitNotice
+        message={msg}
+        onOpenParallelOrbit={onOpenParallelOrbit}
+      />
+    );
   }
 
   // 资料卡更新后留下的痕迹：同样是独立渲染，不走头像+气泡布局。

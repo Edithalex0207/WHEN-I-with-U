@@ -2551,7 +2551,8 @@ useLayoutEffect(() => {
                              onEnterOfflineScene={(sessionId) => setActiveOfflineSessionId(sessionId)}
           onToggleReaction={handleToggleReaction}
                     onOpenCompanionOffer={() => setShowCompanionPage(true)}
-          onOpenParcel={() => setShowParcelPage(true)}
+                   onOpenParcel={() => setShowParcelPage(true)}
+          onOpenParallelOrbit={() => setShowParallelOrbit(true)}
           onRespondToConfirmCard={handleRespondToConfirmCard}
           onPokeAvatar={handlePokeCharacter}
           onOpenProfileCard={() => setShowProfileCard(true)}
