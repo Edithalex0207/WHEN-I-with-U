@@ -3,15 +3,16 @@
 // 生图室（Image Studio）顶层 app。
 //   - 切片A：数据模型 + 设置 + 画师串 + 外貌锁定。
 //   - 切片B：打通真实生图（第三方接口 + NovelAI），「生成」页上线。
-//   - 切片C：「画廊」页（重 roll / 打包下载 / 保存到相册 / 删除），目前还是占位说明。
+//   - 切片C：「画廊」页（重 roll / 打包下载 / 保存到相册 / 删除）。
 //   - 切片D：聊天里 AI 用 [AI_IMAGE: ...] 标签触发生图。
 //
 // 这不是聊天室类 app，所以不接收也不调用 onChatRoomStateChange，
 // 只需要一个返回首页的回调（跟 DiaryApp 一样）。
 
 import React, { useState } from 'react';
-import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
+import GalleryPanel from './GalleryPanel';
 import GeneratePanel from './GeneratePanel';
 import ImageStudioSettingsPanel from './ImageStudioSettingsPanel';
 import ArtistTagPanel from './ArtistTagPanel';
@@ -24,23 +25,6 @@ const TABS = [
   { id: 'appearance', label: '外貌' },
   { id: 'settings', label: '设置' },
 ];
-
-const GALLERY_PLACEHOLDER_TEXT =
-  '画廊会在下一轮开放，届时支持重 roll、打包下载、保存到相册和删除。生成的图已经在本机保存了。';
-
-const ComingSoonPanel = ({ text }) => (
-  <div
-    className="rounded-3xl border px-6 py-14 text-center"
-    style={{
-      backgroundColor: 'var(--card-bg)',
-      borderColor: 'var(--card-border)',
-      color: 'var(--text-main)',
-    }}
-  >
-    <ImageIcon className="mx-auto mb-3 h-8 w-8 opacity-40" />
-    <p className="text-xs leading-relaxed opacity-60">{text}</p>
-  </div>
-);
 
 const ImageStudioApp = ({ onBackHub }) => {
   const [activeTab, setActiveTab] = useState('settings');
@@ -89,7 +73,9 @@ const ImageStudioApp = ({ onBackHub }) => {
       {activeTab === 'generate' ? (
         <GeneratePanel onGoSettings={() => setActiveTab('settings')} />
       ) : null}
-      {activeTab === 'gallery' ? <ComingSoonPanel text={GALLERY_PLACEHOLDER_TEXT} /> : null}
+      {activeTab === 'gallery' ? (
+        <GalleryPanel onGoSettings={() => setActiveTab('settings')} />
+      ) : null}
       {activeTab === 'artist' ? <ArtistTagPanel /> : null}
       {activeTab === 'appearance' ? <AppearancePanel /> : null}
       {activeTab === 'settings' ? <ImageStudioSettingsPanel /> : null}
