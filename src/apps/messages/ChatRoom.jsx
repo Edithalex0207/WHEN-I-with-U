@@ -31,6 +31,7 @@ Phone,
   Trash2,
   Package,
   Stamp,
+  Mic,
 } from 'lucide-react';
 
 import {
@@ -112,6 +113,7 @@ import { checkForCrossChatCheckIn } from './check-in/checkInService';
 import ChatEntryCardOverlay from './components/ChatEntryCardOverlay';
 
 import PhotoCaptureButton from './components/cards/PhotoCaptureButton';
+import VoiceRecorderBar from './components/VoiceRecorderBar';
 import OfflineInviteArchive from '../offline/OfflineInviteArchive';
 
 import './check-in/check-in.css';
@@ -358,6 +360,7 @@ const [showOfflineInviteArchive, setShowOfflineInviteArchive] = useState(false);
 
 const [showInputMenu, setShowInputMenu] = useState(false);
 
+const [isRecordingRealVoice, setIsRecordingRealVoice] = useState(false);
 // 发送成功后要不要闪一下心电图动效；数值本身没意义，
 // 每次自增触发 HeartbeatPulse 重新播放一次。
 const [heartbeatPulseKey, setHeartbeatPulseKey] = useState(0);
@@ -2850,6 +2853,16 @@ useLayoutEffect(() => {
             </>
           )}
 
+          {isRecordingRealVoice && (
+            <VoiceRecorderBar
+              chatId={chatId}
+              characterId={character?.id}
+              onDone={() => setIsRecordingRealVoice(false)}
+            />
+          )}
+
+          {!isRecordingRealVoice && (
+          <>
           <div className="relative flex items-center gap-1 opacity-80">
             <InteractiveMenuPopover
               onSelectAction={(type) => {
@@ -3010,6 +3023,19 @@ if (type === 'interaction_coupon') {
                     chatId={chatId}
                     characterId={character?.id}
                   />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowInputMenu(false);
+                      inputRef.current?.blur();
+                      setIsRecordingRealVoice(true);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs opacity-85 transition-opacity hover:opacity-100"
+                  >
+                    <Mic className="h-4 w-4" />
+                    <span>真实语音</span>
+                  </button>
                 </div>
               </>
             )}
@@ -3089,6 +3115,8 @@ if (type === 'interaction_coupon') {
               <span>回应</span>
             </button>
           </div>
+          </>
+          )}
         </div>
       </footer>
 

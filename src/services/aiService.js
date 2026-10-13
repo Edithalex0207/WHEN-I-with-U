@@ -610,6 +610,16 @@ export const formatMsgContentForPrompt = (msg, options = {}) => {
     return '[发送了一张真实照片，但未能识别画面内容]';
   }
 
+  if (msg.type === 'realVoice' && msg.sender === 'user') {
+  if (msg.metadata?.transcribeStatus === 'done' && msg.content) {
+    return `[发送了一条真实语音，内容是: ${msg.content}]`;
+  }
+  if (msg.metadata?.transcribeStatus === 'pending') {
+    return '[发送了一条真实语音，正在识别语音内容]';
+  }
+  return '[发送了一条真实语音，但未能识别语音内容]';
+}
+
   if (msg.type === 'order_request') {
     return describeOrderRequestForPrompt(msg, {
       handled: options.orderRequestHandled === true,

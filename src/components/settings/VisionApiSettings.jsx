@@ -18,6 +18,47 @@ const DEFAULT_CONFIG = {
   model: '',
 };
 
+// 生成一张 64x64、带文字的小测试图（JPEG data URL），而不是用一张手写的
+// 1x1 透明像素。体积依然很小，但是一张"正常"的图片，不会踩到某些视觉
+// 模型自身预处理流程对退化小图的边界问题（见下方 handleVisionTest 的说明）。
+const createTestImageDataUrl = () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#4f7cff';
+  ctx.fillRect(0, 0, 64, 64);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('TEST', 32, 32);
+
+  return canvas.toDataURL('image/jpeg', 0.9);
+};
+
+// 从失败的响应里尽量拿到服务商自己给出的具体错误文案，而不是整段原始
+// JSON/HTML 文本——否则用户很难一眼看出报错到底是什么。
+const extractErrorDetail = async (response) => {
+  const rawText = await response.text();
+
+  try {
+    const parsed = JSON.parse(rawText);
+    const detail =
+      parsed?.error?.message ||
+      parsed?.error?.msg ||
+      parsed?.message ||
+      parsed?.msg;
+
+    if (detail) return String(detail);
+  } catch {
+    // 不是 JSON，直接用原始文本
+  }
+
+  return rawText;
+};
+
 const VisionApiSettings = () => {
   const [visionConfig, setVisionConfig] = useState(DEFAULT_CONFIG);
   const [models, setModels] = useState([]);
@@ -175,9 +216,13 @@ const VisionApiSettings = () => {
     try {
       const baseUrl = normalizeBaseUrl();
 
-      // 1x1 透明 PNG，仅用于测试模型是否接受图片输入
-      const testImage =
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/Sc0lGQAAAABJRU5ErkJggg==';
+      // 用一张真正有尺寸、有内容的小图（64x64，带文字），而不是 1x1 透明像素。
+      // 之前那张 1x1 PNG 体积虽然最小，但很多视觉模型自己的图片预处理流程
+      // （比如按比例切块、resize）对这种退化到 1 像素的图会直接报"格式/解析
+      // 错误"——不是真的不支持视觉，是测试图片本身太极端，触发了模型预处理
+      // 的边界问题。换成一张正常的小图，测试结果才能真正反映这个 API 支不
+      // 支持视觉输入。
+      const testImage = createTestImageDataUrl();
 
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
@@ -209,9 +254,9 @@ const VisionApiSettings = () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const detail = await extractErrorDetail(response);
         throw new Error(
-          `视觉调用失败：HTTP ${response.status}${errorText ? ` - ${errorText}` : ''}`,
+          `视觉调用失败：HTTP ${response.status}${detail ? ` - ${detail}` : ''}`,
         );
       }
 
