@@ -742,7 +742,10 @@ const MessageRow = ({
         </div>
 
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          {!isUser && (
+          {/* image_generated 类型不用这个"重新让AI写一遍回复"的通用重roll——
+              它自己的"换一张"按钮在 GeneratedImageCard.jsx 卡片内部，
+              重roll出的是同一个场景的新图，不是重新问一次AI。 */}
+          {!isUser && msg.type !== 'image_generated' && (
             <button
               type="button"
               onClick={() => onReroll(msg.id)}

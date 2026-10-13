@@ -13,6 +13,7 @@ import db from '../../../db';
 import { getImageGenConfig } from '../../imagestudio/imageGenConfigService';
 import { getMissingConfigItems } from '../../imagestudio/imageGenRequest';
 import { runImageGeneration } from '../../imagestudio/imageGenRunner';
+import { rerollGeneration } from '../../imagestudio/imageGalleryService';
 import { ImageGenError } from '../../imagestudio/imageGenAdapters';
 import { BACKEND_NOVELAI } from '../../imagestudio/imageGenRules';
 import { GENERATION_SOURCE_CHAT } from '../../imagestudio/imageGenerationService';
@@ -90,6 +91,7 @@ export const runChatImageGeneration = async ({
         prompt: record.prompt,
         negativePrompt: record.negativePrompt,
         backend: record.backend,
+        model: record.model,
         adjustments: adjustments || [],
       });
     } else {
@@ -133,4 +135,106 @@ export const retryChatImageGeneration = async ({
   await runChatImageGeneration({ chatId, characterId, messageId, sceneText });
 };
 
-export default { runChatImageGeneration, retryChatImageGeneration };
+/**
+ * "换一张"：用这条消息当前版本保存下来的提示词和参数，重roll出一张新图，
+ * 作为消息的新版本追加——旧版本保留，用户可以用通用的版本切换箭头
+ * （MessageRow.jsx 里本来就有的 prev/next，跟文字消息的 reroll 共用同一
+ * 套 versions / currentVersionIndex 机制）翻回去看。复用生图室画廊已有
+ * 的 rerollGeneration，这里只管"从聊天这头怎么调、调完怎么追加成消息的
+ * 新版本"。
+ *
+ * 只有当前版本是真的存进了画廊的成功结果（metadata.generationId 存在）
+ * 才能换一张；还在排队/生成失败/没能存进画廊的（unsaved），这里直接
+ * 拒绝，调用方（GeneratedImageCard.jsx）据此决定要不要显示这个按钮。
+ *
+ * 不把失败原因写进消息的 metadata——那样会在"换一张"失败后，一条已经
+ * 显示成功的消息上永久挂一行跟当前图片无关的错误文案。失败原因只通过
+ * 返回值交给调用方，由卡片自己做一次性的提示。
+ */
+export const rerollChatImageGeneration = async ({ chatId, characterId, messageId }) => {
+  const message = await db.messages.get(messageId);
+
+  if (!message?.metadata?.generationId) {
+    return { ok: false, error: '这张图没有存进画廊，没法换一张。' };
+  }
+
+  try {
+    const record = await db.imageGenerations.get(message.metadata.generationId);
+    if (!record) {
+      return { ok: false, error: '原始生成记录找不到了，没法换一张。' };
+    }
+
+    const rawConfig = await getImageGenConfig();
+    const config = forceFreeNovelAi(rawConfig);
+
+    const { record: newRecord, blob, adjustments, saveError } = await rerollGeneration({
+      record,
+      config,
+    });
+
+    const nowIso = new Date().toISOString();
+    const baseVersions = Array.isArray(message.versions) && message.versions.length > 0
+      ? message.versions
+      : [{
+          type: message.type || 'image_generated',
+          content: message.content || '',
+          metadata: message.metadata || {},
+          timestamp: message.timestamp || nowIso,
+        }];
+
+    const newMetadata = newRecord
+      ? {
+          status: 'done',
+          generationId: newRecord.id,
+          thumbnail: newRecord.thumbnail,
+          width: newRecord.width,
+          height: newRecord.height,
+          prompt: newRecord.prompt,
+          negativePrompt: newRecord.negativePrompt,
+          backend: newRecord.backend,
+          model: newRecord.model,
+          adjustments: adjustments || [],
+        }
+      : {
+          status: 'done',
+          blob,
+          unsaved: true,
+          errorMessage: saveError || '',
+        };
+
+    const newVersions = [
+      ...baseVersions,
+      {
+        type: 'image_generated',
+        content: message.content || '',
+        metadata: newMetadata,
+        timestamp: nowIso,
+      },
+    ];
+
+    await db.messages.update(messageId, {
+      type: 'image_generated',
+      content: message.content || '',
+      metadata: newMetadata,
+      versions: newVersions,
+      currentVersionIndex: newVersions.length - 1,
+    });
+
+    notifyChatRoom(chatId);
+    return { ok: true };
+  } catch (error) {
+    console.warn('[ChatImageGen] 换一张失败：', error);
+
+    const message2 = error instanceof ImageGenError
+      ? error.message
+      : (error?.message || '换一张失败，请重试。');
+
+    return { ok: false, error: message2 };
+  }
+};
+
+export default {
+  runChatImageGeneration,
+  retryChatImageGeneration,
+  rerollChatImageGeneration,
+};
