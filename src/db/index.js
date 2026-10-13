@@ -4855,4 +4855,11 @@ db.version(83).stores({
   imageGenerationFiles: 'generationId',
 });
 
+// AI 拼词的「给AI预设」库：每条是一段写给AI的指导词（人设/风格要求），
+// 比如"你是一位顶级插画师，擅长写 MJ 风格的提示词"。用户可以存多条、
+// 拼词时切换着用。见 promptComposerPresetService.js。
+db.version(84).stores({
+  imagePromptPresets: '++id, name, createdAt, updatedAt',
+});
+
 export default db;

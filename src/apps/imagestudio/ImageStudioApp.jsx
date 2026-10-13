@@ -16,7 +16,7 @@
 // 只需要一个返回首页的回调（跟 DiaryApp 一样）。
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Images, MoreHorizontal, Palette, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Images, MoreHorizontal, Palette, Sparkles, Wand2, X } from 'lucide-react';
 
 import GalleryPanel from './GalleryPanel';
 import GeneratePanel from './GeneratePanel';
@@ -24,6 +24,7 @@ import ImageStudioSettingsPanel from './ImageStudioSettingsPanel';
 import NotifySettingsSection from './NotifySettingsSection';
 import ArtistTagPanel from './ArtistTagPanel';
 import AppearancePanel from './AppearancePanel';
+import PromptComposerPanel from './PromptComposerPanel';
 import { countRunningJobs, useImageGenJobs } from './imageGenJobStore';
 
 const PAGES = {
@@ -31,11 +32,12 @@ const PAGES = {
   generate: { kicker: 'No.01 — Create', title: '为 TA 画一幅', deck: '把此刻的心情，慢慢洇成一张画。', compact: true },
   gallery: { kicker: 'No.02 — Archive', title: '你的画廊', deck: '按时间排开，每一张都是某个瞬间。' },
   artist: { kicker: 'No.03 — Style', title: '画师串', deck: '像索引卡一样收着，每张都能写备注。' },
+  compose: { kicker: 'No.04 — AI Draft', title: 'AI 拼词', deck: '说一句想要的画面，剩下的交给 AI 拼。' },
 };
 
 const SHEETS = {
-  appearance: { kicker: 'No.04 — Looks', title: '外貌', no: '01' },
-  settings: { kicker: 'No.05 — Setup', title: '设置', no: '02' },
+  appearance: { kicker: 'No.05 — Looks', title: '外貌', no: '01' },
+  settings: { kicker: 'No.06 — Setup', title: '设置', no: '02' },
 };
 
 const formatElapsed = (ms) => {
@@ -177,6 +179,7 @@ const ImageStudioApp = ({ onBackHub }) => {
         <GeneratePanel onGoSettings={goSettings} />
       </div>
       {page === 'artist' ? <ArtistTagPanel /> : null}
+      {page === 'compose' ? <PromptComposerPanel /> : null}
       {page === 'gallery' ? <GalleryPanel onGoSettings={goSettings} refreshSignal={jobState.doneSeq} /> : null}
 
       {/* 生成中悬浮胶囊：在展厅以外的页面都看得到（展厅里画框上就有计时） */}
@@ -227,6 +230,7 @@ const ImageStudioApp = ({ onBackHub }) => {
         {dockButton('generate', '展厅', Sparkles)}
         {dockButton('gallery', '画廊', Images)}
         {dockButton('artist', '画师串', Palette)}
+        {dockButton('compose', 'AI拼词', Wand2)}
         <button
           type="button"
           onClick={() => setMenuOpen((open) => !open)}

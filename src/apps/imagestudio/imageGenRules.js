@@ -92,6 +92,10 @@ export const DEFAULT_IMAGE_GEN_CONFIG = {
   aiImageMode: AI_IMAGE_MODE_AUTO,
   // 聊天里没有单独填用户外貌时，回退使用这一份。
   defaultUserAppearance: '',
+  // AI 拼词页上次用的「给AI预设」id（字符串形式；空字符串 = 不用任何预设，
+  // 走内置的通用指导词）。只是记住上次选了哪个，方便下次打开接着用，
+  // 换预设不影响这里别的字段。
+  promptComposerPresetId: '',
   thirdParty: {
     baseUrl: '',
     apiKey: '',
@@ -157,6 +161,7 @@ export const normalizeImageGenConfig = (raw) => {
       defaults.aiImageMode
     ),
     defaultUserAppearance: asString(source.defaultUserAppearance),
+    promptComposerPresetId: asString(source.promptComposerPresetId).trim(),
     thirdParty: {
       baseUrl: asString(third.baseUrl).trim().replace(/\/+$/, ''),
       apiKey: asString(third.apiKey).trim(),
