@@ -16,7 +16,9 @@
 
 import {
   BACKEND_NOVELAI,
+  NOVELAI_ACCOUNT_HOST,
   NOVELAI_DEFAULT_HOST,
+  clampNovelAiParams,
   joinPromptParts,
 } from './imageGenRules';
 
@@ -154,4 +156,46 @@ export const getMissingConfigItems = (config) => {
   }
 
   return missing;
+};
+
+/**
+ * 这一次大概会出多大的图，只用来让界面提前按正确比例摆好占位画框。
+ * NovelAI 取夹紧之后的宽高；第三方解析 "宽x高"，解析不出来按方图算。
+ * 真正的尺寸以生成后读到的图片为准。
+ */
+export const getPlannedImageSize = (config) => {
+  if (config?.backend === BACKEND_NOVELAI) {
+    const { params } = clampNovelAiParams(config.novelai, config.novelai.allowAnlas);
+    return { width: params.width, height: params.height };
+  }
+
+  const match = String(config?.thirdParty?.size || '').match(/(\d+)\s*[x×*]\s*(\d+)/i);
+  if (match && Number(match[1]) > 0 && Number(match[2]) > 0) {
+    return { width: Number(match[1]), height: Number(match[2]) };
+  }
+
+  return { width: 1024, height: 1024 };
+};
+
+/**
+ * 查询账户信息（含 Anlas）的地址。账户接口在 api.novelai.net，不是出图用的 image.novelai.net。
+ * 配了跨域代理就发给代理，路径是 /user/data，需要代理把 /user/ 开头的请求转到 api.novelai.net。
+ */
+export const buildNovelAiAccountUrl = (corsProxyUrl) => {
+  const host = String(corsProxyUrl || '').trim() || NOVELAI_ACCOUNT_HOST;
+  return `${host.replace(/\/+$/, '')}/user/data`;
+};
+
+/**
+ * 从账户信息里取 Anlas：免费赠送的 + 购买的。取不到返回 null。
+ * 字段名来自社区客户端的实际用法（subscription.trainingStepsLeft），不是官方文档原文。
+ */
+export const extractAnlas = (payload) => {
+  const steps = payload?.subscription?.trainingStepsLeft ?? payload?.trainingStepsLeft;
+  if (!steps || typeof steps !== 'object') return null;
+
+  const fixed = Number(steps.fixedTrainingStepsLeft) || 0;
+  const purchased = Number(steps.purchasedTrainingSteps) || 0;
+
+  return { fixed, purchased, total: fixed + purchased };
 };

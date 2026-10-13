@@ -7,11 +7,13 @@
 // 当前配置同时放在 state（驱动渲染）和 ref（保证连续操作时拿到的永远是最新值，
 // 不会因为 React 状态还没刷新而用旧快照覆盖）。
 //
-// 切片A只负责"把配置存好"，还没有任何地方会真的拿这些配置去请求生图接口。
+// 固定正面前缀和负面提示词已经挪到「展厅」页的折叠区里编辑（同一份配置，改哪边都行），
+// 这里不再重复放。保存配置后会广播给展厅页，切换后端不需要退出生图室。
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getImageGenConfig, saveImageGenConfig } from './imageGenConfigService';
+import { getCachedAnlas, refreshAnlas } from './novelAiBalanceService';
 import {
   AI_IMAGE_MODE_AUTO,
   AI_IMAGE_MODE_CONFIRM,
@@ -45,6 +47,9 @@ const ImageStudioSettingsPanel = () => {
   const [config, setConfig] = useState(null);
   const [customModel, setCustomModel] = useState(false);
   const [saveStatus, setSaveStatus] = useState('idle');
+  const [anlas, setAnlas] = useState(() => getCachedAnlas());
+  const [anlasBusy, setAnlasBusy] = useState(false);
+  const [anlasError, setAnlasError] = useState('');
 
   const configRef = useRef(null);
   const flashTimerRef = useRef(null);
@@ -81,6 +86,24 @@ const ImageStudioSettingsPanel = () => {
       flashStatus('error');
     }
   }, [flashStatus]);
+
+  const handleRefreshAnlas = async () => {
+    if (anlasBusy) return;
+
+    // 先把输入框里还没失焦保存的 Token / 代理地址存下来，再用最新配置去查。
+    await persist();
+
+    setAnlasBusy(true);
+    setAnlasError('');
+
+    try {
+      setAnlas(await refreshAnlas());
+    } catch (error) {
+      setAnlasError(error?.message || '查询失败，请稍后再试。');
+    } finally {
+      setAnlasBusy(false);
+    }
+  };
 
   const change = useCallback((mutator) => {
     if (!configRef.current) return;
@@ -236,6 +259,41 @@ const ImageStudioSettingsPanel = () => {
           />
         </Field>
 
+        <Field
+          label="账户余额"
+          hint="手动点击才会查询，不会每次打开设置页自动请求。余额接口在 api.novelai.net；如果用了跨域代理 Worker，需要它也转发 /user/ 开头的请求。"
+        >
+          <div
+            className="flex items-center gap-3 rounded-2xl border p-3"
+            style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--bg-surface)' }}
+          >
+            <div>
+              <b className="block font-serif text-2xl font-semibold leading-none tabular-nums">
+                {anlas ? anlas.total.toLocaleString('en-US') : '--'}
+              </b>
+              <span className="text-[9px] uppercase tracking-[0.16em] opacity-50">Anlas 剩余</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleRefreshAnlas}
+              disabled={anlasBusy || !nai.token}
+              className="ml-auto whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold disabled:opacity-40"
+              style={{ borderColor: 'var(--divider)' }}
+            >
+              {anlasBusy ? '查询中...' : '刷新余额'}
+            </button>
+          </div>
+          {anlas ? (
+            <span className="mt-1 block text-[10px] opacity-50">
+              上次刷新：{new Date(anlas.at).toLocaleString('zh-CN', { hour12: false })}
+              {anlas.purchased > 0 ? `（其中购买的 ${anlas.purchased.toLocaleString('en-US')}）` : ''}
+            </span>
+          ) : null}
+          {anlasError ? (
+            <span className="mt-1 block text-[11px] leading-relaxed text-rose-500">{anlasError}</span>
+          ) : null}
+        </Field>
+
         <Field label="模型" hint="下拉里没有的模型可以选「自定义」后直接填写模型 id。">
           <SelectInput
             value={modelSelectValue}
@@ -355,29 +413,6 @@ const ImageStudioSettingsPanel = () => {
               );
             })}
           </div>
-        </Field>
-
-        <Field
-          label="固定正面提示词（可选）"
-          hint="每次生成都会放在最前面，比如质量词。"
-        >
-          <TextArea
-            value={nai.positivePrefix}
-            onChange={setNai('positivePrefix')}
-            onBlur={persist}
-            placeholder="masterpiece, best quality"
-            rows={2}
-          />
-        </Field>
-
-        <Field label="负面提示词（可选）">
-          <TextArea
-            value={nai.negativePrompt}
-            onChange={setNai('negativePrompt')}
-            onBlur={persist}
-            placeholder="lowres, bad anatomy, ..."
-            rows={3}
-          />
         </Field>
 
         <div

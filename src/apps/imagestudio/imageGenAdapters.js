@@ -13,8 +13,10 @@ import {
   decodeImageResponse,
 } from './imageGenMedia';
 import {
+  buildNovelAiAccountUrl,
   buildNovelAiRequestBody,
   buildNovelAiUrl,
+  extractAnlas,
   buildThirdPartyRequestBody,
   buildThirdPartyUrl,
 } from './imageGenRequest';
@@ -135,6 +137,40 @@ export const requestNovelAiImage = async ({ config, positive, negative, params, 
       kind: 'decode',
     });
   }
+};
+
+/**
+ * 查询 NovelAI 账户的 Anlas 余额。只读一次，不重试。
+ * 返回 { fixed, purchased, total }。
+ */
+export const requestNovelAiBalance = async ({ config }) => {
+  const response = await fetchWithTimeout(
+    buildNovelAiAccountUrl(config.corsProxyUrl),
+    { method: 'GET', headers: { Authorization: `Bearer ${config.novelai.token}` } },
+    '余额接口在 api.novelai.net，和出图不是同一个地址。浏览器直连通常会被跨域拦住；如果用了跨域代理 Worker，需要让它也把 /user/ 开头的请求转发到 api.novelai.net。'
+  );
+
+  if (!response.ok) {
+    const serverMessage = await readServerMessage(response);
+    throw new ImageGenError(describeHttpError(response.status, serverMessage, 'NovelAI 账户接口'), {
+      status: response.status,
+      kind: 'http',
+    });
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new ImageGenError('账户接口返回的内容不是有效的 JSON。', { kind: 'decode' });
+  }
+
+  const anlas = extractAnlas(payload);
+  if (!anlas) {
+    throw new ImageGenError('账户接口返回了内容，但里面没有找到 Anlas 字段。', { kind: 'decode' });
+  }
+
+  return anlas;
 };
 
 /**

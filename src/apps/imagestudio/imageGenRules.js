@@ -15,6 +15,7 @@
 export const IMAGE_GEN_SETTINGS_KEY = 'imageGenConfig';
 
 export const NOVELAI_DEFAULT_HOST = 'https://image.novelai.net';
+export const NOVELAI_ACCOUNT_HOST = 'https://api.novelai.net';
 
 // 免费额度上限（allowAnlas 关闭时，生成前按这些数字夹紧）。
 export const FREE_MAX_PIXELS = 1048576;

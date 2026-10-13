@@ -5,6 +5,7 @@
 //   - 切片B：打通真实生图（第三方接口 + NovelAI），「生成」页上线。
 //   - 切片C：「画廊」页（重 roll / 打包下载 / 保存到相册 / 删除）。
 //   - 切片D：聊天里 AI 用 [AI_IMAGE: ...] 标签触发生图。
+//   - 画廊化改版：「生成」页改成「展厅」，成品图挂在最上面的展墙，支持同时多张作画。
 //
 // 版面（杂志风）：主页面只有「生成」「画廊」，用底部悬浮 dock 切换；
 // 画师串 / 外貌 / 设置收进 dock 右侧「更多」，以底部弹窗的形式打开。
@@ -23,10 +24,11 @@ import ImageStudioSettingsPanel from './ImageStudioSettingsPanel';
 import NotifySettingsSection from './NotifySettingsSection';
 import ArtistTagPanel from './ArtistTagPanel';
 import AppearancePanel from './AppearancePanel';
-import { useImageGenJob } from './imageGenJobStore';
+import { countRunningJobs, useImageGenJobs } from './imageGenJobStore';
 
 const PAGES = {
-  generate: { kicker: 'No.01 — Create', title: '为 TA 画一幅', deck: '把此刻的心情，慢慢洇成一张画。' },
+  // compact：展厅页不放大标题，让成品图直接出现在最上面。
+  generate: { kicker: 'No.01 — Create', title: '为 TA 画一幅', deck: '把此刻的心情，慢慢洇成一张画。', compact: true },
   gallery: { kicker: 'No.02 — Archive', title: '你的画廊', deck: '按时间排开，每一张都是某个瞬间。' },
 };
 
@@ -59,8 +61,12 @@ const ImageStudioApp = ({ onBackHub }) => {
   const [seenDoneSeq, setSeenDoneSeq] = useState(0);
   const [now, setNow] = useState(Date.now());
 
-  const job = useImageGenJob();
-  const running = job.status === 'running';
+  const jobState = useImageGenJobs();
+  const runningCount = countRunningJobs(jobState);
+  const running = runningCount > 0;
+  const earliestStart = jobState.jobs
+    .filter((item) => item.status === 'pending')
+    .reduce((min, item) => Math.min(min, item.startedAt), Infinity);
 
   // 生成中每秒刷新一次计时。
   useEffect(() => {
@@ -72,8 +78,8 @@ const ImageStudioApp = ({ onBackHub }) => {
 
   // 在「画廊」页时看过新图就算已读；不在画廊页则 dock 上亮小红点。
   useEffect(() => {
-    if (page === 'gallery') setSeenDoneSeq(job.doneSeq);
-  }, [page, job.doneSeq]);
+    if (page === 'gallery') setSeenDoneSeq(jobState.doneSeq);
+  }, [page, jobState.doneSeq]);
 
   useEffect(() => {
     if (!sheet && !menuOpen) return undefined;
@@ -86,7 +92,7 @@ const ImageStudioApp = ({ onBackHub }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [sheet, menuOpen]);
 
-  const galleryDot = page !== 'gallery' && job.doneSeq > seenDoneSeq;
+  const galleryDot = page !== 'gallery' && jobState.doneSeq > seenDoneSeq;
   const meta = PAGES[page];
 
   const openSheet = (id) => {
@@ -151,25 +157,29 @@ const ImageStudioApp = ({ onBackHub }) => {
         <span>Studio · 生图室</span>
       </div>
 
-      <div className="mb-5 mt-4">
-        <p className="mb-1.5 text-[9.5px] uppercase tracking-[0.18em] opacity-50">{meta.kicker}</p>
-        <h1 className="text-[28px] font-medium leading-tight" style={serifStyle}>
-          {meta.title}
-        </h1>
-        <p className="mt-2 max-w-[18rem] text-xs italic leading-relaxed opacity-70" style={serifStyle}>
-          {meta.deck}
-        </p>
-        <hr className="mt-4 border-0 border-t" style={{ borderColor: 'var(--divider)' }} />
-      </div>
+      {meta.compact ? (
+        <div className="mb-3 mt-2" />
+      ) : (
+        <div className="mb-5 mt-4">
+          <p className="mb-1.5 text-[9.5px] uppercase tracking-[0.18em] opacity-50">{meta.kicker}</p>
+          <h1 className="text-[28px] font-medium leading-tight" style={serifStyle}>
+            {meta.title}
+          </h1>
+          <p className="mt-2 max-w-[18rem] text-xs italic leading-relaxed opacity-70" style={serifStyle}>
+            {meta.deck}
+          </p>
+          <hr className="mt-4 border-0 border-t" style={{ borderColor: 'var(--divider)' }} />
+        </div>
+      )}
 
       {/* 「生成」页一直挂载，只是切走时隐藏，保住输入内容 */}
       <div className={page === 'generate' ? 'block' : 'hidden'}>
         <GeneratePanel onGoSettings={goSettings} />
       </div>
-      {page === 'gallery' ? <GalleryPanel onGoSettings={goSettings} refreshSignal={job.doneSeq} /> : null}
+      {page === 'gallery' ? <GalleryPanel onGoSettings={goSettings} refreshSignal={jobState.doneSeq} /> : null}
 
-      {/* 生成中悬浮胶囊：不管停在哪一页都看得到 */}
-      {running ? (
+      {/* 生成中悬浮胶囊：在展厅以外的页面都看得到（展厅里画框上就有计时） */}
+      {running && page !== 'generate' ? (
         <div
           className="fixed bottom-24 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap rounded-full border py-2 pl-3 pr-4 text-xs"
           style={GlassStyle}
@@ -179,9 +189,9 @@ const ImageStudioApp = ({ onBackHub }) => {
             style={{ borderColor: 'var(--accent-color)', borderTopColor: 'transparent' }}
           />
           <span style={serifStyle} className="text-sm">
-            正在作画
+            {runningCount > 1 ? `正在作画 · ${runningCount} 张` : '正在作画'}
           </span>
-          <span className="tabular-nums opacity-60">{formatElapsed(now - job.startedAt)}</span>
+          <span className="tabular-nums opacity-60">{formatElapsed(now - earliestStart)}</span>
         </div>
       ) : null}
 
@@ -213,7 +223,7 @@ const ImageStudioApp = ({ onBackHub }) => {
         className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-full border p-1.5"
         style={GlassStyle}
       >
-        {dockButton('generate', '生成', Sparkles)}
+        {dockButton('generate', '展厅', Sparkles)}
         {dockButton('gallery', '画廊', Images)}
         <button
           type="button"

@@ -50,6 +50,29 @@ const describeParams = (record) => {
   return [record.model, params.size].filter(Boolean).join(' / ');
 };
 
+// 记录里没有实际宽高（外链图）时，依次回退到参数里的尺寸，再不行按方图排。
+const recordSize = (record) => {
+  if (record.width > 0 && record.height > 0) return { width: record.width, height: record.height };
+
+  const params = record.params || {};
+  if (params.width > 0 && params.height > 0) return { width: params.width, height: params.height };
+
+  const match = String(params.size || '').match(/(\d+)\s*[x×*]\s*(\d+)/i);
+  if (match) return { width: Number(match[1]), height: Number(match[2]) };
+
+  return null;
+};
+
+const recordRatio = (record) => {
+  const size = recordSize(record);
+  return size ? size.width / size.height : 1;
+};
+
+const recordSizeText = (record) => {
+  const size = recordSize(record);
+  return size ? `${size.width}x${size.height}` : '';
+};
+
 const saveStatusText = (status) => {
   if (status === 'shared') return '已打开系统分享面板，选择"存储图像"即可存进相册。';
   if (status === 'downloaded') return '已下载到设备。';
@@ -338,7 +361,7 @@ const GalleryPanel = ({ onGoSettings, refreshSignal = 0 }) => {
     <div className="space-y-4">
       <SectionCard
         title="画廊"
-        subtitle="按时间从新到旧。点缩略图看大图，可重 roll、保存到相册、删除；也可以多选后批量打包。"
+        subtitle="按时间从新到旧，每张保留自己的比例。点缩略图看大图，可重 roll、保存到相册、删除；也可以多选后批量打包。"
       >
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -416,50 +439,68 @@ const GalleryPanel = ({ onGoSettings, refreshSignal = 0 }) => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-1.5">
+          {/* 瀑布流：每张按自己的真实比例排，横图、竖图、方图都不会被裁成同一个方块 */}
+          <div className="columns-2 gap-3.5">
             {items.map((record) => {
               const selected = selectedIds.includes(record.id);
               return (
-                <button
-                  key={record.id}
-                  type="button"
-                  onClick={() => handleTileClick(record)}
-                  className="relative aspect-square overflow-hidden rounded-xl border"
-                  style={{
-                    borderColor: selected ? 'var(--accent-color)' : 'var(--card-border)',
-                    backgroundColor: 'var(--card-bg)',
-                  }}
-                >
-                  {record.thumbnail ? (
-                    <img
-                      src={record.thumbnail}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center">
-                      <ImageIcon className="h-6 w-6 opacity-30" />
+                <figure key={record.id} className="mb-4 break-inside-avoid">
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick(record)}
+                    className="relative block w-full p-[3px] text-left"
+                    style={{
+                      backgroundColor: 'var(--text-main)',
+                      boxShadow: '0 12px 16px -10px rgba(0,0,0,0.35)',
+                      outline: selected ? '2px solid var(--accent-color)' : 'none',
+                      outlineOffset: '2px',
+                    }}
+                  >
+                    <span className="block p-1.5" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                      <span
+                        className="relative block w-full overflow-hidden"
+                        style={{
+                          aspectRatio: String(recordRatio(record)),
+                          backgroundColor: 'var(--bg-surface-strong)',
+                        }}
+                      >
+                        {record.thumbnail ? (
+                          <img
+                            src={record.thumbnail}
+                            alt=""
+                            className="h-full w-full object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center">
+                            <ImageIcon className="h-6 w-6 opacity-30" />
+                          </span>
+                        )}
+                        {record.hasOriginal ? null : (
+                          <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 text-[9px] text-white">
+                            {record.remoteUrl ? '仅外链' : '无原图'}
+                          </span>
+                        )}
+                      </span>
                     </span>
-                  )}
-                  {record.hasOriginal ? null : (
-                    <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 text-[9px] text-white">
-                      {record.remoteUrl ? '仅外链' : '无原图'}
-                    </span>
-                  )}
-                  {selectMode ? (
-                    <span
-                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full border"
-                      style={
-                        selected
-                          ? { ...accentStyle, borderColor: 'var(--accent-color)' }
-                          : { backgroundColor: 'rgba(0,0,0,0.35)', borderColor: 'rgba(255,255,255,0.8)' }
-                      }
-                    >
-                      {selected ? <Check className="h-3 w-3" /> : null}
-                    </span>
-                  ) : null}
-                </button>
+                    {selectMode ? (
+                      <span
+                        className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full border"
+                        style={
+                          selected
+                            ? { ...accentStyle, borderColor: 'var(--accent-color)' }
+                            : { backgroundColor: 'rgba(0,0,0,0.35)', borderColor: 'rgba(255,255,255,0.8)' }
+                        }
+                      >
+                        {selected ? <Check className="h-3 w-3" /> : null}
+                      </span>
+                    ) : null}
+                  </button>
+                  <figcaption className="mt-1.5 flex justify-between gap-2 font-mono text-[9.5px] opacity-55">
+                    <span>{String(record.id).padStart(4, '0')}</span>
+                    <span>{recordSizeText(record)}</span>
+                  </figcaption>
+                </figure>
               );
             })}
           </div>
@@ -510,7 +551,7 @@ const GalleryPanel = ({ onGoSettings, refreshSignal = 0 }) => {
               <img
                 src={detailUrl}
                 alt="生成的图片"
-                className="w-full rounded-2xl border"
+                className="h-auto w-full rounded-2xl border object-contain"
                 style={{ borderColor: 'var(--card-border)' }}
               />
             ) : detail.remoteUrl ? (

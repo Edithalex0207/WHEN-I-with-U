@@ -1,26 +1,29 @@
 // src/apps/imagestudio/ArtistTagPanel.jsx
 //
-// 生图室「画师串」页：存储站。每条是一串画师标签，可以存很多条，
+// 生图室「画师串」页：存储站。每条是一串画师标签，可以存很多条，可以写备注，
 // 勾选其中一条或几条启用，生图时按创建顺序拼进提示词（拼接逻辑在切片B）。
+// 支持批量导入：粘贴多行文本，每行一条，识别预览确认后一次性写入（默认都未启用）。
 //
 // 编辑和删除按钮始终可见，不做 hover 才出现——手机上没有 hover，
 // 做成 hover 才显示的话点不到（RpApp 的会话删除按钮之前踩过这个坑）。
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
 import ConfirmModal from '../../components/ConfirmModal';
 import {
   createArtistTagPreset,
   deleteArtistTagPreset,
   getAllArtistTagPresets,
+  importArtistTagPresets,
+  parseArtistTagBulkText,
   setArtistTagPresetEnabled,
   updateArtistTagPreset,
 } from './artistTagService';
 import { joinPromptParts } from './imageGenRules';
 import { Field, SectionCard, TextArea, TextInput, ToggleRow } from './StudioFormParts';
 
-const EMPTY_EDITOR = { id: null, name: '', tags: '' };
+const EMPTY_EDITOR = { id: null, name: '', remark: '', tags: '' };
 
 const ArtistTagPanel = () => {
   const [presets, setPresets] = useState([]);
@@ -28,6 +31,9 @@ const ArtistTagPanel = () => {
   const [editor, setEditor] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [errorText, setErrorText] = useState('');
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importMessage, setImportMessage] = useState('');
 
   const reload = useCallback(async () => {
     setPresets(await getAllArtistTagPresets());
@@ -57,13 +63,14 @@ const ArtistTagPanel = () => {
 
     const name = editor.name.trim();
     const tags = editor.tags.trim();
+    const remark = editor.remark.trim();
     if (!name || !tags) return;
 
     try {
       if (editor.id) {
-        await updateArtistTagPreset(editor.id, { name, tags });
+        await updateArtistTagPreset(editor.id, { name, tags, remark });
       } else {
-        await createArtistTagPreset({ name, tags });
+        await createArtistTagPreset({ name, tags, remark });
       }
 
       setEditor(null);
@@ -89,6 +96,28 @@ const ArtistTagPanel = () => {
     await reload();
   };
 
+  const importPreview = parseArtistTagBulkText(importText, presets.length);
+
+  const closeImport = () => {
+    setImportOpen(false);
+    setImportText('');
+    setImportMessage('');
+  };
+
+  const handleImport = async () => {
+    if (importPreview.length === 0) return;
+
+    try {
+      await importArtistTagPresets(importPreview);
+      await reload();
+      setErrorText('');
+      closeImport();
+    } catch (error) {
+      console.warn('[ImageStudio] 批量导入画师串失败：', error);
+      setImportMessage('导入失败，请重试。');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <SectionCard
@@ -112,14 +141,24 @@ const ArtistTagPanel = () => {
           ) : null}
         </Field>
 
-        <button
-          type="button"
-          onClick={() => setEditor({ ...EMPTY_EDITOR })}
-          className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm"
-          style={{ backgroundColor: 'var(--accent-color)', color: 'var(--accent-foreground)' }}
-        >
-          <Plus className="h-3.5 w-3.5" /> 新增画师串
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm"
+            style={{ backgroundColor: 'var(--accent-color)', color: 'var(--accent-foreground)' }}
+          >
+            批量导入
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditor({ ...EMPTY_EDITOR })}
+            className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold"
+            style={{ borderColor: 'var(--divider)' }}
+          >
+            <Plus className="h-3.5 w-3.5" /> 新增画师串
+          </button>
+        </div>
 
         {errorText ? <p className="text-[11px] text-rose-500">{errorText}</p> : null}
       </SectionCard>
@@ -135,6 +174,12 @@ const ArtistTagPanel = () => {
 
       {presets.map((preset) => (
         <SectionCard key={preset.id} title={preset.name}>
+          {preset.remark ? (
+            <p className="break-words font-serif text-[13px] italic leading-relaxed opacity-75">
+              {preset.remark}
+            </p>
+          ) : null}
+
           <ToggleRow
             label={preset.enabled ? '已启用' : '未启用'}
             hint={preset.tags}
@@ -146,7 +191,12 @@ const ArtistTagPanel = () => {
             <button
               type="button"
               onClick={() =>
-                setEditor({ id: preset.id, name: preset.name, tags: preset.tags })
+                setEditor({
+                  id: preset.id,
+                  name: preset.name,
+                  remark: preset.remark || '',
+                  tags: preset.tags,
+                })
               }
               className="font-semibold opacity-70 hover:opacity-100"
             >
@@ -189,6 +239,14 @@ const ArtistTagPanel = () => {
               />
             </Field>
 
+            <Field label="备注（可选）" hint="写给自己看的，比如这串适合什么角色或风格，不会进提示词。">
+              <TextInput
+                value={editor.remark}
+                onChange={(value) => setEditor((prev) => ({ ...prev, remark: value }))}
+                placeholder="例如：给林夏用的，偏水墨"
+              />
+            </Field>
+
             <Field label="画师标签" hint="原样保存，换行会在使用时变成逗号。">
               <TextArea
                 value={editor.tags}
@@ -216,6 +274,91 @@ const ArtistTagPanel = () => {
               </button>
             </div>
           </form>
+        </div>
+      ) : null}
+
+      {importOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3 backdrop-blur-sm">
+          <div
+            className="max-h-[82vh] w-full max-w-md space-y-3 overflow-y-auto rounded-3xl p-5 shadow-2xl"
+            style={{
+              backgroundColor: 'var(--modal-bg)',
+              border: '1px solid var(--modal-border)',
+              color: 'var(--text-main)',
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-start justify-between">
+              <h3 className="font-serif text-base font-semibold">批量导入画师串</h3>
+              <button
+                type="button"
+                onClick={closeImport}
+                className="flex h-7 w-7 items-center justify-center rounded-full border"
+                style={{ borderColor: 'var(--divider)' }}
+                aria-label="关闭"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <Field
+              label="粘贴文本，每行一条"
+              hint="某一行写了「名称：标签」就按冒号拆开（中文、英文冒号都行）；没写名称的会自动编号，导入后随时能改名、加备注。"
+            >
+              <TextArea
+                value={importText}
+                onChange={setImportText}
+                placeholder={'水墨写意：artist:wlop, artist:sakimichan\nartist:guweiz, oil painting'}
+                rows={6}
+              />
+            </Field>
+
+            {importPreview.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-[11px] opacity-70">识别预览 · {importPreview.length} 条</p>
+                {importPreview.map((item, index) => (
+                  <div
+                    key={`${index}-${item.name}`}
+                    className="rounded-2xl border px-3 py-2"
+                    style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--bg-surface)' }}
+                  >
+                    <p className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+                      {item.name}
+                      {item.autoNamed ? (
+                        <span className="rounded-full border border-amber-500 px-1.5 text-[8.5px] text-amber-500">
+                          自动命名
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="mt-0.5 break-words font-mono text-[10.5px] leading-relaxed opacity-65">
+                      {item.tags}
+                    </p>
+                  </div>
+                ))}
+                <p className="text-[10px] leading-relaxed opacity-50">
+                  导入后默认都是「未启用」，不会突然把一堆陌生风格混进当前生成里。
+                </p>
+              </div>
+            ) : null}
+
+            {importMessage ? <p className="text-[11px] text-rose-500">{importMessage}</p> : null}
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={closeImport} className="px-3 py-1 text-xs opacity-60">
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleImport}
+                disabled={importPreview.length === 0}
+                className="rounded-xl px-4 py-1.5 text-xs font-semibold disabled:opacity-40"
+                style={{ backgroundColor: 'var(--accent-color)', color: 'var(--accent-foreground)' }}
+              >
+                确认导入 {importPreview.length || ''} 条
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 

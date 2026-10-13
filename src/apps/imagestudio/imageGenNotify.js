@@ -95,7 +95,7 @@ const preview = (text, max = 28) => {
 };
 
 /** 生图成功后调用。 */
-export const notifyGenerationDone = ({ sceneText = '', saved = true } = {}) => {
+export const notifyGenerationDone = ({ sceneText = '', saved = true, quiet = false } = {}) => {
   const settings = getNotifySettings();
 
   if (settings.notify) {
@@ -104,7 +104,8 @@ export const notifyGenerationDone = ({ sceneText = '', saved = true } = {}) => {
     showSystemNotification('生图完成', content);
   }
 
-  if (settings.sound) previewSound(settings.preset);
+  // 同时画好好几张时只响一次，免得叠成一串。
+  if (settings.sound && !quiet) previewSound(settings.preset);
 };
 
 /** 生图失败后调用（只弹提示，不响铃，免得把失败也当成喜讯）。 */
