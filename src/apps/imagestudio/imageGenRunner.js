@@ -13,7 +13,7 @@ import { ImageGenError, requestNovelAiImage, requestThirdPartyImage } from './im
 import { readSizeAndMakeThumbnail } from './imageGenMedia';
 import { buildGenerationPrompts, generateSeed, getMissingConfigItems } from './imageGenRequest';
 import { BACKEND_NOVELAI, clampNovelAiParams } from './imageGenRules';
-import { saveGeneration } from './imageGenerationService';
+import { GENERATION_SOURCE_STUDIO, saveGeneration } from './imageGenerationService';
 
 /**
  * 读出拼提示词需要的几段素材。
@@ -51,6 +51,10 @@ export const runImageGeneration = async ({
   characterId = null,
   includeCharacterAppearance = false,
   includeUserAppearance = false,
+  // 'studio'（生图室手动生成）或 'chat'（聊天里AI自己触发，见
+  // chatImageGenService.js）。只是落到 imageGenerations.source 字段，
+  // 不影响生成逻辑本身。
+  source = GENERATION_SOURCE_STUDIO,
 }) => {
   const missing = getMissingConfigItems(config);
   if (missing.length > 0) {
@@ -98,6 +102,7 @@ export const runImageGeneration = async ({
 
     meta = {
       backend: BACKEND_NOVELAI,
+      source,
       model: nai.model,
       params: {
         ...clamped.params,
@@ -114,6 +119,7 @@ export const runImageGeneration = async ({
 
     meta = {
       backend: config.backend,
+      source,
       model: config.thirdParty.model,
       params: { size: config.thirdParty.size },
     };

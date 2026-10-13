@@ -22,6 +22,7 @@ import { DECORATION_FIELDS, DECORATION_FIELD_LABELS } from '../chatButtonDecorat
 import SavedInfoSection from './SavedInfoSection';
 import AwaySettingsSection from '../away/AwaySettingsSection';
 import LearningModeSettingsSection from '../learningMode/LearningModeSettingsSection';
+import ChatImageGenSettingsSection from '../chatImageGen/ChatImageGenSettingsSection';
 import db from '../../../db';
 import { CHAT_CONTROL_STYLE_OPTIONS } from '../chatControlStylePresets';
 import { compressImageFile } from '../../../utils/imageHelper';
@@ -913,6 +914,12 @@ const handleToggleLocation = async () => {
 
         {/* 语言学习模式（每个聊天窗单独设置） */}
         <LearningModeSettingsSection
+          chat={chat}
+          onUpdated={onUpdatedUserPersona}
+        />
+
+        {/* AI自动生图（每个聊天窗单独设置，默认关闭） */}
+        <ChatImageGenSettingsSection
           chat={chat}
           onUpdated={onUpdatedUserPersona}
         />

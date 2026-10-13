@@ -38,6 +38,7 @@ import { BubbleDecorationOverlay } from './bubbleDecorations';
 import TextCard from './cards/TextCard';
 import LearningModeTranslationToggle from '../learningMode/LearningModeTranslationToggle';
 import ImageCard from './cards/ImageCard';
+import GeneratedImageCard from './cards/GeneratedImageCard';
 import VoiceCard from './cards/VoiceCard';
 import TransferCard from './cards/TransferCard';
 import ArticleCard from './cards/ArticleCard';
@@ -568,6 +569,16 @@ const MessageRow = ({
                 <ImageCard
                   content={msg.content}
                   metadata={msg.metadata}
+                />
+              )}
+
+              {msg.type === 'image_generated' && (
+                <GeneratedImageCard
+                  content={msg.content}
+                  metadata={msg.metadata}
+                  messageId={msg.id}
+                  chatId={msg.chatId}
+                  characterId={msg.characterId}
                 />
               )}
 

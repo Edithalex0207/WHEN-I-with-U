@@ -29,6 +29,8 @@
 import db from '../../db';
 
 export const GENERATION_SOURCE_STUDIO = 'studio';
+// 聊天里AI自己触发的生图（切片D，见 chatImageGenService.js）。
+export const GENERATION_SOURCE_CHAT = 'chat';
 
 /**
  * 保存一次成功的生成。blob 为 null 表示只有外链（remoteUrl），不写原图表。
@@ -109,6 +111,8 @@ export const getGenerationStats = async () => {
 };
 
 export default {
+  GENERATION_SOURCE_STUDIO,
+  GENERATION_SOURCE_CHAT,
   saveGeneration,
   getGenerationOriginal,
   getGenerationStats,

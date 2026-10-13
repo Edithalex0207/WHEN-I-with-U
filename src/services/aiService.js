@@ -128,6 +128,8 @@ import {
 
 import { getSharedWorldPromptBlock } from '../apps/shared-world/sharedWorldService';
 import { maybeUpdateProfileCard } from '../apps/messages/profile/profileCardService';
+import { buildChatImageGenPromptNote } from '../apps/messages/chatImageGen/chatImageGenDirective';
+import { runChatImageGeneration } from '../apps/messages/chatImageGen/chatImageGenService';
 import {
   countPendingUserCoupons,
   containsCouponRedeemRequest,
@@ -295,8 +297,10 @@ export const parseAiResponseToMessages = async (text = '') => {
   const result = [];
 
   // 支持的 AI 卡片标签，加入 STICKER
+  // GENIMAGE：聊天里AI自主触发的真实生图（跟 IMAGE 的纯文字占位卡完全
+  // 独立，见 chatImageGen/chatImageGenDirective.js 的系统提示词说明）。
  const pattern =
-  /\[(TRANSFER|VOICE|IMAGE|TODO|GIFT|FOOD|KINSHIP|STICKER|LOCATION|TRICK|DIYAREA_REQUEST|DIYAREA_SELF_UPDATE|DIYAREA_INSPIRATION|PARCEL_START|PARCEL_NOTE|COUPON|COUPON_REDEEM):\s*([^\]]+)\]/g;
+  /\[(TRANSFER|VOICE|IMAGE|GENIMAGE|TODO|GIFT|FOOD|KINSHIP|STICKER|LOCATION|TRICK|DIYAREA_REQUEST|DIYAREA_SELF_UPDATE|DIYAREA_INSPIRATION|PARCEL_START|PARCEL_NOTE|COUPON|COUPON_REDEEM):\s*([^\]]+)\]/g;
   // 一次性读取本地表情包库，建立「名称 -> URL」映射
   const allStickers = await db.stickers.toArray();
 
@@ -368,6 +372,15 @@ export const parseAiResponseToMessages = async (text = '') => {
         type: 'image',
         content: rawPayload,
         metadata: {}
+      });
+    } else if (cardType === 'genimage') {
+      // 真实生图的占位消息：status 先是 pending，真正的生成在消息落库
+      // 之后才会触发（见 triggerAiResponse / rerollAiResponse 里对
+      // runChatImageGeneration 的调用），这里只负责占个位置。
+      result.push({
+        type: 'image_generated',
+        content: rawPayload,
+        metadata: { status: 'pending' }
       });
     } else if (cardType === 'todo') {
       const parts = rawPayload.split('|');
@@ -2567,6 +2580,12 @@ const confirmCardNote = options.ignoreAway ? '' : CONFIRM_CARD_PROMPT_NOTE;
 
 const moodBubbleNote = options.ignoreAway ? '' : MOOD_BUBBLE_PROMPT_NOTE;
 
+// 聊天里AI自主触发真实生图：只有这个聊天窗自己开了开关、且生图室配置
+// 完整时才会有内容，否则是空字符串（AI完全不会被告知有这个标签）。
+const chatImageGenNote = options.ignoreAway
+  ? ''
+  : await buildChatImageGenPromptNote(chat);
+
 const trickButtonNote = (!options.ignoreAway && isHalloweenSeasonActive())
   ? `
 【万圣节限定·可选：恶作剧按钮】
@@ -2597,6 +2616,8 @@ const userReturnContext = `${buildUserReturnContext(recentMsgs)}${
   moodBubbleNote ? `\n\n${moodBubbleNote}` : ''
 }${
   trickButtonNote ? `\n\n${trickButtonNote}` : ''
+}${
+  chatImageGenNote ? `\n\n${chatImageGenNote}` : ''
 }`;
 
 const historyContext = buildHistoryContext(
@@ -2943,6 +2964,15 @@ for (const [messageIndex, msgData] of safeParsedMessages.entries()) {
             emotion: memoirEmotion,
             feeling: memoirFeeling,
             timestamp: nowIso,
+          });
+        } else if (msgData?.type === 'image_generated' && relatedMessageId) {
+          // 真实生图：占位消息已经落库（status: pending），这里才真的
+          // 起一次生成，不阻塞这次回复本身的落库/后续流程。
+          void runChatImageGeneration({
+            chatId,
+            characterId: character.id,
+            messageId: relatedMessageId,
+            sceneText: msgData.content,
           });
         }
       });
@@ -3473,6 +3503,17 @@ const result = await runAiToolOrchestrator({
       });
 
       void scheduleMemoryProcessing(chatId);
+
+      if (newVersion.type === 'image_generated') {
+        // 重roll出来的新版本如果也带了真实生图标签，同样要真的触发一次
+        // 生成——跟 triggerAiResponse 里的处理一致。
+        void runChatImageGeneration({
+          chatId,
+          characterId: character.id,
+          messageId,
+          sceneText: newVersion.content,
+        });
+      }
     }
   } catch (err) {
     console.error('Reroll failed:', err);
