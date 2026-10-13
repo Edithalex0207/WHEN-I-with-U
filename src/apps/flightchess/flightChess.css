@@ -1,0 +1,944 @@
+/* src/apps/flightchess/flightChess.css
+ *
+ * 飞行棋房间的样式：弥散柔彩背景 + 3D倾斜棋盘 + 立体棋子 + 翻牌。
+ * 色板和质感来自用户给的 AeroFlight 美化参考（粉/蓝/绿/黄四种弥散色、
+ * 磨砂玻璃、果冻弹跳），3D部分用 CSS perspective + rotateX 实现，
+ * 不引入任何 3D 库。棋盘格子本身用固定的柔彩底色（不随主题变深），
+ * 页面外框、文字、弹窗用全局主题变量，所以四套主题下都能读。
+ */
+
+.fc-room {
+  --fc-p0: #fca5b9;
+  --fc-p1: #93c5fd;
+  --fc-p2: #86efac;
+  --fc-p3: #fde047;
+  --fc-tilt: 46deg;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-main, #f8f9fc);
+  color: var(--text-main, #334155);
+}
+
+.fc-room::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(at 0% 0%, rgba(255, 232, 237, 0.7) 0, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(224, 242, 254, 0.7) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(232, 251, 243, 0.7) 0, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(255, 247, 219, 0.7) 0, transparent 50%);
+  opacity: 0.55;
+}
+
+.fc-room > * {
+  position: relative;
+}
+
+/* ------------------------------ 页眉 / 玩家条 ------------------------------ */
+
+.fc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--card-bg, #fff) 70%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  z-index: 5;
+}
+
+.fc-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.fc-turn-capsule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 62%;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--card-bg, #fff) 85%, transparent);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.8));
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fc-turn-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.fc-players {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px 4px;
+  overflow-x: auto;
+}
+
+.fc-player-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--card-bg, #fff) 80%, transparent);
+  border: 1.5px solid transparent;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.fc-player-chip.is-active {
+  border-color: var(--chip-color);
+  box-shadow: 0 0 14px var(--chip-glow);
+  transform: translateY(-1px);
+}
+
+.fc-player-chip-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: var(--chip-color);
+  box-shadow: 0 2px 8px var(--chip-glow);
+}
+
+.fc-player-chip-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.fc-player-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.fc-player-meta small {
+  font-size: 9px;
+  opacity: 0.55;
+}
+
+/* ------------------------------ 3D 棋盘 ------------------------------ */
+
+.fc-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px 14px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fc-stage {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  perspective: 1000px;
+  perspective-origin: 50% 22%;
+}
+
+.fc-board {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  aspect-ratio: var(--cols) / var(--rows);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: repeat(var(--rows), 1fr);
+  gap: 7px;
+  padding: 12px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 26px 40px -18px rgba(100, 116, 139, 0.4),
+    0 8px 0 rgba(203, 213, 225, 0.75),
+    inset 0 0 30px rgba(255, 255, 255, 0.7);
+  transform: rotateX(var(--fc-tilt));
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+}
+
+.fc-tile {
+  --t-bg: #f1f5f9;
+  --t-edge: #cbd5e1;
+  --t-glow: rgba(148, 163, 184, 0.5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border-radius: 12px;
+  background: var(--t-bg);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 0 var(--t-edge), 0 9px 10px rgba(100, 116, 139, 0.16);
+  color: #475569;
+  transform-style: preserve-3d;
+}
+
+.fc-tile.tone-rose { --t-bg: #fff1f4; --t-edge: #f3c2cf; --t-glow: rgba(252, 165, 185, 0.6); }
+.fc-tile.tone-blue { --t-bg: #f0f7ff; --t-edge: #bcd5f4; --t-glow: rgba(147, 197, 253, 0.6); }
+.fc-tile.tone-mint { --t-bg: #f0fdf4; --t-edge: #b9e4c6; --t-glow: rgba(134, 239, 172, 0.6); }
+.fc-tile.tone-gold { --t-bg: #fefce8; --t-edge: #e8dc90; --t-glow: rgba(253, 224, 71, 0.55); }
+.fc-tile.tone-violet { --t-bg: #f5f0ff; --t-edge: #cdc1ec; --t-glow: rgba(196, 181, 253, 0.6); }
+.fc-tile.tone-gray { --t-bg: #f1f5f9; --t-edge: #c7d1dd; --t-glow: rgba(148, 163, 184, 0.55); }
+
+.fc-tile.is-end {
+  border-color: #fde68a;
+  box-shadow: 0 4px 0 var(--t-edge), 0 0 18px rgba(253, 224, 71, 0.55), 0 9px 10px rgba(100, 116, 139, 0.16);
+}
+
+.fc-tile.is-current {
+  box-shadow:
+    0 4px 0 var(--t-edge),
+    0 0 0 2px var(--fc-active, #fca5b9),
+    0 0 16px var(--fc-active-glow, rgba(252, 165, 185, 0.6));
+}
+
+.fc-tile-num {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 8px;
+  opacity: 0.4;
+}
+
+.fc-tile svg {
+  width: 15px;
+  height: 15px;
+  opacity: 0.72;
+}
+
+.fc-tile-label {
+  margin-top: 2px;
+  font-size: 8px;
+  line-height: 1.1;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.fc-tile-badge {
+  position: absolute;
+  right: 3px;
+  top: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+/* 落点涟漪：贴在格子平面上的一圈光环，在3D倾斜下会呈椭圆向外扩散 */
+.fc-ripple {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  border: 2px solid var(--fx-color, #fca5b9);
+  box-shadow: 0 0 10px var(--fx-color, #fca5b9);
+  pointer-events: none;
+  animation: fcRipple 0.9s ease-out forwards;
+}
+
+@keyframes fcRipple {
+  0% { transform: scale(0.4); opacity: 0.95; }
+  100% { transform: scale(6); opacity: 0; }
+}
+
+/* ------------------------------ 棋子 ------------------------------ */
+
+.fc-tokens {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.fc-token {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: translateX(var(--ox, 0px));
+}
+
+.fc-token-shadow {
+  position: absolute;
+  left: -12px;
+  top: -5px;
+  width: 24px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(51, 65, 85, 0.3);
+  filter: blur(1.5px);
+}
+
+.fc-token-stand {
+  position: absolute;
+  left: -14px;
+  bottom: 0;
+  width: 28px;
+  height: 38px;
+  transform-origin: 50% 100%;
+  transform: rotateX(calc(var(--fc-tilt) * -1));
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.fc-token-body {
+  position: relative;
+  width: 28px;
+  height: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: 50% 100%;
+}
+
+.fc-token-head {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: var(--tk-color);
+  border: 2px solid #fff;
+  box-shadow: 0 5px 12px var(--tk-glow), inset 0 -4px 6px color-mix(in srgb, var(--tk-color) 25%, transparent);
+}
+
+.fc-token-head svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.fc-token-neck {
+  width: 10px;
+  height: 10px;
+  margin-top: -2px;
+  border-radius: 0 0 6px 6px;
+  background: var(--tk-color);
+  box-shadow: 0 3px 6px var(--tk-glow);
+}
+
+.fc-token.is-active .fc-token-body {
+  animation: fcBob 1.6s ease-in-out infinite;
+}
+
+.fc-token.is-active .fc-token-head {
+  box-shadow: 0 0 0 3px var(--tk-glow), 0 6px 16px var(--tk-glow);
+}
+
+@keyframes fcBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.fc-token-motion.hop {
+  animation: fcHop 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fc-token-motion.land {
+  animation: fcLand 0.75s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.fc-token-motion.tap {
+  animation: fcTap 0.7s ease;
+}
+
+@keyframes fcHop {
+  0% { transform: translateY(-24px) scale(0.92, 1.1); }
+  55% { transform: translateY(0) scale(1.14, 0.84); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+@keyframes fcLand {
+  0% { transform: translateY(-46px) scale(0.88, 1.18); }
+  38% { transform: translateY(0) scale(1.28, 0.7); }
+  55% { transform: translateY(-14px) scale(0.94, 1.1); }
+  74% { transform: translateY(0) scale(1.1, 0.88); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+@keyframes fcTap {
+  0% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-14deg) scale(1.15); }
+  45% { transform: rotate(12deg) scale(1.1); }
+  70% { transform: rotate(-6deg) scale(1.04); }
+  100% { transform: rotate(0) scale(1); }
+}
+
+/* ------------------------------ 棋子特效 ------------------------------ */
+
+.fc-fx-stand {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: 0;
+  height: 0;
+  transform-origin: 50% 100%;
+  transform: rotateX(calc(var(--fc-tilt) * -1));
+  pointer-events: none;
+  z-index: 20;
+}
+
+.fc-fx-part {
+  position: absolute;
+  left: -8px;
+  top: -30px;
+  width: 16px;
+  height: 16px;
+  color: var(--fx-color);
+  opacity: 0;
+  animation: fcFxFly var(--dur, 1s) ease-out var(--delay, 0s) forwards;
+}
+
+.fc-fx-part svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  filter: drop-shadow(0 0 4px var(--fx-color));
+}
+
+.fc-fx-dash {
+  width: 14px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--fx-color);
+  box-shadow: 0 0 6px var(--fx-color);
+}
+
+.fc-fx-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fx-color);
+  box-shadow: 0 0 8px var(--fx-color);
+}
+
+@keyframes fcFxFly {
+  0% { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(var(--s, 1)) rotate(var(--rot, 0deg)); opacity: 0; }
+}
+
+.fc-fx-ring {
+  position: absolute;
+  left: -14px;
+  top: -42px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--fx-color);
+  box-shadow: 0 0 10px var(--fx-color);
+  opacity: 0;
+  animation: fcFxRing 1s ease-out var(--delay, 0s) forwards;
+}
+
+@keyframes fcFxRing {
+  0% { transform: scale(0.3); opacity: 0.9; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+
+/* ------------------------------ 日志 / 底栏 ------------------------------ */
+
+.fc-log {
+  max-width: 420px;
+  margin: 14px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fc-log-item {
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--card-bg, #fff) 80%, transparent);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.8));
+  animation: fcFadeUp 0.4s ease both;
+}
+
+.fc-log-item b {
+  margin-right: 4px;
+}
+
+.fc-log-item.is-system {
+  opacity: 0.6;
+  font-size: 11px;
+  text-align: center;
+  background: transparent;
+  border-color: transparent;
+}
+
+@keyframes fcFadeUp {
+  0% { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.fc-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--card-bg, #fff) 70%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  z-index: 5;
+}
+
+.fc-dice {
+  flex: none;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card-bg, #fff) 90%, transparent);
+  border: 1.5px solid var(--card-border, rgba(255, 255, 255, 0.85));
+  box-shadow: 0 6px 0 rgba(203, 213, 225, 0.8), 0 12px 20px rgba(100, 115, 140, 0.12);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.fc-dice:not(:disabled):active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 rgba(203, 213, 225, 0.8), 0 6px 10px rgba(100, 115, 140, 0.12);
+}
+
+.fc-dice:disabled {
+  opacity: 0.7;
+}
+
+.fc-dice.is-ready {
+  animation: fcDiceReady 1.6s ease-in-out infinite;
+}
+
+.fc-dice.is-rolling {
+  animation: fcDiceShake 0.5s ease infinite;
+}
+
+@keyframes fcDiceReady {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes fcDiceShake {
+  0% { transform: rotate(0deg) scale(0.95); }
+  25% { transform: rotate(-14deg) scale(1.06); }
+  50% { transform: rotate(16deg) scale(0.96); }
+  75% { transform: rotate(-8deg) scale(1.04); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.fc-pips {
+  display: grid;
+  grid-template-columns: repeat(3, 10px);
+  grid-template-rows: repeat(3, 10px);
+  gap: 4px;
+}
+
+.fc-pip {
+  width: 10px;
+  height: 10px;
+  margin: auto;
+  border-radius: 50%;
+  visibility: hidden;
+  background: #64748b;
+}
+
+.fc-pip.on {
+  visibility: visible;
+}
+
+.fc-status {
+  flex: 1;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  background: color-mix(in srgb, var(--card-bg, #fff) 70%, transparent);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.85));
+}
+
+/* ------------------------------ 弹窗 / 翻牌 ------------------------------ */
+
+.fc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(30, 41, 59, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fcFade 0.25s ease both;
+}
+
+@keyframes fcFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.fc-modal {
+  width: 100%;
+  max-width: 340px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px 16px;
+  border-radius: 28px;
+  background: var(--modal-bg, #fff);
+  border: 1px solid var(--modal-border, rgba(255, 255, 255, 0.8));
+  color: var(--text-main, #334155);
+  box-shadow: 0 30px 60px rgba(30, 41, 59, 0.3);
+  animation: fcModalIn 0.45s cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+
+@keyframes fcModalIn {
+  0% { transform: translateY(30px) scale(0.92); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.fc-card3d {
+  width: min(70vw, 236px);
+  height: 318px;
+  perspective: 900px;
+  flex: none;
+}
+
+.fc-card3d-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.85s cubic-bezier(0.34, 1.2, 0.5, 1);
+  animation: fcDeal 0.7s cubic-bezier(0.34, 1.3, 0.5, 1) both;
+}
+
+.fc-card3d.is-flipped .fc-card3d-inner {
+  transform: rotateY(180deg);
+}
+
+.fc-card3d.can-flip {
+  cursor: pointer;
+}
+
+@keyframes fcDeal {
+  0% { transform: translateY(60px) rotateZ(-8deg) scale(0.8); opacity: 0; }
+  100% { transform: translateY(0) rotateZ(0) scale(1); opacity: 1; }
+}
+
+.fc-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 16px;
+  border-radius: 22px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 16px 30px rgba(100, 115, 140, 0.28), inset 0 0 0 1.5px rgba(255, 255, 255, 0.7);
+}
+
+.fc-card-back {
+  color: #fff;
+  text-align: center;
+  background-size: cover;
+  background-position: center;
+}
+
+.fc-card-back.tone-rose { background-color: #f9a8bc; background-image: linear-gradient(145deg, #fda4b8, #f9c5d1 55%, #fbd8c4); }
+.fc-card-back.tone-blue { background-color: #93c5fd; background-image: linear-gradient(145deg, #93c5fd, #bfdbfe 55%, #c7d2fe); }
+.fc-card-back.tone-mint { background-color: #86efac; background-image: linear-gradient(145deg, #86efac, #bbf7d0 55%, #a7f3d0); }
+.fc-card-back.tone-gold { background-color: #fde047; background-image: linear-gradient(145deg, #fcd34d, #fde68a 55%, #fed7aa); }
+.fc-card-back.tone-violet { background-color: #c4b5fd; background-image: linear-gradient(145deg, #c4b5fd, #ddd6fe 55%, #fbcfe8); }
+.fc-card-back.tone-gray { background-color: #cbd5e1; background-image: linear-gradient(145deg, #cbd5e1, #e2e8f0); }
+
+.fc-card-back-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.fc-card-back-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.fc-card-front {
+  transform: rotateY(180deg);
+  justify-content: flex-start;
+  gap: 8px;
+  color: #475569;
+  background: linear-gradient(160deg, #ffffff, #f8fafc);
+  overflow-y: auto;
+}
+
+.fc-card-title {
+  width: 100%;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: #64748b;
+}
+
+.fc-card-text {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.fc-card-text p.is-variant {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.fc-card-author {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.fc-effect-pill {
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.fc-answer-box {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--card-border, #e2e8f0);
+  background: var(--bg-surface, #f8fafc);
+  color: inherit;
+  font-size: 13px;
+  outline: none;
+  resize: none;
+}
+
+.fc-reaction {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--card-border, #e2e8f0);
+  animation: fcFadeUp 0.4s ease both;
+}
+
+.fc-reaction b {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.fc-dots span {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+  animation: fcDot 1s ease-in-out infinite;
+}
+
+.fc-dots span:nth-child(2) { animation-delay: 0.15s; }
+.fc-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fcDot {
+  0%, 100% { transform: translateY(0); opacity: 0.3; }
+  50% { transform: translateY(-4px); opacity: 0.9; }
+}
+
+.fc-btn {
+  padding: 9px 26px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--accent-color, #334155);
+  color: var(--accent-foreground, #fff);
+  box-shadow: 0 6px 16px rgba(100, 115, 140, 0.18);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+}
+
+.fc-btn:active {
+  transform: scale(0.94);
+}
+
+.fc-btn:disabled {
+  opacity: 0.4;
+}
+
+.fc-btn.is-ghost {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  border: 1px solid var(--card-border, #e2e8f0);
+}
+
+/* ------------------------------ 提问卡 / 结算 ------------------------------ */
+
+.fc-panel {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 18px 16px;
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--card-bg, #fff) 82%, transparent);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.8));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 20px 40px -10px rgba(100, 115, 140, 0.12);
+}
+
+.fc-panel h3 {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fc-panel p.fc-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.6;
+  opacity: 0.6;
+}
+
+.fc-setup-card {
+  position: relative;
+  margin-top: 10px;
+  padding: 10px 12px 10px 38px;
+  border-radius: 18px;
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--card-border, #e2e8f0);
+}
+
+.fc-setup-card::before {
+  content: attr(data-n);
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--fc-p0);
+  color: #fff;
+}
+
+.fc-setup-card textarea {
+  width: 100%;
+  min-height: 52px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  outline: none;
+  resize: none;
+}
+
+.fc-settle-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+  border-bottom: 1px dashed var(--divider, #e2e8f0);
+}
+
+.fc-settle-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--card-border, #e2e8f0);
+  animation: fcFadeUp 0.5s ease both;
+}
+
+.fc-settle-card small {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-token.is-active .fc-token-body,
+  .fc-dice.is-ready,
+  .fc-dice.is-rolling,
+  .fc-token-motion,
+  .fc-fx-part,
+  .fc-fx-ring,
+  .fc-ripple {
+    animation: none !important;
+  }
+}

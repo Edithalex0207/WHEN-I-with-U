@@ -39,6 +39,7 @@ import {
   Heart,
   Gamepad2,
   Palette,
+  Dices,
 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import AppTitle from './AppTitle';
@@ -343,7 +344,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Studio（施工）" zh="生图室" mode={nameMode} />
+          <AppTitle en="Studio" zh="生图室" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Image Studio
           </p>
@@ -842,6 +843,35 @@ export const buildAppGridItems = ({
           <AppTitle en="Text Game Hall" zh="文字游戏" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Issue Index
+          </p>
+        </div>
+      </GlassCard>
+    ),
+  },
+
+  {
+    id: 'flightchess',
+    colSpan: 1,
+    content: (
+      <GlassCard
+        blur={false}
+        onClick={() => onOpenApp('flightchess')}
+        className="group flex h-full cursor-pointer flex-col justify-between p-4 text-left"
+      >
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: 'var(--control-soft-bg)' }}
+        >
+          <Dices
+            className="h-5 w-5 opacity-90"
+            style={{ color: 'var(--text-main)' }}
+          />
+        </div>
+
+        <div>
+          <AppTitle en="Flight Chess" zh="飞行棋" mode={nameMode} />
+          <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
+            Roll the Dice
           </p>
         </div>
       </GlassCard>

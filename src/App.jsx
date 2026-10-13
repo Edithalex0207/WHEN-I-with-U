@@ -139,6 +139,7 @@ const SharedWorldApp = lazyWithRetry(() => import('./apps/shared-world/SharedWor
 const RhythmApp = lazyWithRetry(() => import('./apps/rhythm/RhythmApp'), 'RhythmApp');
 const WorkflowApp = lazyWithRetry(() => import('./apps/workflows/WorkflowApp'), 'WorkflowApp');
 const TextGameHallApp = lazyWithRetry(() => import('./apps/textgames/TextGameHallApp'), 'TextGameHallApp');
+const FlightChessApp = lazyWithRetry(() => import('./apps/flightchess/FlightChessApp'), 'FlightChessApp');
 
 // 只是"这个模块的代码正在下载"那零点几秒到一两秒（视网络而定）的占位，
 // 不是常规的应用内 loading 状态，所以故意做得很轻，没有另起 CSS 文件。
@@ -194,6 +195,7 @@ const CHAT_APPS = [
   'bubble',
   'habitat',
   'rp',
+  'flightchess',
 ];
 
 const REGISTERED_APPS = [
@@ -231,6 +233,7 @@ const REGISTERED_APPS = [
   'margin-notes',
   'workflows',
   'textgames',
+  'flightchess',
 ];
 
 const DEFAULT_AUDIO_CONFIG = {
@@ -1210,6 +1213,19 @@ const isTextGameHallApp = currentApp === 'textgames';
                   setIsInsideChatRoom
                 }
                 hubBackground={hubBackground}
+              />
+            </React.Suspense>
+          </ErrorBoundary>
+        )}
+
+        {currentApp === 'flightchess' && (
+          <ErrorBoundary>
+            <React.Suspense fallback={<AppLoadingFallback />}>
+              <FlightChessApp
+                onBackHub={() => openApp('hub')}
+                onChatRoomStateChange={
+                  setIsInsideChatRoom
+                }
               />
             </React.Suspense>
           </ErrorBoundary>

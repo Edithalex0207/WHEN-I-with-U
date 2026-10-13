@@ -4862,4 +4862,33 @@ db.version(84).stores({
   imagePromptPresets: '++id, name, createdAt, updatedAt',
 });
 
+// ============================================================
+// v85：飞行棋（事件卡骰子棋）子应用切片A —— 棋盘库 + 对局会话两张新表。
+//
+// flightChessBoards：一条记录 = 一张棋盘。tiles 是内联的非索引数组
+// 字段（下标0固定是起点，最后一个固定是终点，走子顺序就是数组顺序），
+// 不单独建格子表 —— 跟 rpPresets.prompts / rpWorldBooks.entries「小
+// 数组直接内联」的思路一致，格子数不会很多，没必要为它单独起一张表。
+// 每个格子目前只有 { type }，type 取值见 flightChessBoardData.js 的
+// TILE_TYPES（'start'/'end'/'event'/'question'），以后要加新格子类型
+// 不用动表结构，只是 tiles 数组里多一种 type 取值。isBuiltin 区分内置
+// 示例棋盘和用户自己导入的，导入一律新建一条记录、不覆盖任何已有棋盘
+// （跟 rpPresetService 的导入约定一致）。
+//
+// flightChessSessions：一局游戏。mainChatId + mainCharacterId 是用户
+// 选的「主聊天框」——决定终局总结消息发去哪个聊天、以及默认的反应声音
+// 是谁；extraCharacterIds 是另外从角色库里多选的最多2个角色（内联
+// 数组，不建成员表，参照 bubbleRooms.selectedCharacterIds）。players
+// 是这局真正要走格子的棋子列表，固定顺序 [user, mainCharacter,
+// ...extraCharacters]，每个元素是 { type: 'user'|'character',
+// characterId, position, finished }。questionCards 存开局时用户和
+// 主角色各自写的3张提问卡（{ userCards: [], characterCards: [] }）。
+// status 这一切片只会停在 'setup'（建局向导走完就创建成这个状态，
+// 真正掷骰子/移动/问答走进 Slice B 才会把它推进到 'active'/'finished'）。
+// ============================================================
+db.version(85).stores({
+  flightChessBoards: '++id, title, isBuiltin, createdAt, updatedAt',
+  flightChessSessions: '++id, mainChatId, status, createdAt, updatedAt',
+});
+
 export default db;
