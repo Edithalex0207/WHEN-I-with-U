@@ -562,6 +562,9 @@ export const formatMsgContentForPrompt = (msg, options = {}) => {
   if (msg.type === 'image') {
     return `[发送了画面/照片: ${msg.content || ''}]`;
   }
+    if (msg.type === 'image_generated') {
+    return `[你刚刚生成了一张真实图片，画面描述: ${msg.content || ''}]`;
+  }
 
   if (msg.type === 'voice') {
     return `[发送了语音: ${msg.content || ''}]`;
