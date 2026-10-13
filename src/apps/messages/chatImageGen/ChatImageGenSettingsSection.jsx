@@ -7,12 +7,14 @@
 // 自己读写 db.chats，通过 onUpdated 通知外层 ChatSettingsModal 重新拉取
 // chat（外层传的就是 onUpdatedUserPersona，它自己会 loadChatData）。
 import React, { useState } from 'react';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, Images } from 'lucide-react';
 import db from '../../../db';
+import ChatImageGenGalleryModal from './ChatImageGenGalleryModal';
 
 export const ChatImageGenSettingsSection = ({ chat, onUpdated }) => {
   const [isBusy, setIsBusy] = useState(false);
   const [guideDraft, setGuideDraft] = useState(chat?.aiImageGenPromptGuide || '');
+  const [showGallery, setShowGallery] = useState(false);
 
   const enabled = chat?.aiAutoImageGenEnabled === true;
 
@@ -59,9 +61,9 @@ export const ChatImageGenSettingsSection = ({ chat, onUpdated }) => {
 
       <p className="text-[10px] opacity-55 leading-relaxed">
         开启后，角色会自己判断时机，调用「生图室」真的生成一张图片发给你
-        （不是文字占位卡片），会自动带上角色和你各自设置的外貌。「设置 →
+        ，会自动带上角色和你各自设置的外貌。「设置 →
         生图室」要先配置好后端（填好 Key/模型）这个才会真的生效。没有
-        次数限制——NovelAI 后端下会强制使用免费额度，不会花费课金的
+        次数限制，NovelAI 后端下会强制使用免费额度，不会花费
         Anlas；如果用的是第三方接口，每次生成都会按它自己的计费方式真实
         扣费，请自行评估开启后的频率和费用。
       </p>
@@ -117,6 +119,26 @@ export const ChatImageGenSettingsSection = ({ chat, onUpdated }) => {
             }}
           />
         </div>
+      )}
+
+      {/* 不放进 enabled 分支里——关掉开关之后，之前生成过的图还在，
+          仍然要能查看/打包/清空。 */}
+      <button
+        type="button"
+        onClick={() => setShowGallery(true)}
+        disabled={!chat?.id}
+        className="w-full flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium active:scale-95 disabled:opacity-30"
+        style={{ borderColor: 'var(--divider)' }}
+      >
+        <Images className="h-3.5 w-3.5" />
+        查看本聊天的生图
+      </button>
+
+      {showGallery && (
+        <ChatImageGenGalleryModal
+          chatId={chat.id}
+          onClose={() => setShowGallery(false)}
+        />
       )}
     </div>
   );
