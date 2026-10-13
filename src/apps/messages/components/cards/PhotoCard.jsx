@@ -77,14 +77,19 @@ export const PhotoCard = ({ metadata, messageId, isUser = false }) => {
         )}
       </div>
 
-      {!isUser && visionStatus === 'pending' && (
+      {/* photo 类型消息目前只会是用户自己发的（sender 永远是 'user'），
+          isUser 对这条消息恒为 true——之前这里写的是 `!isUser && ...`，
+          导致这两条状态提示永远不会渲染，是一段死代码。这里去掉
+          isUser 这个条件，只按 visionStatus 本身判断，用户才能看到
+          "正在识别/识别失败"的真实反馈。 */}
+      {visionStatus === 'pending' && (
         <span className="flex items-center gap-1 text-[9px] opacity-50">
           <Loader2 className="h-2.5 w-2.5 animate-spin" />
           正在查看这张照片...
         </span>
       )}
 
-      {!isUser && visionStatus === 'error' && (
+      {visionStatus === 'error' && (
         <span className="text-[9px] opacity-50">
           未能识别这张照片的内容
         </span>
