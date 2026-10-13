@@ -37,7 +37,7 @@ import {
   startImageGeneration,
   useImageGenJobs,
 } from './imageGenJobStore';
-import { BACKEND_NOVELAI } from './imageGenRules';
+import { BACKEND_NOVELAI, NOVELAI_BALANCE_PAGE, toSafeExternalUrl } from './imageGenRules';
 import { getGenerationStats } from './imageGenerationService';
 import { useImageGenConfig } from './useImageGenConfig';
 import {
@@ -286,6 +286,9 @@ const GeneratePanel = ({ onGoSettings }) => {
     ? { width: config.novelai.width, height: config.novelai.height }
     : planned;
   const activeOrientation = orientationOf(rawSize.width, rawSize.height);
+
+  // 查询剩余积分的入口：NovelAI 固定指向官网；第三方用设置里自己填的网址，没填就不显示。
+  const balanceLink = isNovelAi ? NOVELAI_BALANCE_PAGE : toSafeExternalUrl(config.thirdParty.balanceUrl);
 
   const foldFilled = [prefixDraft, negativeDraft].filter((text) => text.trim()).length;
 
@@ -841,6 +844,17 @@ const GeneratePanel = ({ onGoSettings }) => {
               <ArrowRight className="h-4 w-4" />
             </span>
           </button>
+
+          {balanceLink ? (
+            <a
+              href={balanceLink}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-1 text-[11px] opacity-60"
+            >
+              <ExternalLink className="h-3 w-3" /> 查看剩余积分
+            </a>
+          ) : null}
         </SectionCard>
       </section>
 

@@ -21,6 +21,7 @@ import {
   BACKEND_THIRD_PARTY,
   FREE_MAX_PIXELS,
   FREE_MAX_STEPS,
+  NOVELAI_BALANCE_PAGE,
   NOVELAI_MODELS,
   NOVELAI_NOISE_SCHEDULES,
   NOVELAI_SAMPLERS,
@@ -29,6 +30,7 @@ import {
   THIRD_PARTY_SIZE_SUGGESTIONS,
   clampNovelAiParams,
   snapTo64,
+  toSafeExternalUrl,
 } from './imageGenRules';
 import {
   Field,
@@ -139,6 +141,7 @@ const ImageStudioSettingsPanel = () => {
 
   const nai = config.novelai;
   const third = config.thirdParty;
+  const thirdBalanceLink = toSafeExternalUrl(third.balanceUrl);
   const isKnownModel = NOVELAI_MODELS.some((item) => item.value === nai.model);
   const showCustomModelInput = customModel || !isKnownModel;
   const modelSelectValue = showCustomModelInput ? CUSTOM_MODEL_OPTION : nai.model;
@@ -228,6 +231,29 @@ const ImageStudioSettingsPanel = () => {
           />
         </Field>
 
+        <Field
+          label="查询剩余积分的网址（可选）"
+          hint="不同服务的积分页面不一样，填你自己服务的余额 / 用量页面，生图室里会出现一个直达链接。"
+        >
+          <TextInput
+            value={third.balanceUrl}
+            onChange={setThird('balanceUrl')}
+            onBlur={persist}
+            placeholder="https://api.example.com/dashboard"
+          />
+          {thirdBalanceLink ? (
+            <a
+              href={thirdBalanceLink}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1.5 inline-block border-b text-[11px] font-semibold"
+              style={{ borderColor: 'var(--text-main)' }}
+            >
+              打开查询页面
+            </a>
+          ) : null}
+        </Field>
+
         <Field label="图片尺寸" hint="格式为 宽x高，具体可用的尺寸取决于你用的服务。">
           <TextInput
             value={third.size}
@@ -289,6 +315,15 @@ const ImageStudioSettingsPanel = () => {
               {anlas.purchased > 0 ? `（其中购买的 ${anlas.purchased.toLocaleString('en-US')}）` : ''}
             </span>
           ) : null}
+          <a
+            href={NOVELAI_BALANCE_PAGE}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1.5 inline-block border-b text-[11px] font-semibold"
+            style={{ borderColor: 'var(--text-main)' }}
+          >
+            在 NovelAI 官网查看余额
+          </a>
           {anlasError ? (
             <span className="mt-1 block text-[11px] leading-relaxed text-rose-500">{anlasError}</span>
           ) : null}

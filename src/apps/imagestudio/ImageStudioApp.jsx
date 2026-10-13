@@ -7,8 +7,8 @@
 //   - 切片D：聊天里 AI 用 [AI_IMAGE: ...] 标签触发生图。
 //   - 画廊化改版：「生成」页改成「展厅」，成品图挂在最上面的展墙，支持同时多张作画。
 //
-// 版面（杂志风）：主页面只有「生成」「画廊」，用底部悬浮 dock 切换；
-// 画师串 / 外貌 / 设置收进 dock 右侧「更多」，以底部弹窗的形式打开。
+// 版面（杂志风）：主页面有「展厅」「画廊」「画师串」，用底部悬浮 dock 切换；
+// 画师串单独成一页；外貌 / 设置收进 dock 右侧「更多」，以底部弹窗的形式打开。
 // 「生成」页始终保持挂载（只是隐藏），所以切 tab 不会丢输入内容；
 // 生成任务本身跑在 imageGenJobStore（模块级），也不依赖任何组件是否挂载。
 //
@@ -16,7 +16,7 @@
 // 只需要一个返回首页的回调（跟 DiaryApp 一样）。
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Images, MoreHorizontal, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Images, MoreHorizontal, Palette, Sparkles, X } from 'lucide-react';
 
 import GalleryPanel from './GalleryPanel';
 import GeneratePanel from './GeneratePanel';
@@ -30,12 +30,12 @@ const PAGES = {
   // compact：展厅页不放大标题，让成品图直接出现在最上面。
   generate: { kicker: 'No.01 — Create', title: '为 TA 画一幅', deck: '把此刻的心情，慢慢洇成一张画。', compact: true },
   gallery: { kicker: 'No.02 — Archive', title: '你的画廊', deck: '按时间排开，每一张都是某个瞬间。' },
+  artist: { kicker: 'No.03 — Style', title: '画师串', deck: '像索引卡一样收着，每张都能写备注。' },
 };
 
 const SHEETS = {
-  artist: { kicker: 'No.03 — Style', title: '画师串', no: '01' },
-  appearance: { kicker: 'No.04 — Looks', title: '外貌', no: '02' },
-  settings: { kicker: 'No.05 — Setup', title: '设置', no: '03' },
+  appearance: { kicker: 'No.04 — Looks', title: '外貌', no: '01' },
+  settings: { kicker: 'No.05 — Setup', title: '设置', no: '02' },
 };
 
 const formatElapsed = (ms) => {
@@ -176,6 +176,7 @@ const ImageStudioApp = ({ onBackHub }) => {
       <div className={page === 'generate' ? 'block' : 'hidden'}>
         <GeneratePanel onGoSettings={goSettings} />
       </div>
+      {page === 'artist' ? <ArtistTagPanel /> : null}
       {page === 'gallery' ? <GalleryPanel onGoSettings={goSettings} refreshSignal={jobState.doneSeq} /> : null}
 
       {/* 生成中悬浮胶囊：在展厅以外的页面都看得到（展厅里画框上就有计时） */}
@@ -225,6 +226,7 @@ const ImageStudioApp = ({ onBackHub }) => {
       >
         {dockButton('generate', '展厅', Sparkles)}
         {dockButton('gallery', '画廊', Images)}
+        {dockButton('artist', '画师串', Palette)}
         <button
           type="button"
           onClick={() => setMenuOpen((open) => !open)}
@@ -239,7 +241,7 @@ const ImageStudioApp = ({ onBackHub }) => {
         </button>
       </nav>
 
-      {/* 画师串 / 外貌 / 设置：底部弹窗 */}
+      {/* 外貌 / 设置：底部弹窗 */}
       {sheet ? (
         <div
           className="fixed inset-0 z-[60] flex items-end justify-center p-3"
@@ -275,7 +277,6 @@ const ImageStudioApp = ({ onBackHub }) => {
             </div>
 
             <div className="space-y-4">
-              {sheet === 'artist' ? <ArtistTagPanel /> : null}
               {sheet === 'appearance' ? <AppearancePanel /> : null}
               {sheet === 'settings' ? (
                 <>

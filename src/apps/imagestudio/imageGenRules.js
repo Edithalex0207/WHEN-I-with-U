@@ -16,6 +16,8 @@ export const IMAGE_GEN_SETTINGS_KEY = 'imageGenConfig';
 
 export const NOVELAI_DEFAULT_HOST = 'https://image.novelai.net';
 export const NOVELAI_ACCOUNT_HOST = 'https://api.novelai.net';
+// NovelAI 官网的生图页，页面上能看到当前账户的 Anlas 数量（接口查询失败时的备用入口）。
+export const NOVELAI_BALANCE_PAGE = 'https://novelai.net/image';
 
 // 免费额度上限（allowAnlas 关闭时，生成前按这些数字夹紧）。
 export const FREE_MAX_PIXELS = 1048576;
@@ -95,6 +97,8 @@ export const DEFAULT_IMAGE_GEN_CONFIG = {
     apiKey: '',
     model: '',
     size: '1024x1024',
+    // 用户自己填的"查询剩余积分"网址（各家第三方服务的地址不同，没法替他写死）。
+    balanceUrl: '',
   },
   novelai: {
     token: '',
@@ -158,6 +162,7 @@ export const normalizeImageGenConfig = (raw) => {
       apiKey: asString(third.apiKey).trim(),
       model: asString(third.model).trim(),
       size: asString(third.size, defaults.thirdParty.size).trim() || defaults.thirdParty.size,
+      balanceUrl: asString(third.balanceUrl).trim(),
     },
     novelai: {
       token: asString(nai.token).trim(),
@@ -233,6 +238,24 @@ export const clampNovelAiParams = (novelai, allowAnlas) => {
     params: { width: nextWidth, height: nextHeight, steps: nextSteps },
     adjustments,
   };
+};
+
+/**
+ * 把用户填的网址整理成可以放进 <a href> 的安全地址：
+ * 没写协议就补 https://，只接受 http / https，别的（javascript: 之类）一律当作没填。
+ */
+export const toSafeExternalUrl = (text) => {
+  const raw = String(text || '').trim();
+  if (!raw) return '';
+
+  const withProtocol = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    const parsed = new URL(withProtocol);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : '';
+  } catch {
+    return '';
+  }
 };
 
 /**
