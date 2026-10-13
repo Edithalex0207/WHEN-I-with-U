@@ -170,6 +170,31 @@ export const selectImageGenJob = (id) =>
     jobs: current.jobs.map((job) => (job.id === id ? { ...job, seen: true } : job)),
   }));
 
+/**
+ * 画廊删除了某几条生成记录后，把展厅"墙上"对应的任务也一并摘掉——
+ * 不然墙上的任务还留着自己那份 outcome.record / outcome.blob 缓存，
+ * 数据库里明明删了，墙上看着还在。只摘 outcome.record.id 命中的，
+ * 没有残留（比如本来就没在墙上留着，或者已经被用户手动收起过）就什么都不做。
+ */
+export const removeJobsByGenerationIds = (ids) => {
+  const idSet = new Set((ids || []).filter((id) => id !== null && id !== undefined));
+  if (idSet.size === 0) return;
+
+  update((current) => {
+    const jobs = current.jobs.filter((job) => !idSet.has(job.outcome?.record?.id));
+    if (jobs.length === current.jobs.length) return current;
+
+    const selectedStillThere = jobs.some((job) => job.id === current.selectedId);
+    const selectedId = selectedStillThere
+      ? current.selectedId
+      : jobs.length
+      ? jobs[jobs.length - 1].id
+      : null;
+
+    return { ...current, jobs, selectedId };
+  });
+};
+
 /** 收起一幅已完成 / 失败的画（进行中的不能收）。 */
 export const dismissImageGenJob = (id) =>
   update((current) => {

@@ -10,6 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, Download, Image as ImageIcon, RefreshCw, Trash2, X } from 'lucide-react';
 
 import { getImageGenConfig } from './imageGenConfigService';
+import { removeJobsByGenerationIds } from './imageGenJobStore';
 import { saveBlobToDevice } from './imageGenMedia';
 import { getGenerationOriginal } from './imageGenerationService';
 import {
@@ -273,6 +274,7 @@ const GalleryPanel = ({ onGoSettings, refreshSignal = 0 }) => {
     if (!detail) return;
     try {
       await deleteGenerations([detail.id]);
+      removeJobsByGenerationIds([detail.id]);
       setItems((previous) => previous.filter((item) => item.id !== detail.id));
       closeDetail();
     } catch (error) {
@@ -346,7 +348,9 @@ const GalleryPanel = ({ onGoSettings, refreshSignal = 0 }) => {
 
     setBusy(true);
     try {
-      await deleteGenerations(selectedRecords.map((item) => item.id));
+      const idsToDelete = selectedRecords.map((item) => item.id);
+      await deleteGenerations(idsToDelete);
+      removeJobsByGenerationIds(idsToDelete);
       setItems((previous) => previous.filter((item) => !selectedIds.includes(item.id)));
       setMessage(`已删除 ${selectedRecords.length} 张。`);
       setSelectedIds([]);
