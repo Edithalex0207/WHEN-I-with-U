@@ -34,7 +34,8 @@ import {
 import { BUILTIN_WORLD_BOOK_METAS } from '../builtinWorldBook';
 
 import { triggerGlobalToast } from '../../../components/NotificationToast';
-import { clearChatRealVoiceMedia } from '../chatMediaCleanupService';
+import { clearChatRealVoiceMedia, clearChatRealPhotoMedia } from '../chatMediaCleanupService';
+import { releasePhotoObjectUrl } from './cards/PhotoCard';
 import { getLocationSettings, setLocationEnabled } from '../../../apps/location/placeService';
 
 
@@ -64,6 +65,8 @@ export const ChatSettingsModal = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showVoiceMediaClearConfirm, setShowVoiceMediaClearConfirm] = useState(false);
   const [isClearingVoiceMedia, setIsClearingVoiceMedia] = useState(false);
+  const [showPhotoMediaClearConfirm, setShowPhotoMediaClearConfirm] = useState(false);
+  const [isClearingPhotoMedia, setIsClearingPhotoMedia] = useState(false);
 
   const handleClearVoiceMedia = async () => {
     if (!chat?.id) return;
@@ -90,6 +93,41 @@ export const ChatSettingsModal = ({
     } finally {
       setIsClearingVoiceMedia(false);
       setShowVoiceMediaClearConfirm(false);
+    }
+  };
+
+  // 跟上面语音缓存清理是同一个思路，针对这个聊天里所有真实图片
+  // （type: 'photo'）的图片本体，不是清整条消息——文字记录和视觉识别
+  // 描述都保留。
+  const handleClearPhotoMedia = async () => {
+    if (!chat?.id) return;
+
+    setIsClearingPhotoMedia(true);
+    try {
+      const { clearedCount, clearedMessageIds } = await clearChatRealPhotoMedia(chat.id);
+      triggerGlobalToast(
+        clearedCount > 0
+          ? `已清理 ${clearedCount} 张照片的图片本体，文字记录已保留。`
+          : '这个聊天里暂时没有可以清理的图片本体。',
+      );
+
+      if (clearedCount > 0) {
+        // 释放 PhotoCard 缓存的 object URL，否则本体清了，内存里那份
+        // blob object URL 还占着——跟 ChatRoom.jsx 单张清除时的做法一致。
+        clearedMessageIds.forEach((messageId) => releasePhotoObjectUrl(messageId));
+
+        window.dispatchEvent(
+          new CustomEvent('new-local-message-inserted', {
+            detail: { chatId: chat.id },
+          }),
+        );
+      }
+    } catch (error) {
+      console.warn('[ChatSettingsModal] 清理图片缓存失败：', error);
+      triggerGlobalToast('清理失败，请稍后再试。');
+    } finally {
+      setIsClearingPhotoMedia(false);
+      setShowPhotoMediaClearConfirm(false);
     }
   };
 
@@ -2095,6 +2133,21 @@ const handleToggleLocation = async () => {
 
           <button
             type="button"
+            onClick={() => setShowPhotoMediaClearConfirm(true)}
+            disabled={isClearingPhotoMedia}
+            className="w-full py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
+            style={{
+              background: 'var(--control-soft-bg)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--card-border)'
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{isClearingPhotoMedia ? '清理中...' : '清理本窗图片缓存'}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowDeleteConfirm(true)}
             className="w-full py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
             style={{
@@ -2130,6 +2183,16 @@ const handleToggleLocation = async () => {
         cancelText="保留"
         onCancel={() => setShowVoiceMediaClearConfirm(false)}
         onConfirm={handleClearVoiceMedia}
+      />
+
+      <ConfirmModal
+        isOpen={showPhotoMediaClearConfirm}
+        title="清理图片缓存"
+        message="清空这个聊天里所有真实照片的图片本体，释放占用的内存/存储空间。每条消息的文字记录和已识别出的画面描述会原样保留，之后翻记录还能看到发过什么、画面大致是什么内容，只是看不到原图了。操作后不可恢复。"
+        confirmText="清理"
+        cancelText="保留"
+        onCancel={() => setShowPhotoMediaClearConfirm(false)}
+        onConfirm={handleClearPhotoMedia}
       />
 
       <ConfirmModal
