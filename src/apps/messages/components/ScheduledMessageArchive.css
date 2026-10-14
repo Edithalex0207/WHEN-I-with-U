@@ -82,6 +82,40 @@
   transform: rotate(4deg);
 }
 
+.scheduled-archive-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.scheduled-archive-clear {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--card-border);
+  border-radius: 50%;
+  background: var(--control-soft-bg);
+  color: var(--text-main);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.scheduled-archive-clear:hover:not(:disabled) {
+  background: var(--control-soft-hover);
+  color: var(--text-main);
+  transform: rotate(-4deg);
+}
+
+.scheduled-archive-clear:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .scheduled-archive-paper {
   position: relative;
   flex: 1 1 auto;
