@@ -1,0 +1,99 @@
+/* src/apps/flightchess/flightChessExit.css
+ *
+ * 离开确认弹窗，以及掷骰全屏时让返回键仍然可点。
+ */
+
+.fc-room > .fc-exit-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fcExitFade 0.25s ease both;
+}
+
+@keyframes fcExitFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fc-exit-card {
+  width: 100%;
+  max-width: 300px;
+  padding: 20px 18px 16px;
+  border-radius: 26px;
+  color: var(--text-main, #334155);
+  background: linear-gradient(160deg, color-mix(in srgb, #ffffff 62%, transparent), color-mix(in srgb, var(--card-bg, #ffffff) 36%, transparent));
+  backdrop-filter: blur(26px) saturate(1.6);
+  -webkit-backdrop-filter: blur(26px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 24px 48px -16px rgba(80, 62, 34, 0.5);
+  animation: fcExitPop 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+@keyframes fcExitPop {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.fc-exit-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fc-exit-card p {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  opacity: 0.75;
+}
+
+.fc-exit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.fc-exit-btn {
+  flex: 1;
+  padding: 11px 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(160deg, #f0b9a0, #e49a7c);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 4px 0 #c27c60;
+}
+
+.fc-exit-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 1px 0 #c27c60;
+}
+
+.fc-exit-btn.is-ghost {
+  color: inherit;
+  background: color-mix(in srgb, #ffffff 55%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+/* 掷骰全屏时，返回键浮在骰子层上面，仍然能点；其余头部按钮藏起来 */
+.fc-room.is-dice-open > .fc-header {
+  z-index: 35;
+}
+
+.fc-room.is-dice-open > .fc-header .fc-turn-capsule,
+.fc-room.is-dice-open > .fc-header .fc-cam-btn {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-room > .fc-exit-backdrop,
+  .fc-exit-card {
+    animation: none !important;
+  }
+}

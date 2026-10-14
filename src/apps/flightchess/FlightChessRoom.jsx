@@ -40,20 +40,12 @@ import FlightChessCardModal from './FlightChessCardModal';
 import FlightChessChatSheet from './FlightChessChatSheet';
 import { generateRollComment } from './flightChessChatService';
 import FlightChessDiceStage from './FlightChessDiceStage';
+import FlightChessExitConfirm from './FlightChessExitConfirm';
 import FlightChessSetupCards from './FlightChessSetupCards';
 import {
   PLAYER_COLORS, PLAYER_GLOWS, TOKEN_KINDS, TokenIcon,
 } from './FlightChessTokens';
 import './flightChess.css';
-
-const PIP_PATTERNS = {
-  1: [5],
-  2: [1, 9],
-  3: [1, 5, 9],
-  4: [1, 3, 7, 9],
-  5: [1, 3, 5, 7, 9],
-  6: [1, 3, 4, 6, 7, 9],
-};
 
 class UnmountedError extends Error {}
 
@@ -63,7 +55,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const [charactersById, setCharactersById] = useState({});
   const [chat, setChat] = useState(null);
   const [phase, setPhase] = useState('loading'); // loading | setup | idle | rolling | moving | modal | finished
-  const [dice, setDice] = useState(1);
+  const [, setDice] = useState(1);
   const [status, setStatus] = useState('');
   const [modal, setModal] = useState(null);
   const [motion, setMotion] = useState(null);
@@ -74,6 +66,8 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [diceRequest, setDiceRequest] = useState(null);
   const [rollBubble, setRollBubble] = useState(null);
+  const [rollFailed, setRollFailed] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
 
   const sessionRef = useRef(null);
   const ctxRef = useRef({});
@@ -86,6 +80,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const diceSettleRef = useRef(null);
   const rollReqRef = useRef(0);
   const rollBubbleRef = useRef(null);
+  const resumedRef = useRef(false);
 
   const userName = chat?.userName || '你';
 
@@ -259,7 +254,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
         reactorIndex = characterIndexes[Math.floor(Math.random() * characterIndexes.length)];
       }
       setModal((prev) => (prev && !prev.chatOpen ? { ...prev, chatOpen: true, reactorIndex } : prev));
-       }, modalRef.current?.deckMeta ? 2100 : 1300);
+    }, modalRef.current?.deckMeta ? 2100 : 1300);
     return () => clearTimeout(timer);
   }, [modalFlipped, modalChatOpen]);
 
@@ -548,8 +543,13 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
       config.effect = { type: 'perk', perk: tile.perk };
     }
 
+    // 记下这张卡：中途退出再回来，可以从这张卡重新开始
+    const { deckMeta: pendingDeck, ...pendingConfig } = config;
+    await commit({ pendingTask: { ...pendingConfig, deckId: pendingDeck?.id || null } });
+
     await openPromptModal(config);
     if (!mountedRef.current) return;
+    await commit({ pendingTask: null });
 
     const finished = await applyEffect(playerIndex, config.effect);
     if (finished) return;
@@ -571,7 +571,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
       isAI: s.players[playerIndex].type === 'character',
     });
     setDice(value);
-    fetchRollComment({ playerIndex, value });
+    if (sessionRef.current.rollReactions !== false) fetchRollComment({ playerIndex, value });
     setStatus(`${actorName} 掷出了 ${value} 点`);
     await commit({
       log: appendLog(s.log, { kind: 'system', text: `${actorName} 掷出 ${value} 点` }),
@@ -588,6 +588,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     const s = sessionRef.current;
     if (busyRef.current || !s || s.status !== 'active') return;
     busyRef.current = true;
+    setRollFailed(false);
     try {
       await runTurn(s.currentTurnIndex);
     } catch (err) {
@@ -595,7 +596,8 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
         console.error('[FlightChessRoom] 回合执行出错:', err);
         if (mountedRef.current) {
           setPhase('idle');
-          setStatus('这一步出了点小问题，再点一次骰子试试。');
+          setRollFailed(true);
+          setStatus('这一步出了点小问题，点「重新掷骰」再试一次。');
         }
       }
     } finally {
@@ -603,14 +605,52 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     }
   }, [runTurn]);
 
-  // 轮到 AI 角色：稍等一下自动掷骰
+  // 退出前还有一张没聊完的卡：回来后从这张卡重新开始
+  const resumePendingTask = useCallback(async () => {
+    const pending = sessionRef.current?.pendingTask;
+    if (!pending || busyRef.current) return;
+    busyRef.current = true;
+    try {
+      let deckMeta = null;
+      if (pending.deckId) {
+        deckMeta = pending.deckId === 'custom' ? CUSTOM_DECK_META : getDeck(pending.deckId);
+      }
+      await openPromptModal({ ...pending, deckMeta });
+      if (!mountedRef.current) return;
+      await commit({ pendingTask: null });
+
+      const finished = await applyEffect(pending.actorIndex, pending.effect);
+      if (finished) return;
+      await endTurn(pending.actorIndex);
+    } catch (err) {
+      if (!(err instanceof UnmountedError)) {
+        console.error('[FlightChessRoom] 恢复未完成的卡片出错:', err);
+        if (mountedRef.current) {
+          await commit({ pendingTask: null });
+          setPhase('idle');
+        }
+      }
+    } finally {
+      busyRef.current = false;
+    }
+  }, [applyEffect, commit, endTurn, openPromptModal]);
+
+  useEffect(() => {
+    if (resumedRef.current || phase !== 'idle') return;
+    if (!session || session.status !== 'active' || !session.pendingTask) return;
+    resumedRef.current = true;
+    resumePendingTask();
+  }, [phase, session, resumePendingTask]);
+
+  // 轮到谁就自动掷骰：角色稍等一下，用户直接弹出全屏骰子
   useEffect(() => {
     if (!session || session.status !== 'active' || phase !== 'idle') return undefined;
+    if (session.pendingTask || rollFailed || confirmExit) return undefined;
     const current = session.players[session.currentTurnIndex];
-    if (!current || current.type !== 'character') return undefined;
-    const timer = setTimeout(() => { handleRoll(); }, 1100);
+    if (!current) return undefined;
+    const timer = setTimeout(() => { handleRoll(); }, current.type === 'character' ? 1100 : 700);
     return () => clearTimeout(timer);
-  }, [session, phase, handleRoll]);
+  }, [session, phase, handleRoll, rollFailed, confirmExit]);
 
   /* ------------------------------------------------------------------ */
   /* 开局：写提问卡                                                        */
@@ -677,6 +717,12 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   /* 渲染                                                                 */
   /* ------------------------------------------------------------------ */
 
+  // 对局进行中退出要二次确认，防止误触
+  const handleBackClick = () => {
+    if (sessionRef.current?.status === 'active') setConfirmExit(true);
+    else onBack?.();
+  };
+
   const playerNames = useMemo(() => (
     (session?.players || []).map((p) => (
       p.type === 'user' ? userName : charactersById[p.characterId]?.name || '角色'
@@ -698,9 +744,6 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const isActive = session.status === 'active';
   const isFinished = session.status === 'finished';
   const currentIsUser = session.players[currentIndex]?.type === 'user';
-  const canRoll = isActive && phase === 'idle' && currentIsUser;
-  const isRolling = phase === 'rolling';
-  const dicePips = PIP_PATTERNS[dice] || [];
   const diceColor = PLAYER_COLORS[currentIndex % 4];
 
   const capsuleText = (() => {
@@ -714,7 +757,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const endTile = board.tiles[lastIndex];
 
   return (
-    <div className="fc-room animate-fade-in-up">
+    <div className={`fc-room animate-fade-in-up${diceRequest ? ' is-dice-open' : ''}`}>
       <FlightChessBoard3D
         tiles={board.tiles}
         players={session.players}
@@ -728,7 +771,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
       />
 
       <div className="fc-header">
-        <button type="button" onClick={onBack} className="fc-back">
+        <button type="button" onClick={handleBackClick} className="fc-back">
           <ArrowLeft className="w-4 h-4" /> 返回
         </button>
         <div className="fc-turn-capsule">
@@ -847,26 +890,12 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
 
       {isActive && (
         <div className="fc-footer">
-          <button
-            type="button"
-            className={`fc-dice${canRoll ? ' is-ready' : ''}${isRolling ? ' is-rolling' : ''}`}
-            disabled={!canRoll}
-            onClick={handleRoll}
-            aria-label="掷骰子"
-          >
-            <div className="fc-pips">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((pos) => (
-                <span
-                  key={pos}
-                  className={`fc-pip${dicePips.includes(pos) ? ' on' : ''}`}
-                  style={{ background: diceColor }}
-                />
-              ))}
-            </div>
-          </button>
           <div className="fc-status">
-            {status || (currentIsUser ? '轻触骰子，启航' : `${playerNames[currentIndex]} 准备中...`)}
+            {status || (currentIsUser ? '轮到你了，准备掷骰子...' : `${playerNames[currentIndex]} 准备中...`)}
           </div>
+          {rollFailed && (
+            <button type="button" className="fc-btn" onClick={handleRoll}>重新掷骰</button>
+          )}
         </div>
       )}
 
@@ -913,6 +942,14 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
           key={diceRequest.nonce}
           request={diceRequest}
           onDone={handleDiceDone}
+        />
+      )}
+
+      {confirmExit && (
+        <FlightChessExitConfirm
+          hasPendingTask={Boolean(session.pendingTask)}
+          onStay={() => setConfirmExit(false)}
+          onLeave={() => onBack?.()}
         />
       )}
     </div>

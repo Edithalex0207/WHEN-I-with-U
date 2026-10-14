@@ -1,0 +1,338 @@
+/* src/apps/flightchess/flightChessLobby.css
+ *
+ * 飞行棋大厅和建局向导：粉白 / 蓝粉弥散天空 + 毛玻璃悬浮卡片。
+ * 文字和卡片底色跟随全局主题变量（--text-main / --card-bg / --bg-main），
+ * 弥散色块用固定的粉、蓝、淡紫和主题背景色混合，所以浅色和深色主题都能读。
+ */
+
+.fcl-root {
+  --fcl-ink: var(--text-main, #3a3249);
+  --fcl-soft: color-mix(in srgb, var(--text-main, #3a3249) 58%, transparent);
+  --fcl-glass: color-mix(in srgb, var(--card-bg, #ffffff) 58%, transparent);
+  --fcl-glass-strong: color-mix(in srgb, var(--card-bg, #ffffff) 78%, transparent);
+  --fcl-edge: rgba(255, 255, 255, 0.55);
+  --fcl-shadow: rgba(110, 70, 120, 0.3);
+  --fcl-pink: #f49ab8;
+  --fcl-pink-deep: #dd6f98;
+  --fcl-blue: #8fb8ea;
+  --fcl-lav: #b9a6e3;
+  --fcl-good: #4e9a68;
+
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--fcl-ink);
+  background: var(--bg-main, #fff7fa);
+  font-size: 14px;
+}
+
+:where(.fcl-root) button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+.fcl-root, .fcl-root *, .fcl-root *::before, .fcl-root *::after { box-sizing: border-box; }
+.fcl-root button:focus-visible,
+.fcl-root input:focus-visible,
+.fcl-root textarea:focus-visible { outline: 2px solid var(--fcl-lav); outline-offset: 3px; }
+.fcl-root h1, .fcl-root h2, .fcl-root h3, .fcl-root p { margin: 0; }
+
+/* ------------------------------ 弥散天空 ------------------------------ */
+
+.fcl-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.fcl-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  animation: fclDrift 22s ease-in-out infinite alternate;
+}
+.fcl-blob.b1 { width: 62vmax; height: 62vmax; left: -22vmax; top: -18vmax; background: color-mix(in srgb, #f8bcd3 78%, var(--bg-main, #fff) 22%); opacity: 0.85; }
+.fcl-blob.b2 { width: 56vmax; height: 56vmax; right: -24vmax; top: 4vmax; background: color-mix(in srgb, #b9d6f6 78%, var(--bg-main, #fff) 22%); opacity: 0.85; animation-delay: -6s; }
+.fcl-blob.b3 { width: 58vmax; height: 58vmax; left: -12vmax; bottom: -28vmax; background: color-mix(in srgb, #dccdf6 78%, var(--bg-main, #fff) 22%); opacity: 0.8; animation-delay: -12s; }
+.fcl-blob.b4 { width: 42vmax; height: 42vmax; right: -8vmax; bottom: -14vmax; background: color-mix(in srgb, #fbd0e2 78%, var(--bg-main, #fff) 22%); opacity: 0.75; animation-delay: -3s; }
+
+@keyframes fclDrift { to { transform: translate(5vmax, -4vmax) scale(1.08); } }
+
+.fcl-mote {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0;
+  animation: fclMote 7s ease-in-out infinite;
+}
+@keyframes fclMote {
+  0% { opacity: 0; transform: translateY(20px); }
+  30% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-80px); }
+}
+
+/* ------------------------------ 通用 ------------------------------ */
+
+.fcl-screen {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 18px calc(40px + env(safe-area-inset-bottom, 0px));
+  scrollbar-width: none;
+  animation: fclScreenIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.fcl-root.is-wizard .fcl-screen { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+.fcl-screen::-webkit-scrollbar { display: none; }
+
+@keyframes fclScreenIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.fcl-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; }
+.fcl-spacer { width: 40px; flex: none; }
+.fcl-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--fcl-soft); }
+.fcl-title { margin-top: 10px; text-align: center; font-size: 28px; font-weight: 800; letter-spacing: 0.1em; }
+.fcl-title.small { margin: 0; text-align: left; font-size: 24px; letter-spacing: 0.04em; }
+.fcl-card-title { font-size: 19px; font-weight: 800; letter-spacing: 0.04em; margin-top: 4px; }
+.fcl-sub { font-size: 12.5px; line-height: 1.7; color: var(--fcl-soft); }
+.fcl-sub.center { text-align: center; }
+.fcl-sub.right { text-align: right; }
+.fcl-faint { color: var(--fcl-soft); font-size: 11px; }
+.fcl-grow { flex: 1; min-width: 0; }
+.fcl-row { display: flex; align-items: center; gap: 10px; }
+.fcl-row.between { justify-content: space-between; }
+.fcl-row.wrap { flex-wrap: wrap; gap: 6px; }
+
+.fcl-glass {
+  background: var(--fcl-glass);
+  border: 1px solid var(--fcl-edge);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 22px 40px -22px var(--fcl-shadow);
+  border-radius: 26px;
+}
+
+.fcl-iconbtn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--fcl-glass);
+  border: 1px solid var(--fcl-edge);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 18px -10px var(--fcl-shadow);
+}
+.fcl-iconbtn svg { width: 18px; height: 18px; }
+.fcl-iconbtn.small { width: 34px; height: 34px; }
+.fcl-iconbtn.small svg { width: 15px; height: 15px; }
+.fcl-iconbtn.tiny { width: 28px; height: 28px; box-shadow: none; }
+.fcl-iconbtn.tiny svg { width: 13px; height: 13px; }
+
+.fcl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 26px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--fcl-pink) 82%, #ffffff), var(--fcl-pink-deep));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 0 color-mix(in srgb, var(--fcl-pink-deep) 72%, #5a2a44), 0 22px 26px -12px var(--fcl-pink-deep);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+}
+.fcl-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 1px 0 color-mix(in srgb, var(--fcl-pink-deep) 72%, #5a2a44); }
+.fcl-btn svg { width: 18px; height: 18px; }
+.fcl-btn:disabled { opacity: 0.45; pointer-events: none; }
+.fcl-btn.small { padding: 10px 18px; font-size: 13px; }
+.fcl-btn.ghost {
+  color: var(--fcl-ink);
+  background: var(--fcl-glass-strong);
+  border: 1px solid var(--fcl-edge);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 10px 20px -12px var(--fcl-shadow);
+}
+
+.fcl-pill { flex: none; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: color-mix(in srgb, var(--fcl-good) 22%, transparent); color: var(--fcl-good); }
+.fcl-pill.warn { background: color-mix(in srgb, var(--fcl-pink) 26%, transparent); color: var(--fcl-pink-deep); }
+.fcl-pill.mute { background: color-mix(in srgb, var(--fcl-ink) 10%, transparent); color: var(--fcl-soft); }
+
+.fcl-seats { display: flex; gap: 8px; flex-wrap: wrap; }
+.fcl-seat {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 800;
+  color: #5a3a50;
+  background: radial-gradient(circle at 32% 26%, #fff 0 14%, var(--c) 68%);
+  box-shadow: 0 0 0 2px #fff, 0 8px 14px -6px var(--c);
+}
+.fcl-seat.big { width: 48px; height: 48px; font-size: 17px; }
+.fcl-seat.empty { background: transparent; box-shadow: none; border: 2px dashed color-mix(in srgb, var(--fcl-ink) 25%, transparent); color: var(--fcl-soft); }
+.fcl-seat.empty svg { width: 18px; height: 18px; }
+
+.fcl-progress { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--fcl-ink) 10%, transparent); overflow: hidden; }
+.fcl-progress i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--fcl-pink), var(--fcl-lav)); }
+
+.fcl-empty { padding: 28px 16px; text-align: center; border-radius: 22px; font-size: 13px; color: var(--fcl-soft); }
+.fcl-error { font-size: 12px; color: #d9534f; }
+
+/* ------------------------------ 大厅 ------------------------------ */
+
+.fcl-hero { position: relative; margin: 6px -10px 0; height: 262px; display: grid; place-items: center; }
+.fcl-iso { width: 100%; max-width: 360px; height: auto; overflow: visible; animation: fclFloaty 7s ease-in-out infinite; filter: drop-shadow(0 30px 24px rgba(110, 70, 130, 0.25)); }
+@keyframes fclFloaty { 50% { transform: translateY(-9px); } }
+
+.fcl-cloud { position: absolute; height: 26px; border-radius: 999px; background: var(--fcl-glass-strong); animation: fclCloud 16s linear infinite; }
+.fcl-cloud::before, .fcl-cloud::after { content: ""; position: absolute; border-radius: 50%; background: inherit; }
+.fcl-cloud::before { width: 30px; height: 30px; left: 14px; top: -14px; }
+.fcl-cloud::after { width: 22px; height: 22px; left: 40px; top: -9px; }
+@keyframes fclCloud { from { transform: translateX(-30px); } to { transform: translateX(60px); } }
+
+.fcl-token { animation: fclTokenBob 2.6s ease-in-out infinite; }
+@keyframes fclTokenBob { 50% { transform: translateY(-4px); } }
+.fcl-plane { animation: fclOrbit 14s linear infinite; }
+@keyframes fclOrbit {
+  0% { transform: translate(-150px, 30px) rotate(8deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(170px, -20px) rotate(-6deg); opacity: 0; }
+}
+
+.fcl-active { margin-top: 4px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.fcl-active + .fcl-active { margin-top: 12px; }
+.fcl-lock-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; font-size: 12px; color: var(--fcl-soft); text-align: center; }
+.fcl-lock-note svg { flex: none; width: 14px; height: 14px; }
+.fcl-cta { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.fcl-section-label { margin: 24px 4px 10px; }
+.fcl-history { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fcl-hist { padding: 14px; display: flex; flex-direction: column; gap: 6px; border-radius: 22px; min-width: 0; }
+.fcl-hist b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fcl-hist small { color: var(--fcl-soft); font-size: 11px; }
+.fcl-link { align-self: flex-start; font-size: 11.5px; font-weight: 800; color: var(--fcl-pink-deep); }
+.fcl-mini-avatar { width: 24px; height: 24px; display: grid; place-items: center; overflow: hidden; border-radius: 50%; font-size: 11px; font-weight: 800; color: #fff; background: var(--fcl-lav); }
+.fcl-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ------------------------------ 向导 ------------------------------ */
+
+.fcl-flightpath { position: relative; margin: 14px 4px 4px; height: 26px; }
+.fcl-flightpath .track { position: absolute; left: 0; right: 0; top: 12px; height: 2px; background-image: linear-gradient(90deg, color-mix(in srgb, var(--fcl-ink) 30%, transparent) 50%, transparent 0); background-size: 10px 2px; }
+.fcl-flightpath .done { position: absolute; left: 0; top: 11px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--fcl-pink), var(--fcl-lav)); transition: width 0.6s cubic-bezier(0.3, 1, 0.4, 1); }
+.fcl-flightpath .stop { position: absolute; top: 5px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--fcl-glass-strong); border: 2px solid var(--fcl-edge); transition: 0.4s; }
+.fcl-flightpath .stop.on { background: var(--fcl-pink); border-color: #fff; box-shadow: 0 0 12px var(--fcl-pink); }
+.fcl-flightpath .jet { position: absolute; top: 0; width: 26px; height: 26px; margin-left: -13px; color: var(--fcl-pink-deep); transition: left 0.6s cubic-bezier(0.3, 1, 0.4, 1); filter: drop-shadow(0 6px 6px rgba(110, 70, 130, 0.3)); }
+.fcl-flightpath .jet svg { width: 100%; height: 100%; }
+.fcl-stephead { margin: 18px 4px 14px; display: flex; flex-direction: column; gap: 6px; }
+
+/* 角色卡 */
+.fcl-deck { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -18px; padding: 18px calc(50% - 105px) 30px; scrollbar-width: none; perspective: 900px; }
+.fcl-deck::-webkit-scrollbar { display: none; }
+.fcl-pass {
+  position: relative;
+  flex: none;
+  width: 210px;
+  height: 300px;
+  scroll-snap-align: center;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  text-align: left;
+  overflow: hidden;
+  border-radius: 30px;
+  background: var(--fcl-glass);
+  border: 1px solid var(--fcl-edge);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 28px 40px -24px var(--fcl-shadow);
+  transform: scale(0.93);
+  opacity: 0.78;
+  transition: transform 0.35s cubic-bezier(0.3, 1.2, 0.5, 1), box-shadow 0.35s, opacity 0.35s;
+  animation: fclBob 6s ease-in-out infinite;
+}
+.fcl-pass:nth-child(2n) { animation-delay: -2s; }
+.fcl-pass:nth-child(3n) { animation-delay: -4s; }
+@keyframes fclBob { 50% { translate: 0 -6px; } }
+.fcl-pass.on { transform: scale(1); opacity: 1; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 0 0 2px var(--c1), 0 30px 46px -22px var(--c1); }
+.fcl-pass .art { position: absolute; inset: 0 0 30% 0; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); background: radial-gradient(60% 60% at 30% 25%, var(--c2), transparent 70%), radial-gradient(70% 70% at 80% 70%, var(--c1), transparent 70%); opacity: 0.85; }
+.fcl-pass .avatar { position: absolute; left: 50%; top: 52px; width: 92px; height: 92px; margin-left: -46px; display: grid; place-items: center; overflow: hidden; border-radius: 50%; font-size: 38px; font-weight: 800; color: #fff; background: radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--c2) 60%, #fff) 0 16%, var(--c1) 80%); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.85), 0 18px 26px -10px var(--c1); }
+.fcl-pass .avatar img { width: 100%; height: 100%; object-fit: cover; }
+.fcl-pass b { position: relative; font-size: 19px; letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fcl-pass small { position: relative; font-size: 11.5px; color: var(--fcl-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fcl-pass .check { position: absolute; right: 12px; top: 12px; width: 28px; height: 28px; display: none; place-items: center; border-radius: 50%; color: #fff; background: var(--c1); box-shadow: 0 6px 12px -4px var(--c1); }
+.fcl-pass.on .check { display: grid; }
+.fcl-pass .check svg { width: 15px; height: 15px; }
+.fcl-dots { display: flex; justify-content: center; gap: 6px; margin-top: -8px; }
+.fcl-dots i { width: 6px; height: 6px; border-radius: 50%; background: color-mix(in srgb, var(--fcl-ink) 22%, transparent); transition: 0.3s; }
+.fcl-dots i.on { width: 18px; border-radius: 4px; background: var(--fcl-pink); }
+
+/* 同伴 */
+.fcl-cabin { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.fcl-seatrow { display: flex; justify-content: space-between; gap: 6px; }
+.fcl-seatcol { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 0; font-size: 11px; color: var(--fcl-soft); }
+.fcl-seatcol > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fcl-bubbles { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px 12px; margin-top: 22px; }
+.fcl-bub { width: 98px; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: fclBob 5s ease-in-out infinite; }
+.fcl-bub:nth-child(2n) { animation-delay: -1.7s; }
+.fcl-bub:nth-child(3n) { animation-delay: -3.1s; }
+.fcl-bub .orb { position: relative; width: 78px; height: 78px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--c2) 60%, #fff) 0 16%, var(--c1) 80%); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 16px 22px -10px var(--c1); transition: transform 0.3s cubic-bezier(0.3, 1.5, 0.5, 1), box-shadow 0.3s; }
+.fcl-bub .orb-face { width: 100%; height: 100%; display: grid; place-items: center; overflow: hidden; border-radius: 50%; font-size: 28px; font-weight: 800; color: #fff; }
+.fcl-bub .orb-face img { width: 100%; height: 100%; object-fit: cover; }
+.fcl-bub.on { margin-bottom: 6px; }
+.fcl-bub.on .orb { transform: scale(1.1); box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--c1), 0 18px 28px -8px var(--c1); }
+.fcl-bub.off { opacity: 0.4; pointer-events: none; }
+.fcl-bub .n { max-width: 100%; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fcl-bub .badge-n { position: absolute; right: -4px; top: -4px; width: 24px; height: 24px; display: none; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 800; color: #5a3a50; background: var(--sc); box-shadow: 0 0 0 2px #fff; }
+.fcl-bub.on .badge-n { display: grid; }
+
+/* 棋盘 */
+.fcl-boards { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -18px; padding: 10px calc(50% - 145px) 30px; scrollbar-width: none; }
+.fcl-boards::-webkit-scrollbar { display: none; }
+.fcl-bcard { position: relative; flex: none; width: 290px; scroll-snap-align: center; padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; border-radius: 30px; opacity: 0.8; transform: scale(0.95); transition: 0.35s cubic-bezier(0.3, 1.2, 0.5, 1); }
+.fcl-bcard.on { opacity: 1; transform: scale(1); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 0 0 2px var(--fcl-pink), 0 30px 46px -22px var(--fcl-pink-deep); }
+.fcl-bcard .model { height: 168px; display: grid; place-items: center; border-radius: 22px; background: radial-gradient(70% 70% at 50% 40%, var(--fcl-glass-strong), transparent); }
+.fcl-bcard .model svg { width: 100%; height: 100%; animation: fclFloaty 6s ease-in-out infinite; filter: drop-shadow(0 14px 10px rgba(110, 70, 130, 0.22)); }
+.fcl-bcard b { padding: 0 4px; font-size: 16px; letter-spacing: 0.05em; }
+.fcl-bcard .fcl-row { padding: 0 4px; }
+.fcl-bcard.import { align-items: center; justify-content: center; text-align: center; min-height: 270px; color: var(--fcl-soft); background: transparent; border: 2px dashed color-mix(in srgb, var(--fcl-ink) 28%, transparent); box-shadow: none; }
+.fcl-bcard.import svg { width: 34px; height: 34px; }
+
+/* 确认页 */
+.fcl-manifest { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+.fcl-field { display: flex; flex-direction: column; gap: 6px; }
+.fcl-field label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: var(--fcl-soft); }
+.fcl-input { width: 100%; padding: 13px 16px; border-radius: 18px; border: 1px solid var(--fcl-edge); background: var(--fcl-glass-strong); color: var(--fcl-ink); font: inherit; font-size: 15px; }
+.fcl-input.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; resize: none; }
+.fcl-input::placeholder { color: var(--fcl-soft); }
+.fcl-miniboard { height: 118px; display: grid; place-items: center; overflow: hidden; border-radius: 20px; background: color-mix(in srgb, var(--fcl-glass-strong) 70%, transparent); }
+.fcl-miniboard svg { height: 100%; width: auto; max-width: 100%; }
+.fcl-switchrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border-radius: 20px; background: color-mix(in srgb, var(--fcl-glass-strong) 80%, transparent); border: 1px solid var(--fcl-edge); }
+.fcl-switchrow .t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fcl-switchrow b { font-size: 14px; }
+.fcl-switchrow small { font-size: 11.5px; line-height: 1.5; color: var(--fcl-soft); }
+.fcl-sw { flex: none; position: relative; width: 52px; height: 30px; border-radius: 999px; background: color-mix(in srgb, var(--fcl-ink) 18%, transparent); transition: 0.3s; }
+.fcl-sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.3); transition: 0.3s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.fcl-sw[aria-checked="true"] { background: linear-gradient(90deg, var(--fcl-pink), var(--fcl-lav)); }
+.fcl-sw[aria-checked="true"]::after { left: 25px; }
+
+.fcl-footbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; width: 100%; max-width: 460px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px calc(16px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(0deg, color-mix(in srgb, var(--bg-main, #fff) 80%, transparent), transparent); }
+.fcl-footbar .fcl-btn.ghost { padding: 12px 20px; }
+
+/* 导入棋盘抽屉 */
+.fcl-sheet-backdrop { position: absolute; inset: 0; z-index: 8; display: flex; align-items: flex-end; justify-content: center; padding: 16px; background: rgba(40, 30, 60, 0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: fclScreenIn 0.3s ease both; }
+.fcl-import-sheet { width: 100%; max-width: 440px; padding: 18px; display: flex; flex-direction: column; gap: 12px; margin-bottom: env(safe-area-inset-bottom, 0px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fcl-blob, .fcl-mote, .fcl-iso, .fcl-cloud, .fcl-token, .fcl-plane, .fcl-pass, .fcl-bub, .fcl-bcard .model svg, .fcl-screen, .fcl-sheet-backdrop {
+    animation: none !important;
+  }
+}
