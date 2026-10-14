@@ -32,11 +32,13 @@ import {
   appendLog, bumpStat, getLoserIndexes,
 } from './flightChessEngine';
 import {
-  generateCharacterQuestionCards, generateTileReaction,
+  generateCharacterQuestionCards,
   generateFinalSummary, postSummaryToMainChat,
 } from './flightChessAiService';
 import FlightChessBoard3D from './FlightChessBoard3D';
 import FlightChessCardModal from './FlightChessCardModal';
+import FlightChessChatSheet from './FlightChessChatSheet';
+import { generateRollComment } from './flightChessChatService';
 import FlightChessDiceStage from './FlightChessDiceStage';
 import FlightChessSetupCards from './FlightChessSetupCards';
 import {
@@ -71,6 +73,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const [setupBusy, setSetupBusy] = useState(false);
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [diceRequest, setDiceRequest] = useState(null);
+  const [rollBubble, setRollBubble] = useState(null);
 
   const sessionRef = useRef(null);
   const ctxRef = useRef({});
@@ -81,11 +84,14 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const nonceRef = useRef(0);
   const fxTimerRef = useRef(null);
   const diceSettleRef = useRef(null);
+  const rollReqRef = useRef(0);
+  const rollBubbleRef = useRef(null);
 
   const userName = chat?.userName || '你';
 
   ctxRef.current = { board, charactersById, userName };
   modalRef.current = modal;
+  rollBubbleRef.current = rollBubble;
 
   /* ------------------------------------------------------------------ */
   /* 加载                                                                 */
@@ -97,7 +103,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     loadData();
     return () => {
       mountedRef.current = false;
-            clearTimeout(fxTimerRef.current);
+      clearTimeout(fxTimerRef.current);
       diceSettleRef.current?.reject(new UnmountedError());
       diceSettleRef.current = null;
       onChatRoomStateChange?.(false);
@@ -165,7 +171,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     return next;
   }, []);
 
-    // 打开全屏骰子,等它播完再继续;点数由调用方先定好
+  // 打开全屏骰子，等它播完再继续；点数由调用方先定好
   const showDice = useCallback((request) => new Promise((resolve, reject) => {
     diceSettleRef.current = { resolve, reject };
     nonceRef.current += 1;
@@ -233,77 +239,121 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     setModal((m) => (m && !m.flipped ? { ...m, flipped: true } : m));
   }, []);
 
-  const runReaction = useCallback(async ({ reactorIndex, answer }) => {
-    const s = sessionRef.current;
-    const m = modalRef.current;
-    if (!s || !m) return;
+  // 卡片翻开后稍等一下，翻牌弹窗收起，聊天抽屉升起
+  const modalFlipped = Boolean(modal && modal.flipped);
+  const modalChatOpen = Boolean(modal && modal.chatOpen);
 
-    const reactorPlayer = s.players[reactorIndex];
-    const reactor = ctxRef.current.charactersById[reactorPlayer?.characterId];
-    const reactorName = nameOf(reactorIndex);
+  useEffect(() => {
+    if (!modalFlipped || modalChatOpen) return undefined;
+    const timer = setTimeout(() => {
+      const m = modalRef.current;
+      const s = sessionRef.current;
+      if (!m || !s || m.chatOpen) return;
 
-    let text = '……';
-    if (reactor) {
-      text = await generateTileReaction({
-        reactor,
-        userName: ctxRef.current.userName,
-        actorIsCharacter: m.actorIsCharacter,
-        actorName: m.actorName,
-        promptTitle: m.title,
-        promptText: m.text,
-        userAnswer: answer,
-        log: s.log,
-      });
-    }
-    if (!mountedRef.current) return;
+      // 角色自己的任务：就是它；用户的任务：随机一位角色来聊
+      let reactorIndex = m.actorIndex;
+      if (!m.actorIsCharacter) {
+        const characterIndexes = s.players
+          .map((p, i) => (p.type === 'character' ? i : -1))
+          .filter((i) => i >= 0);
+        reactorIndex = characterIndexes[Math.floor(Math.random() * characterIndexes.length)];
+      }
+      setModal((prev) => (prev && !prev.chatOpen ? { ...prev, chatOpen: true, reactorIndex } : prev));
+       }, modalRef.current?.deckMeta ? 2100 : 1300);
+    return () => clearTimeout(timer);
+  }, [modalFlipped, modalChatOpen]);
 
-    setModal((prev) => (prev ? {
-      ...prev, reaction: text, loading: false, stage: 'reaction', reactorName,
-    } : prev));
+  // 聊完（角色认可 / 角色任务结束）：把对话记进日志，关掉抽屉，回合继续
+  const handleChatComplete = useCallback(async (transcript) => {
+    const resolve = modalResolveRef.current;
+    if (!resolve) return;
+    modalResolveRef.current = null;
 
     let log = sessionRef.current.log;
-    if (answer && answer.trim()) {
-      log = appendLog(log, { who: ctxRef.current.userName, text: answer.trim() });
-    }
-    log = appendLog(log, { who: reactorName, text });
+    (transcript || []).slice(-4).forEach((item) => {
+      log = appendLog(log, { who: item.who, text: item.text });
+    });
     await commit({ log });
-  }, [commit, nameOf]);
+    if (mountedRef.current) setModal(null);
+    resolve();
+  }, [commit]);
 
-  // 翻面之后：角色落子 -> 立刻让它自己回答；用户落子 -> 等用户写回应
+  // 抽屉要聊的角色已经不存在（被删了）：直接放行，别卡住
   useEffect(() => {
-    if (!modal || !modal.flipped || modal.started) return;
-    if (modal.actorIsCharacter) {
-      setModal((m) => (m ? {
-        ...m, started: true, stage: 'reaction', loading: true, reactorName: m.actorName,
-      } : m));
-      runReaction({ reactorIndex: modal.actorIndex, answer: '' });
-    } else {
-      setModal((m) => (m ? { ...m, started: true, stage: 'responding' } : m));
-    }
-  }, [modal, runReaction]);
-
-  const handleSubmitAnswer = useCallback(() => {
+    if (!modalChatOpen) return;
     const m = modalRef.current;
     const s = sessionRef.current;
-    if (!m || !s) return;
+    const reactor = m && s
+      ? ctxRef.current.charactersById[s.players[m.reactorIndex]?.characterId]
+      : null;
+    if (!reactor) handleChatComplete([]);
+  }, [modalChatOpen, handleChatComplete]);
 
+  /* ------------------------------------------------------------------ */
+  /* 掷骰反应气泡                                                          */
+  /* ------------------------------------------------------------------ */
+
+  // 不阻塞回合：棋子照常走，气泡在旁边冒出来
+  const fetchRollComment = useCallback(async ({ playerIndex, value, destinationTitle }) => {
+    const s = sessionRef.current;
+    const { board: currentBoard, charactersById: chars, userName: name } = ctxRef.current;
+    if (!s || !currentBoard) return;
+
+    const actorIsCharacter = s.players[playerIndex].type === 'character';
     const characterIndexes = s.players
       .map((p, i) => (p.type === 'character' ? i : -1))
       .filter((i) => i >= 0);
-    const reactorIndex = characterIndexes[Math.floor(Math.random() * characterIndexes.length)];
+    if (characterIndexes.length === 0) return;
 
-    setModal((prev) => (prev ? {
-      ...prev, loading: true, stage: 'reaction', reactorName: nameOf(reactorIndex),
-    } : prev));
-    runReaction({ reactorIndex, answer: m.answer });
-  }, [nameOf, runReaction]);
+    const reactorIndex = actorIsCharacter
+      ? playerIndex
+      : characterIndexes[Math.floor(Math.random() * characterIndexes.length)];
+    const reactor = chars[s.players[reactorIndex].characterId];
+    if (!reactor) return;
 
-  const handleContinue = useCallback(() => {
-    const resolve = modalResolveRef.current;
-    modalResolveRef.current = null;
-    setModal(null);
-    resolve?.();
-  }, []);
+    let title = destinationTitle;
+    if (title === undefined) {
+      const lastIdx = currentBoard.tiles.length - 1;
+      title = currentBoard.tiles[Math.min(s.players[playerIndex].position + value, lastIdx)]?.title || '';
+    }
+
+    rollReqRef.current += 1;
+    const id = rollReqRef.current;
+    setRollBubble({
+      id,
+      who: nameOf(reactorIndex),
+      text: '',
+      loading: true,
+      failed: false,
+      args: { playerIndex, value, destinationTitle: title },
+    });
+
+    const result = await generateRollComment({
+      reactor,
+      userName: name,
+      actorName: nameOf(playerIndex),
+      actorIsReactor: reactorIndex === playerIndex,
+      value,
+      destinationTitle: title,
+      log: s.log,
+    });
+    if (!mountedRef.current || rollReqRef.current !== id) return;
+    setRollBubble((b) => (b && b.id === id
+      ? { ...b, text: result.text, loading: false, failed: result.failed }
+      : b));
+  }, [nameOf]);
+
+  const handleRollRetry = useCallback(() => {
+    const current = rollBubbleRef.current;
+    if (current) fetchRollComment(current.args);
+  }, [fetchRollComment]);
+
+  // 气泡停几秒后自己淡出（失败的多留一会儿，方便点「换一句」）
+  useEffect(() => {
+    if (!rollBubble || rollBubble.loading) return undefined;
+    const timer = setTimeout(() => setRollBubble(null), rollBubble.failed ? 12000 : 6500);
+    return () => clearTimeout(timer);
+  }, [rollBubble]);
 
   /* ------------------------------------------------------------------ */
   /* 回合流程                                                             */
@@ -521,6 +571,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
       isAI: s.players[playerIndex].type === 'character',
     });
     setDice(value);
+    fetchRollComment({ playerIndex, value });
     setStatus(`${actorName} 掷出了 ${value} 点`);
     await commit({
       log: appendLog(s.log, { kind: 'system', text: `${actorName} 掷出 ${value} 点` }),
@@ -531,7 +582,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     const path = buildForwardPath(sessionRef.current.players[playerIndex].position, value, lastIndex);
     await movePlayer(playerIndex, path);
     await resolveLanding(playerIndex);
-    }, [commit, movePlayer, nameOf, resolveLanding, showDice, sleep]);
+  }, [commit, fetchRollComment, movePlayer, nameOf, resolveLanding, showDice, sleep]);
 
   const handleRoll = useCallback(async () => {
     const s = sessionRef.current;
@@ -673,6 +724,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
         onTokenTap={handleTokenTap}
         playerNames={playerNames}
         cameraMode={cameraMode}
+        sheetOpen={modalChatOpen}
       />
 
       <div className="fc-header">
@@ -818,13 +870,43 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
         </div>
       )}
 
-      <FlightChessCardModal
-        modal={modal}
-        onFlip={handleFlip}
-        onAnswerChange={(value) => setModal((m) => (m ? { ...m, answer: value } : m))}
-        onSubmitAnswer={handleSubmitAnswer}
-                onContinue={handleContinue}
-      />
+      {rollBubble && !modal && !isFinished && (
+        <div className="fc-roll-bubble" key={rollBubble.id}>
+          <span className="fc-roll-bubble-who">{rollBubble.who}</span>
+          {rollBubble.loading ? (
+            <span className="fc-dots" aria-label="正在输入"><span /><span /><span /></span>
+          ) : (
+            <span className="fc-roll-bubble-text">{rollBubble.text}</span>
+          )}
+          {rollBubble.failed && !rollBubble.loading && (
+            <button type="button" className="fc-roll-bubble-retry" onClick={handleRollRetry}>
+              换一句
+            </button>
+          )}
+        </div>
+      )}
+
+      {modal && !modal.chatOpen && (
+        <FlightChessCardModal
+          modal={modal}
+          onFlip={handleFlip}
+          onAnswerChange={() => {}}
+          onSubmitAnswer={() => {}}
+          onContinue={() => {}}
+        />
+      )}
+
+      {modal && modal.chatOpen && charactersById[session.players[modal.reactorIndex]?.characterId] && (
+        <FlightChessChatSheet
+          task={modal}
+          mode={modal.actorIsCharacter ? 'char' : 'user'}
+          character={charactersById[session.players[modal.reactorIndex].characterId]}
+          characterName={playerNames[modal.reactorIndex]}
+          userName={userName}
+          log={session.log}
+          onComplete={handleChatComplete}
+        />
+      )}
 
       {diceRequest && (
         <FlightChessDiceStage

@@ -9,6 +9,9 @@
 
 import React, { useEffect, useState } from 'react';
 
+import { DrawParticles, DeckBackArt } from './FlightChessDrawFx';
+import './flightChessDraw.css';
+
 const Dots = () => (
   <span className="fc-dots" aria-label="正在输入"><span /><span /><span /></span>
 );
@@ -44,18 +47,22 @@ const FlightChessCardModal = ({
   const tone = deck.tone || modal.tone || 'gray';
   const lines = String(modal.text || '').split('\n').filter(Boolean);
   const backStyle = deck.backUrl ? { backgroundImage: `url(${deck.backUrl})` } : undefined;
-  const canFlip = modal.needsFlip && !modal.flipped;
+    const canFlip = modal.needsFlip && !modal.flipped;
+  const deckId = deck.id || '';
+  const deckClass = deckId ? ` deck-${deckId}` : '';
 
   return (
-    <div className="fc-modal-backdrop">
+        <div className={`fc-modal-backdrop${deckClass}`}>
+      {modal.flipped && deckId && <DrawParticles deckId={deckId} />}
       <div className="fc-modal">
         <div
-          className={`fc-card3d${modal.flipped ? ' is-flipped' : ''}${canFlip ? ' can-flip' : ''}`}
+         className={`fc-card3d${deckClass}${modal.flipped ? ' is-flipped' : ''}${canFlip ? ' can-flip' : ''}`}
           onClick={canFlip ? onFlip : undefined}
           role={canFlip ? 'button' : undefined}
         >
           <div className="fc-card3d-inner">
             <div className={`fc-card-face fc-card-back tone-${tone}`} style={backStyle}>
+                           {deckId && <DeckBackArt deckId={deckId} />}
               <span className="fc-card-back-name">{deck.name || modal.title}</span>
               {deck.subtitle && <span className="fc-card-back-hint">{deck.subtitle}</span>}
               {canFlip && localFlipHint && (

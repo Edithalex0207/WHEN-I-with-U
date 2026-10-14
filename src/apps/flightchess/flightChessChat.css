@@ -1,0 +1,326 @@
+/* src/apps/flightchess/flightChessChat.css
+ *
+ * 聊天抽屉（底部毛玻璃面板）和掷骰反应气泡。
+ * 颜色走全局主题变量；毛玻璃用 backdrop-filter，所以这些元素必须是
+ * 棋盘 3D 容器的兄弟节点，不能放进 .fc-camera 里面。
+ */
+
+/* ------------------------------ 抽屉 ------------------------------ */
+
+.fc-room > .fc-sheet-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  display: flex;
+  justify-content: center;
+  padding: 0 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.fc-sheet {
+  --sheet-accent: #b8b0a0;
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: 62vh;
+  max-height: 62dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 14px 14px;
+  border-radius: 28px;
+  color: var(--text-main, #334155);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, #ffffff 46%, transparent), color-mix(in srgb, var(--card-bg, #ffffff) 22%, transparent));
+  backdrop-filter: blur(28px) saturate(1.7);
+  -webkit-backdrop-filter: blur(28px) saturate(1.7);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 -1px 0 color-mix(in srgb, var(--sheet-accent) 30%, transparent) inset,
+    0 24px 48px -16px rgba(80, 62, 34, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--sheet-accent) 22%, transparent);
+  pointer-events: auto;
+  animation: fcSheetUp 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.fc-sheet.tone-rose { --sheet-accent: #f4a6b5; }
+.fc-sheet.tone-blue { --sheet-accent: #8fb8ea; }
+.fc-sheet.tone-mint { --sheet-accent: #8fd0a4; }
+.fc-sheet.tone-gold { --sheet-accent: #f1cf6a; }
+.fc-sheet.tone-violet { --sheet-accent: #b9a6e3; }
+.fc-sheet.tone-gray { --sheet-accent: #b8b0a0; }
+
+@keyframes fcSheetUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: none; }
+}
+
+.fc-sheet-grab {
+  align-self: center;
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-main, #334155) 22%, transparent);
+}
+
+/* 任务卡摘要 */
+
+.fc-sheet-card {
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: color-mix(in srgb, #ffffff 52%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sheet-accent) 45%, #ffffff);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.fc-sheet-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fc-sheet-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--sheet-accent) 55%, #ffffff);
+}
+
+.fc-sheet-round,
+.fc-sheet-ok {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.fc-sheet-ok {
+  opacity: 1;
+  color: #4e9a68;
+}
+
+.fc-sheet-card-text {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.fc-sheet-card-text p {
+  margin: 0;
+}
+
+.fc-sheet-card-text p.is-variant {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.fc-sheet-author {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+/* 对话 */
+
+.fc-sheet-thread {
+  flex: 1 1 auto;
+  min-height: 70px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 2px 4px;
+  overscroll-behavior: contain;
+}
+
+.fc-sheet-empty {
+  margin: auto;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.55;
+}
+
+.fc-bubble {
+  max-width: 82%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+  animation: fcBubbleIn 0.3s ease both;
+}
+
+.fc-bubble.is-char {
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+  background: color-mix(in srgb, #ffffff 70%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 6px 14px -10px rgba(80, 62, 34, 0.4);
+}
+
+.fc-bubble.is-user {
+  align-self: flex-end;
+  border-bottom-right-radius: 6px;
+  background: color-mix(in srgb, var(--sheet-accent) 62%, #ffffff);
+  box-shadow: 0 6px 14px -10px rgba(80, 62, 34, 0.45);
+}
+
+.fc-bubble-name {
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+@keyframes fcBubbleIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.fc-sheet-fail {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.fc-sheet-fail-actions,
+.fc-sheet-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 输入区 */
+
+.fc-sheet-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fc-sheet-input {
+  width: 100%;
+  resize: none;
+  padding: 10px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: inherit;
+  background: color-mix(in srgb, #ffffff 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sheet-accent) 40%, #ffffff);
+  outline: none;
+}
+
+.fc-sheet-input:focus {
+  border-color: var(--sheet-accent);
+}
+
+.fc-sheet-send {
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--sheet-accent) 70%, #ffffff), color-mix(in srgb, var(--sheet-accent) 100%, #6b5a3e));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 4px 0 color-mix(in srgb, var(--sheet-accent) 60%, #5a4630);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.fc-sheet-send:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 1px 0 color-mix(in srgb, var(--sheet-accent) 60%, #5a4630);
+}
+
+.fc-sheet-send:disabled {
+  opacity: 0.45;
+}
+
+.fc-sheet-send.is-wide {
+  width: 100%;
+  padding: 12px;
+}
+
+.fc-sheet-mini {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: inherit;
+  background: color-mix(in srgb, var(--sheet-accent) 50%, #ffffff);
+}
+
+.fc-sheet-mini.is-ghost {
+  background: color-mix(in srgb, #ffffff 55%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+/* ------------------------------ 掷骰反应气泡 ------------------------------ */
+
+.fc-room > .fc-roll-bubble {
+  position: absolute;
+  left: 50%;
+  top: 70px;
+  z-index: 7;
+  max-width: min(86%, 340px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main, #334155);
+  background: color-mix(in srgb, #ffffff 48%, transparent);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 14px 28px -14px rgba(80, 62, 34, 0.45);
+  transform: translateX(-50%);
+  animation: fcRollBubbleIn 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+@keyframes fcRollBubbleIn {
+  from { opacity: 0; transform: translate(-50%, -10px) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.fc-roll-bubble-who {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.fc-roll-bubble-text {
+  min-width: 0;
+}
+
+.fc-roll-bubble-retry {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: inherit;
+  background: color-mix(in srgb, #ffffff 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-sheet,
+  .fc-bubble,
+  .fc-room > .fc-roll-bubble {
+    animation: none !important;
+  }
+}

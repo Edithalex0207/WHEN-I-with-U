@@ -36,6 +36,7 @@ const FlightChessApp = ({ onBackHub, onChatRoomStateChange }) => {
   const [boardsById, setBoardsById] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [blockingSession, setBlockingSession] = useState(null); // 已有未结束的对局时，拦住新建
 
   // 建局向导
   const [wizardStep, setWizardStep] = useState(1);
@@ -68,6 +69,12 @@ const FlightChessApp = ({ onBackHub, onChatRoomStateChange }) => {
   const mainCharacterId = selectedChat ? selectedChat.characterId : null;
 
   const handleOpenCreate = async () => {
+    // 一次只能开一局：还有没结束的对局，先去把它玩完（或删掉）
+    const unfinished = sessions.find((item) => item.status !== 'finished');
+    if (unfinished) {
+      setBlockingSession(unfinished);
+      return;
+    }
     const [chats, chars, boards] = await Promise.all([
       db.chats.toArray(),
       db.characters.toArray(),
@@ -237,6 +244,47 @@ const FlightChessApp = ({ onBackHub, onChatRoomStateChange }) => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {blockingSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div
+            className="w-full max-w-xs rounded-3xl p-5 space-y-3 shadow-2xl"
+            style={{
+              backgroundColor: 'var(--modal-bg)',
+              border: '1px solid var(--modal-border)',
+              color: 'var(--text-main)',
+            }}
+          >
+            <h3 className="text-xs font-semibold">还有一局没结束</h3>
+            <p className="text-xs opacity-70 leading-relaxed">
+              飞行棋一次只能开一局。「{blockingSession.title}」还在进行中，
+              先把它玩完，或者在列表里删掉它，再来新建下一局。
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setBlockingSession(null)}
+                className="flex-1 py-2 rounded-full text-xs font-semibold opacity-70"
+                style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+              >
+                知道了
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = blockingSession.id;
+                  setBlockingSession(null);
+                  setActiveSessionId(id);
+                }}
+                className="flex-1 py-2 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: 'var(--accent-color)', color: 'var(--accent-foreground)' }}
+              >
+                回到这一局
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
