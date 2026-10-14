@@ -17,7 +17,7 @@
 import React, {
   useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Maximize2, Crosshair } from 'lucide-react';
 
 import db from '../../db';
 import { getSessionById, getBoardById, updateSession } from './flightChessService';
@@ -65,7 +65,8 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const [modal, setModal] = useState(null);
   const [motion, setMotion] = useState(null);
   const [tileFx, setTileFx] = useState(null);
-  const [focus, setFocus] = useState(null);
+  const [, setFocus] = useState(null);
+  const [cameraMode, setCameraMode] = useState('follow'); // follow | overview
   const [setupBusy, setSetupBusy] = useState(false);
   const [summaryBusy, setSummaryBusy] = useState(false);
 
@@ -643,6 +644,17 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
 
   return (
     <div className="fc-room animate-fade-in-up">
+      <FlightChessBoard3D
+        tiles={board.tiles}
+        players={session.players}
+        activeIndex={currentIndex}
+        motion={motion}
+        tileFx={tileFx}
+        onTokenTap={handleTokenTap}
+        playerNames={playerNames}
+        cameraMode={cameraMode}
+      />
+
       <div className="fc-header">
         <button type="button" onClick={onBack} className="fc-back">
           <ArrowLeft className="w-4 h-4" /> 返回
@@ -657,6 +669,14 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
           />
           <span>{capsuleText}</span>
         </div>
+        <button
+          type="button"
+          className="fc-cam-btn"
+          onClick={() => setCameraMode((mode) => (mode === 'follow' ? 'overview' : 'follow'))}
+        >
+          {cameraMode === 'follow' ? <Maximize2 /> : <Crosshair />}
+          {cameraMode === 'follow' ? '全景' : '跟随'}
+        </button>
       </div>
 
       <div className="fc-players">
@@ -682,86 +702,76 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
         ))}
       </div>
 
-      <div className="fc-scroll">
-        {session.status === 'setup' && (
-          <div className="mb-4">
-            <FlightChessSetupCards
-              busy={setupBusy}
-              onStart={handleStartGame}
-              characterNames={playerNames.filter((_, i) => session.players[i].type === 'character')}
-            />
-          </div>
-        )}
-
-        <FlightChessBoard3D
-          tiles={board.tiles}
-          players={session.players}
-          activeIndex={currentIndex}
-          motion={motion}
-          tileFx={tileFx}
-          focus={focus}
-          onTokenTap={handleTokenTap}
-          playerNames={playerNames}
-        />
-
-        {isFinished && (
-          <div className="fc-panel mt-4">
-            <h3>本局结算 · {playerNames[session.winnerPlayerIndex]} 先到终点</h3>
-            {endTile?.text && (
-              <p className="fc-hint" style={{ whiteSpace: 'pre-line' }}>{endTile.text}</p>
-            )}
-            <div className="mt-2">
-              {session.players.map((player, index) => (
-                <div className="fc-settle-row" key={index}>
-                  <span>{playerNames[index]}</span>
-                  <span className="opacity-70">
-                    存款格 {player.stats.deposit} · 取款格 {player.stats.withdraw} · 惩罚格 {player.stats.punish}
-                  </span>
-                </div>
-              ))}
+      {(session.status === 'setup' || isFinished) && (
+        <div className="fc-overlay">
+          {session.status === 'setup' && (
+            <div className="mb-4">
+              <FlightChessSetupCards
+                busy={setupBusy}
+                onStart={handleStartGame}
+                characterNames={playerNames.filter((_, i) => session.players[i].type === 'character')}
+              />
             </div>
-
-            {session.settlement?.winnerCard && (
-              <div className="fc-settle-card">
-                <small>赢家福利卡 · {playerNames[session.winnerPlayerIndex]}</small>
-                {session.settlement.winnerCard.text}
-              </div>
-            )}
-            {(session.settlement?.loserCards || []).map(({ playerIndex, card }) => (
-              card ? (
-                <div className="fc-settle-card" key={playerIndex}>
-                  <small>甜蜜暴击 · {playerNames[playerIndex]}</small>
-                  {card.text}
-                </div>
-              ) : null
-            ))}
-
-            <div className="mt-4 text-center text-xs opacity-70">
-              {summaryBusy && '正在把这局的总结发回聊天...'}
-              {!summaryBusy && session.summaryPosted && '总结已发回主聊天框'}
-              {!summaryBusy && !session.summaryPosted && session.summaryText && (
-                <button type="button" className="fc-btn is-ghost" onClick={handleRepostSummary}>
-                  把总结发回聊天
-                </button>
+          )}
+          {isFinished && (
+            <div className="fc-panel mt-4">
+              <h3>本局结算 · {playerNames[session.winnerPlayerIndex]} 先到终点</h3>
+              {endTile?.text && (
+                <p className="fc-hint" style={{ whiteSpace: 'pre-line' }}>{endTile.text}</p>
               )}
-            </div>
-          </div>
-        )}
-
-        {logItems.length > 0 && (
-          <div className="fc-log">
-            {logItems.map((entry, index) => (
-              <div
-                key={`${entry.at}-${index}`}
-                className={`fc-log-item${entry.who ? '' : ' is-system'}`}
-              >
-                {entry.who && <b>{entry.who}</b>}
-                {entry.text}
+              <div className="mt-2">
+                {session.players.map((player, index) => (
+                  <div className="fc-settle-row" key={index}>
+                    <span>{playerNames[index]}</span>
+                    <span className="opacity-70">
+                      存款格 {player.stats.deposit} · 取款格 {player.stats.withdraw} · 惩罚格 {player.stats.punish}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              {session.settlement?.winnerCard && (
+                <div className="fc-settle-card">
+                  <small>赢家福利卡 · {playerNames[session.winnerPlayerIndex]}</small>
+                  {session.settlement.winnerCard.text}
+                </div>
+              )}
+              {(session.settlement?.loserCards || []).map(({ playerIndex, card }) => (
+                card ? (
+                  <div className="fc-settle-card" key={playerIndex}>
+                    <small>甜蜜暴击 · {playerNames[playerIndex]}</small>
+                    {card.text}
+                  </div>
+                ) : null
+              ))}
+
+              <div className="mt-4 text-center text-xs opacity-70">
+                {summaryBusy && '正在把这局的总结发回聊天...'}
+                {!summaryBusy && session.summaryPosted && '总结已发回主聊天框'}
+                {!summaryBusy && !session.summaryPosted && session.summaryText && (
+                  <button type="button" className="fc-btn is-ghost" onClick={handleRepostSummary}>
+                    把总结发回聊天
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!isFinished && logItems.length > 0 && (
+        <div className="fc-log">
+          {logItems.slice(-2).map((entry, index) => (
+            <div
+              key={`${entry.at}-${index}`}
+              className={`fc-log-item${entry.who ? '' : ' is-system'}`}
+            >
+              {entry.who && <b>{entry.who}</b>}
+              {entry.text}
+            </div>
+          ))}
+        </div>
+      )}
 
       {isActive && (
         <div className="fc-footer">
