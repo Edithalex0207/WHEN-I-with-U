@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Clock3,
+  Eraser,
   FileClock,
   RotateCcw,
   Trash2,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import ConfirmModal from '../../../components/ConfirmModal';
 import {
+  clearScheduledMessageArchiveHistory,
   deleteScheduledMessageArchiveItem,
   getScheduledMessageArchive,
   getScheduledMessageDisplayState,
@@ -27,6 +29,8 @@ const ScheduledMessageArchive = ({
   const [isLoading, setIsLoading] = useState(true);
   const [deletingRecord, setDeletingRecord] = useState(null);
   const [retryingRecordId, setRetryingRecordId] = useState(null);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const loadRecords = async () => {
     setIsLoading(true);
@@ -72,6 +76,40 @@ const ScheduledMessageArchive = ({
       );
     } finally {
       setDeletingRecord(null);
+    }
+  };
+
+  const clearableCount = records.filter((item) => (
+    item.status === 'sent' ||
+    item.status === 'cancelled' ||
+    item.status === 'failed'
+  )).length;
+
+  const handleClearHistory = async () => {
+    if (isClearing) {
+      return;
+    }
+
+    setIsClearing(true);
+
+    try {
+      await clearScheduledMessageArchiveHistory(chatId);
+
+      setRecords((previous) => (
+        previous.filter((item) => (
+          item.status !== 'sent' &&
+          item.status !== 'cancelled' &&
+          item.status !== 'failed'
+        ))
+      ));
+    } catch (error) {
+      console.error(
+        '[ScheduledMessageArchive] 清空历史预约记录失败：',
+        error
+      );
+    } finally {
+      setIsClearing(false);
+      setIsClearConfirmOpen(false);
     }
   };
 
@@ -143,15 +181,28 @@ const ScheduledMessageArchive = ({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="scheduled-archive-close"
-              title="关闭预约存档"
-              aria-label="关闭预约存档"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="scheduled-archive-actions">
+              <button
+                type="button"
+                onClick={() => setIsClearConfirmOpen(true)}
+                className="scheduled-archive-clear"
+                title="清空已结束的历史记录"
+                aria-label="清空已结束的历史记录"
+                disabled={clearableCount === 0}
+              >
+                <Eraser className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="scheduled-archive-close"
+                title="关闭预约存档"
+                aria-label="关闭预约存档"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </header>
 
           <div className="scheduled-archive-paper">
@@ -310,8 +361,18 @@ const ScheduledMessageArchive = ({
         onConfirm={handleDelete}
         onCancel={() => setDeletingRecord(null)}
       />
+
+      <ConfirmModal
+        isOpen={isClearConfirmOpen}
+        title="清空已结束的预约记录？"
+        message="将删除这个聊天里所有已经抵达、已收回、未能抵达的历史票据，正在等待抵达的预约不会受到影响。"
+        confirmText={isClearing ? '清空中…' : '清空历史'}
+        cancelText="再想想"
+        onConfirm={handleClearHistory}
+        onCancel={() => setIsClearConfirmOpen(false)}
+      />
     </>
   );
 };
 
-export default ScheduledMessageArchive;
+export default ScheduledMessageArchive;shij

@@ -46,6 +46,30 @@ export const deleteScheduledMessageArchive = async (chatId) => {
 };
 
 /**
+ * 只清空"已经结束"的历史预约记录（已抵达 / 已收回 / 未能抵达），
+ * 正在等待抵达的 pending 预约、正在处理中的 processing 预约都不受影响。
+ *
+ * 这是存档面板里「清空」按钮用的函数：用户抱怨的是历史票据越堆越多，
+ * 不是想顺手把还没发出去的预约也取消掉，所以特意跟
+ * deleteScheduledMessageArchive（整条聊天全删）分开，各管各的用途。
+ */
+export const clearScheduledMessageArchiveHistory = async (chatId) => {
+  if (!chatId) {
+    return 0;
+  }
+
+  return db.scheduledMessages
+    .where('chatId')
+    .equals(chatId)
+    .and((item) => (
+      item.status === 'sent' ||
+      item.status === 'cancelled' ||
+      item.status === 'failed'
+    ))
+    .delete();
+};
+
+/**
  * 将失败或已取消的预约重新放回待处理状态。
  *
  * 已发送和正在处理的记录不能被手动重试，
