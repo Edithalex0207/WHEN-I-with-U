@@ -500,8 +500,19 @@ export default function ReaderPage({ bookId, onBack }) {
 
   const scrollToPara = useCallback((index) => {
     const element = paraRefs.current[index];
-    if (element && element.scrollIntoView) {
-      element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const node = scrollRef.current;
+    if (!element || !node) return;
+
+    // 只滚正文容器自己，不用 scrollIntoView（它会把 fixed 的阅读页根节点也一起滚走）
+    const nodeRect = node.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    const delta =
+      elementRect.top - nodeRect.top - (nodeRect.height - elementRect.height) / 2;
+
+    if (typeof node.scrollBy === 'function') {
+      node.scrollBy({ top: delta, behavior: 'smooth' });
+    } else {
+      node.scrollTop += delta;
     }
   }, []);
 

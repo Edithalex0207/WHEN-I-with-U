@@ -293,8 +293,11 @@ export default function LibraryShelf({ onBack, onOpenReader }) {
 
 
 
-  const tint = current ? pickCoverStyle(current.title).tint : '#E6E2D3';
-  const fill = current ? pickCoverStyle(current.title).fill : '#A89F7E';
+  // 顶部弥散色：有书时取这本书的封面色，再和主题底色调和（深色主题下自动变暗）；
+  // 空书架时直接用主题自己的弥散色，不再是固定的米黄色。
+  const tintSource = current ? pickCoverStyle(current.title).tint : 'var(--bg-blob-1)';
+  const tint = `color-mix(in srgb, ${tintSource} 70%, var(--bg-main))`;
+  const fill = current ? pickCoverStyle(current.title).fill : 'var(--text-muted)';
 
   const whereLabel = !current
     ? ''
@@ -347,10 +350,11 @@ export default function LibraryShelf({ onBack, onOpenReader }) {
     <div className="mn-lib-root">
       {hiddenInput}
 
-      <div className="mn-lib">
-        <div className="mn-lib__tint" style={{ background: tint }} />
-        <div className="mn-lib__fade" />
+      {/* 顶部弥散色挂在整页根节点上，横向铺满整个视口；内容列在它上面居中 */}
+      <div className="mn-lib__tint" style={{ background: tint }} />
+      <div className="mn-lib__fade" />
 
+      <div className="mn-lib">
         <button
           type="button"
           className="mn-lib-back"
@@ -390,13 +394,21 @@ export default function LibraryShelf({ onBack, onOpenReader }) {
                     className="mn-lib-book"
                     aria-label={book.title}
                     onClick={() => {
+                      // 书已经翻开放大了：点书本身就进入阅读，和「进入阅读」按钮一样
+                      if (isCurrent && opened) {
+                        onOpenReader(book.id);
+                        return;
+                      }
                       closeBook();
                       setSel(index);
                     }}
                     style={{
-                      transform: `translateX(${offset * 152}px) perspective(900px) rotateY(${
+                      // 点「继续阅读」后书放大一圈（并往下沉一点，占住下面淡出的书名位置）
+                      transform: `translateX(${offset * 152}px) translateY(${
+                        isCurrent && opening ? 22 : 0
+                      }px) perspective(900px) rotateY(${
                         isCurrent ? 0 : -offset * 26
-                      }deg) scale(${isCurrent ? (opening ? 1.15 : 1) : 0.72})`,
+                      }deg) scale(${isCurrent ? (opening ? 1.22 : 1) : 0.72})`,
                       opacity: isCurrent
                         ? 1
                         : distance === 1 && !opening

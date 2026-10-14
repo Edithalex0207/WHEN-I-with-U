@@ -23,9 +23,21 @@ export default function ReaderTocSheet({
   const [tab, setTab] = useState('toc');
   const [annotations, setAnnotations] = useState(null);
   const currentRef = useRef(null);
+  const listRef = useRef(null);
 
+  // 打开时把当前章节滚到列表中间。
+  // 不能用 scrollIntoView：它会连同外层所有可滚动的祖先一起滚，
+  // 阅读页根节点是 fixed 的，被它滚走以后整页就停在上面回不来了。
+  // 这里只滚目录列表自己。
   useEffect(() => {
-    currentRef.current?.scrollIntoView({ block: 'center' });
+    const list = listRef.current;
+    const item = currentRef.current;
+    if (!list || !item) return;
+
+    const listRect = list.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    list.scrollTop +=
+      itemRect.top - listRect.top - (listRect.height - itemRect.height) / 2;
   }, []);
 
   useEffect(() => {
@@ -90,7 +102,7 @@ export default function ReaderTocSheet({
         </header>
 
         {tab === 'toc' ? (
-          <div className="mn-rd-sheet__list">
+          <div className="mn-rd-sheet__list" ref={listRef}>
             {chapters.map((chapter, index) => {
               const active = index === currentIndex;
               return (
