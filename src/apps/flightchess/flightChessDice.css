@@ -1,0 +1,265 @@
+/* src/apps/flightchess/flightChessDice.css
+ *
+ * 全屏骰子的样式：盖满飞行棋房间的毛玻璃层 + 一颗奶油色 3D 立方体骰子。
+ * 骰子本体用固定的奶油色（和棋盘格子一致），点数颜色跟随当前玩家，
+ * 外层背景和文字走全局主题变量，所以四套主题下都能读。
+ */
+
+.fc-room > .fc-dice-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px 16px;
+  color: var(--text-main, #334155);
+  background:
+    radial-gradient(70% 55% at 50% 45%, color-mix(in srgb, var(--bg-main, #f8f9fc) 40%, transparent), color-mix(in srgb, var(--bg-main, #f8f9fc) 82%, transparent));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: fcDiceStageIn 0.35s ease both;
+  touch-action: none;
+}
+
+.fc-dice-stage.is-leaving {
+  animation: fcDiceStageOut 0.3s ease both;
+}
+
+@keyframes fcDiceStageIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fcDiceStageOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.fc-dice-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 6px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--card-bg, #fff) 72%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 18px -10px rgba(110, 90, 55, 0.4);
+}
+
+.fc-dice-who-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--dice-color);
+  background: radial-gradient(circle at 32% 26%, #fff 0 18%, color-mix(in srgb, var(--dice-color) 30%, #fff) 70%);
+  box-shadow: 0 0 0 2px #fff, 0 4px 10px -3px var(--dice-glow);
+}
+
+.fc-dice-who-icon svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
+.fc-dice-scene {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  display: grid;
+  place-items: center;
+  perspective: 800px;
+  touch-action: none;
+  outline: none;
+}
+
+.fc-dice-scene.is-touchable {
+  cursor: grab;
+}
+
+.fc-dice-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  width: 130px;
+  height: 30px;
+  margin-left: -65px;
+  border-radius: 50%;
+  background: rgba(80, 62, 34, 0.35);
+  filter: blur(10px);
+}
+
+.fc-dice-scene.is-rolling .fc-dice-shadow {
+  animation: fcDiceShadow 1.9s cubic-bezier(0.3, 0.5, 0.4, 1) forwards;
+}
+
+@keyframes fcDiceShadow {
+  0% { transform: scale(1); opacity: 0.9; }
+  18% { transform: scale(0.45); opacity: 0.35; }
+  38% { transform: scale(1.1); opacity: 0.95; }
+  52% { transform: scale(0.7); opacity: 0.55; }
+  68% { transform: scale(1.05); opacity: 0.9; }
+  80% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+.fc-dice-hop {
+  transform-style: preserve-3d;
+}
+
+.fc-dice-hop.is-idle {
+  animation: fcDiceBob 2.4s ease-in-out infinite;
+}
+
+.fc-dice-hop.is-throwing {
+  animation: fcDiceThrow 1.9s cubic-bezier(0.3, 0.5, 0.4, 1) forwards;
+}
+
+.fc-dice-hop.is-settled {
+  animation: fcDiceSettle 0.5s ease-out;
+}
+
+@keyframes fcDiceBob {
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fcDiceThrow {
+  0% { transform: translateY(40px) scale(0.7); }
+  18% { transform: translateY(-120px) scale(1.15); }
+  38% { transform: translateY(0) scale(1.1, 0.92); }
+  52% { transform: translateY(-46px); }
+  68% { transform: translateY(0) scale(1.05, 0.95); }
+  80% { transform: translateY(-14px); }
+  100% { transform: none; }
+}
+
+@keyframes fcDiceSettle {
+  0% { transform: scale(1.18); }
+  60% { transform: scale(0.96); }
+  100% { transform: none; }
+}
+
+.fc-dice-cube {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  transform-style: preserve-3d;
+  transform: rotateX(-24deg) rotateY(32deg);
+}
+
+.fc-dice-cube.is-idle {
+  animation: fcDiceSpin 6s linear infinite;
+}
+
+@keyframes fcDiceSpin {
+  to { transform: rotateX(-24deg) rotateY(392deg); }
+}
+
+.fc-dice-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 20px;
+  border-radius: 24px;
+  background: linear-gradient(150deg, #ffffff, #f1e7d6);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9), inset 0 -8px 16px rgba(190, 170, 130, 0.25);
+}
+
+.fc-dice-face.is-f1 { transform: translateZ(60px); }
+.fc-dice-face.is-f2 { transform: rotateY(90deg) translateZ(60px); }
+.fc-dice-face.is-f3 { transform: rotateX(90deg) translateZ(60px); }
+.fc-dice-face.is-f4 { transform: rotateX(-90deg) translateZ(60px); }
+.fc-dice-face.is-f5 { transform: rotateY(-90deg) translateZ(60px); }
+.fc-dice-face.is-f6 { transform: rotateY(180deg) translateZ(60px); }
+
+.fc-dice-pip {
+  width: 20px;
+  height: 20px;
+  place-self: center;
+  border-radius: 50%;
+}
+
+.fc-dice-pip.is-on {
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--dice-color) 45%, #fff), var(--dice-color));
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.18);
+}
+
+.fc-dice-result {
+  height: 60px;
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 60px;
+  color: var(--dice-color);
+  text-shadow: 0 6px 0 rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.fc-dice-result.is-show {
+  animation: fcDiceResultIn 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) forwards;
+}
+
+@keyframes fcDiceResultIn {
+  to { opacity: 1; transform: scale(1); }
+}
+
+.fc-dice-hint {
+  min-height: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.65;
+}
+
+.fc-dice-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fc-dice-btn {
+  padding: 13px 32px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--dice-color) 70%, #fff), var(--dice-color));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 5px 0 color-mix(in srgb, var(--dice-color) 70%, #5a4630), 0 14px 18px -8px var(--dice-glow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fc-dice-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 1px 0 color-mix(in srgb, var(--dice-color) 70%, #5a4630);
+}
+
+.fc-dice-btn.is-ghost {
+  padding: 11px 20px;
+  font-size: 12px;
+  color: inherit;
+  background: color-mix(in srgb, var(--card-bg, #fff) 75%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 16px -10px rgba(110, 90, 55, 0.45);
+}
+
+.fc-dice-btn:focus-visible,
+.fc-dice-scene:focus-visible {
+  outline: 2px solid var(--dice-color);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-dice-hop.is-idle,
+  .fc-dice-hop.is-throwing,
+  .fc-dice-hop.is-settled,
+  .fc-dice-cube.is-idle,
+  .fc-dice-scene.is-rolling .fc-dice-shadow {
+    animation: none !important;
+  }
+}

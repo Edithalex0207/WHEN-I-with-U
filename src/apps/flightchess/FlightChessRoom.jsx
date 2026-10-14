@@ -37,6 +37,7 @@ import {
 } from './flightChessAiService';
 import FlightChessBoard3D from './FlightChessBoard3D';
 import FlightChessCardModal from './FlightChessCardModal';
+import FlightChessDiceStage from './FlightChessDiceStage';
 import FlightChessSetupCards from './FlightChessSetupCards';
 import {
   PLAYER_COLORS, PLAYER_GLOWS, TOKEN_KINDS, TokenIcon,
@@ -69,6 +70,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const [cameraMode, setCameraMode] = useState('follow'); // follow | overview
   const [setupBusy, setSetupBusy] = useState(false);
   const [summaryBusy, setSummaryBusy] = useState(false);
+  const [diceRequest, setDiceRequest] = useState(null);
 
   const sessionRef = useRef(null);
   const ctxRef = useRef({});
@@ -78,6 +80,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const mountedRef = useRef(true);
   const nonceRef = useRef(0);
   const fxTimerRef = useRef(null);
+  const diceSettleRef = useRef(null);
 
   const userName = chat?.userName || '你';
 
@@ -94,7 +97,9 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     loadData();
     return () => {
       mountedRef.current = false;
-      clearTimeout(fxTimerRef.current);
+            clearTimeout(fxTimerRef.current);
+      diceSettleRef.current?.reject(new UnmountedError());
+      diceSettleRef.current = null;
       onChatRoomStateChange?.(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,6 +163,20 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     if (mountedRef.current) setSession(next);
     if (persist) await updateSession(next.id, patch);
     return next;
+  }, []);
+
+    // 打开全屏骰子,等它播完再继续;点数由调用方先定好
+  const showDice = useCallback((request) => new Promise((resolve, reject) => {
+    diceSettleRef.current = { resolve, reject };
+    nonceRef.current += 1;
+    setDiceRequest({ ...request, nonce: nonceRef.current });
+  }), []);
+
+  const handleDiceDone = useCallback(() => {
+    const settle = diceSettleRef.current;
+    diceSettleRef.current = null;
+    setDiceRequest(null);
+    settle?.resolve();
   }, []);
 
   const scheduleFxClear = useCallback(() => {
@@ -494,12 +513,13 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
 
     setPhase('rolling');
     setStatus(`${actorName} 掷骰子中...`);
-    for (let tick = 0; tick < 9; tick += 1) {
-      setDice(rollDie());
-      // eslint-disable-next-line no-await-in-loop
-      await sleep(75);
-    }
     const value = rollDie();
+    await showDice({
+      playerIndex,
+      value,
+      actorName,
+      isAI: s.players[playerIndex].type === 'character',
+    });
     setDice(value);
     setStatus(`${actorName} 掷出了 ${value} 点`);
     await commit({
@@ -511,7 +531,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     const path = buildForwardPath(sessionRef.current.players[playerIndex].position, value, lastIndex);
     await movePlayer(playerIndex, path);
     await resolveLanding(playerIndex);
-  }, [commit, movePlayer, nameOf, resolveLanding, sleep]);
+    }, [commit, movePlayer, nameOf, resolveLanding, showDice, sleep]);
 
   const handleRoll = useCallback(async () => {
     const s = sessionRef.current;
@@ -803,8 +823,16 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
         onFlip={handleFlip}
         onAnswerChange={(value) => setModal((m) => (m ? { ...m, answer: value } : m))}
         onSubmitAnswer={handleSubmitAnswer}
-        onContinue={handleContinue}
+                onContinue={handleContinue}
       />
+
+      {diceRequest && (
+        <FlightChessDiceStage
+          key={diceRequest.nonce}
+          request={diceRequest}
+          onDone={handleDiceDone}
+        />
+      )}
     </div>
   );
 };
