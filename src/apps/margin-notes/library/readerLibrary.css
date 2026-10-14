@@ -1,0 +1,821 @@
+/* src/apps/margin-notes/library/readerLibrary.css
+   页边注「我的藏书」页。类名统一 mn-lib- 开头，只作用在这一页，不影响页边注原页面。 */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=Literata:ital,wght@1,500&display=swap');
+
+.mn-lib-root,
+.mn-lib-root * {
+  box-sizing: border-box;
+}
+
+.mn-lib-root {
+  width: 100%;
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: #f5f5f2;
+  color: #23262b;
+  font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mn-lib-root button,
+.mn-lib-root input {
+  font-family: inherit;
+}
+
+.mn-lib-root button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mn-lib-file {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mn-lib {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.mn-lib__tint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 430px;
+  transition: background-color 0.5s;
+}
+
+.mn-lib__fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 430px;
+  background: linear-gradient(to bottom, rgba(245, 245, 242, 0), #f5f5f2);
+}
+
+/* ---------- 页边注原菜单里的「我的藏书」NEW 标记 ---------- */
+
+.mn-menu .mn-menu__new {
+  margin-left: auto;
+  padding: 1px 5px;
+  border: 1px solid #111111;
+  color: #111111;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+/* ---------- 顶部浮动按钮（不做整条标题栏） ---------- */
+
+.mn-lib-back {
+  position: absolute;
+  z-index: 20;
+  top: 20px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(35, 38, 43, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  color: #23262b;
+  cursor: pointer;
+}
+
+.mn-lib-heading {
+  position: absolute;
+  z-index: 20;
+  top: 28px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: rgba(35, 38, 43, 0.6);
+  pointer-events: none;
+}
+
+.mn-lib-import {
+  position: absolute;
+  z-index: 20;
+  top: 20px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 40px;
+  padding: 0 14px 0 11px;
+  border: none;
+  border-radius: 20px;
+  background: #23262b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mn-lib-import:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---------- 封面轮播 ---------- */
+
+.mn-lib-stage {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  height: 300px;
+  margin-top: 78px;
+}
+
+.mn-lib-book {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 210px;
+  height: 300px;
+  margin-left: -105px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition:
+    transform 0.55s cubic-bezier(0.3, 0.8, 0.3, 1),
+    opacity 0.35s;
+}
+
+.mn-lib-page,
+.mn-lib-cover {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 170px;
+  height: 236px;
+  overflow: hidden;
+  box-shadow: 0 12px 26px rgba(20, 24, 30, 0.22);
+}
+
+.mn-lib-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px 0 24px;
+  border-radius: 3px 8px 8px 3px;
+  background: #fbfaf6;
+  color: #23262b;
+  line-height: 1.8;
+  text-align: left;
+}
+
+.mn-lib-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px 8px 8px 4px;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 0.9s cubic-bezier(0.5, 0.1, 0.2, 1);
+}
+
+.mn-lib-cover__spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 7px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.mn-lib-cover__title {
+  padding: 0 16px 0 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.mn-lib-cover__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mn-lib-glass {
+  position: absolute;
+  top: 128px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.4);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  box-shadow: 0 6px 18px rgba(20, 24, 30, 0.08);
+  transition:
+    transform 0.6s ease,
+    opacity 0.4s ease;
+}
+
+.mn-lib-glass__pct {
+  position: absolute;
+  bottom: 16px;
+  left: 18px;
+  font-size: 12.5px;
+  color: #23262b;
+  font-variant-numeric: tabular-nums;
+}
+
+.mn-lib-glass__bar {
+  position: absolute;
+  right: 18px;
+  bottom: 21px;
+  width: 56px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(35, 38, 43, 0.14);
+}
+
+.mn-lib-glass__bar > span {
+  display: block;
+  height: 100%;
+  background: #23262b;
+}
+
+/* ---------- 书名和信息 ---------- */
+
+.mn-lib-caption {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin-top: 14px;
+  padding: 0 20px;
+  text-align: center;
+  transition: opacity 0.4s;
+}
+
+.mn-lib-caption__title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.mn-lib-caption__author {
+  font-size: 13px;
+  color: #6c7077;
+}
+
+.mn-lib-caption__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #5c6169;
+}
+
+.mn-lib-chip {
+  padding: 1px 6px;
+  border: 1px solid rgba(35, 38, 43, 0.28);
+  border-radius: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+
+.mn-lib-room {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 180px;
+  padding: 2px 9px 2px 7px;
+  border: none;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #23262b;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ---------- 进入阅读 ---------- */
+
+.mn-lib-actions {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  height: 96px;
+  margin-top: 18px;
+}
+
+.mn-lib-cta {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 220px;
+  height: 56px;
+  margin-left: -110px;
+  padding: 0 22px 0 6px;
+  border: none;
+  border-radius: 28px;
+  background: #23262b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.mn-lib-cta:disabled {
+  background: #9a9ea5;
+  cursor: default;
+}
+
+.mn-lib-cta__icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #23262b;
+}
+
+.mn-lib-cta__label {
+  flex: 1;
+  text-align: center;
+}
+
+.mn-lib-textbtn {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  width: 120px;
+  height: 28px;
+  margin-left: -60px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #6c7077;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+/* ---------- 阅读时长 ---------- */
+
+.mn-lib-time {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 22px 20px 0;
+}
+
+.mn-lib-time__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.mn-lib-time__title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mn-lib-time__sub {
+  font-size: 12.5px;
+  color: #6c7077;
+}
+
+.mn-lib-time__days {
+  display: flex;
+  gap: 7px;
+}
+
+.mn-lib-day {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  height: 84px;
+  padding: 7px 0 6px;
+  border: 1px solid #e6e6e1;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.mn-lib-day.is-today {
+  border: 1.5px solid #23262b;
+}
+
+.mn-lib-day__label {
+  font-size: 12px;
+  color: #7a7f87;
+}
+
+.mn-lib-day.is-today .mn-lib-day__label {
+  color: #23262b;
+  font-weight: 600;
+}
+
+.mn-lib-day__track {
+  position: relative;
+  width: 14px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #f0f0ec;
+}
+
+.mn-lib-day__fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.mn-lib-day__mins {
+  font-size: 11px;
+  color: #5c6169;
+  font-variant-numeric: tabular-nums;
+}
+
+.mn-lib-time__note {
+  font-size: 12.5px;
+  color: #5c6169;
+}
+
+.mn-lib-footer {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  margin-top: auto;
+  padding: 22px 20px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #8a8e95;
+}
+
+/* ---------- 空书架 ---------- */
+
+.mn-lib-empty {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 170px;
+  padding: 0 32px;
+  text-align: center;
+  font-size: 13px;
+  color: #6c7077;
+}
+
+.mn-lib-empty__title {
+  margin-top: 6px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #23262b;
+}
+
+.mn-lib-empty__text {
+  line-height: 1.6;
+}
+
+/* ---------- 底部弹层 ---------- */
+
+.mn-lib-sheet-backdrop {
+  position: fixed;
+  z-index: 110;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(20, 22, 26, 0.42);
+}
+
+.mn-lib-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 420px);
+  max-height: 86dvh;
+  padding: 14px 20px 26px;
+  border-radius: 20px 20px 0 0;
+  background: #ffffff;
+  color: #23262b;
+}
+
+.mn-lib-sheet__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mn-lib-sheet__title {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.mn-lib-sheet__close {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #f0f1ee;
+  color: #5c6169;
+  cursor: pointer;
+}
+
+.mn-lib-sheet__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.mn-lib-sheet__meta {
+  font-size: 12.5px;
+  color: #6c7077;
+}
+
+.mn-lib-sheet__actions {
+  display: flex;
+  flex: none;
+  gap: 10px;
+}
+
+.mn-lib-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-lib-field > span {
+  font-size: 12px;
+  color: #7a7f87;
+}
+
+.mn-lib-field input {
+  height: 44px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 12px;
+  background: #f0f1ee;
+  color: #23262b;
+  font-size: 15px;
+  outline: none;
+}
+
+.mn-lib-field__hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #7a7f87;
+}
+
+.mn-lib-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mn-lib-choice__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background: #f6f6f3;
+  color: #23262b;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mn-lib-choice__item.is-active {
+  border-color: #23262b;
+  background: #ffffff;
+}
+
+.mn-lib-choice__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #e4eaf0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+}
+
+.mn-lib-choice__avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mn-lib-choice__avatar--none {
+  background: #ececea;
+  color: #6c7077;
+}
+
+.mn-lib-choice__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mn-lib-choice__text b {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.mn-lib-choice__text small {
+  overflow: hidden;
+  font-size: 12px;
+  color: #7a7f87;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mn-lib-btn {
+  height: 46px;
+  border-radius: 23px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.mn-lib-btn--ghost {
+  flex: 1;
+  border: 1px solid #d5d6d0;
+  background: transparent;
+  color: #23262b;
+}
+
+.mn-lib-btn--solid {
+  flex: 2;
+  border: none;
+  background: #23262b;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.mn-lib-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mn-lib-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 14px;
+  background: #f6f6f3;
+  color: #23262b;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mn-lib-row:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mn-lib-row--danger {
+  color: #a8323e;
+}
+
+.mn-lib-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mn-lib-row__text b {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.mn-lib-row__text small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #7a7f87;
+}
+
+/* ---------- 提示和读取中 ---------- */
+
+.mn-lib-busy {
+  position: fixed;
+  z-index: 105;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 245, 242, 0.7);
+  font-size: 14px;
+  color: #23262b;
+}
+
+.mn-lib-toast {
+  position: fixed;
+  z-index: 130;
+  bottom: 28px;
+  left: 50%;
+  max-width: min(88vw, 360px);
+  padding: 10px 16px;
+  border-radius: 18px;
+  background: #23262b;
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  transform: translateX(-50%);
+  animation: mn-lib-toast-in 180ms ease both;
+}
+
+@keyframes mn-lib-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mn-lib-book,
+  .mn-lib-cover,
+  .mn-lib-glass,
+  .mn-lib-cta,
+  .mn-lib-textbtn,
+  .mn-lib-caption,
+  .mn-lib__tint {
+    transition: none;
+  }
+
+  .mn-lib-toast {
+    animation: none;
+  }
+}

@@ -4891,4 +4891,16 @@ db.version(85).stores({
   flightChessSessions: '++id, mainChatId, status, createdAt, updatedAt',
 });
 
+// v86：页边注「我的藏书」。readerBooks 存书的信息，readerBookFiles 存书的正文，
+// 拆开是为了清理文件后书的信息和以后的批注留言还能保留。
+db.version(86).stores({
+  readerBooks: '++id, chatId, title, lastReadAt, createdAt, updatedAt',
+  readerBookFiles: 'bookId',
+});
+
+// v87：阅读时长。每本书每天一行，[bookId+date] 是唯一索引。
+db.version(87).stores({
+  readerDailyReading: '++id, &[bookId+date], bookId, date',
+});
+
 export default db;

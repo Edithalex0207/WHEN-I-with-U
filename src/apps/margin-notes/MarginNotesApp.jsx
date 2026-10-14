@@ -13,6 +13,7 @@ import {
   Bookmark,
   Check,
   Download,
+  Library,
   MoreHorizontal,
   RefreshCw,
   Settings2,
@@ -27,6 +28,8 @@ import { CURATED_EXCERPTS } from './curatedExcerpts';
 import { generateMarginNotePage } from './marginNotesAiService';
 import { exportPageToImage } from './marginNotesExportService';
 
+import LibraryShelf from './library/LibraryShelf';
+import ReaderPage from './library/ReaderPage';
 import MarginNotesArchive from './MarginNotesArchive';
 import MarginNotesPage from './MarginNotesPage';
 import MarginNotesSettingsModal from './MarginNotesSettingsModal';
@@ -68,6 +71,7 @@ function createFallbackPage(character) {
 
 export default function MarginNotesApp({ onBackHub }) {
   const [activeView, setActiveView] = useState('reading');
+  const [readerBookId, setReaderBookId] = useState(null);
 
   const [characters, setCharacters] = useState([]);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
@@ -384,6 +388,15 @@ export default function MarginNotesApp({ onBackHub }) {
     setShowSettings(true);
   };
 
+  /**
+   * 打开「我的藏书」。藏书页自己占满整个页面（有自己的返回按钮），
+   * 返回时回到原来的书页视图。
+   */
+  const handleOpenLibrary = () => {
+    setShowMenu(false);
+    setActiveView('library');
+  };
+
   if (isLoading) {
     return (
       <div className="margin-notes-root">
@@ -399,6 +412,27 @@ export default function MarginNotesApp({ onBackHub }) {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (activeView === 'reader' && readerBookId) {
+    return (
+      <ReaderPage
+        bookId={readerBookId}
+        onBack={() => setActiveView('library')}
+      />
+    );
+  }
+
+  if (activeView === 'library' || activeView === 'reader') {
+    return (
+      <LibraryShelf
+        onBack={() => setActiveView('reading')}
+        onOpenReader={(bookId) => {
+          setReaderBookId(bookId);
+          setActiveView('reader');
+        }}
+      />
     );
   }
 
@@ -478,6 +512,15 @@ export default function MarginNotesApp({ onBackHub }) {
 
                     <button
                       type="button"
+                      onClick={handleOpenLibrary}
+                    >
+                      <Library size={14} strokeWidth={1.5} />
+                      <span>我的藏书</span>
+                      <span className="mn-menu__new">NEW</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={handleExport}
                       disabled={isExporting || !currentPage}
                     >
@@ -526,6 +569,15 @@ export default function MarginNotesApp({ onBackHub }) {
                     >
                       <Bookmark size={14} strokeWidth={1.5} />
                       <span>返回书页</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenLibrary}
+                    >
+                      <Library size={14} strokeWidth={1.5} />
+                      <span>我的藏书</span>
+                      <span className="mn-menu__new">NEW</span>
                     </button>
 
                     <button
