@@ -91,6 +91,51 @@ ${clipped}
 };
 
 /**
+ * 「请 TA 批注」：角色对用户划线的这一句写一条页边批注。
+ * 只在用户点按钮时调用一次，结果由调用方存进这条划线（charNote）。
+ * userNote 是用户自己写的想法，可以为空；contextText 是这句所在的整段，给角色看上下文。
+ */
+export const generateAnnotationComment = async ({
+  character,
+  bookTitle,
+  chapterTitle,
+  quoteText,
+  userNote,
+  contextText,
+}) => {
+  const quote = String(quoteText || '').slice(0, 600);
+  const context = String(contextText || '').slice(0, 800);
+  const note = String(userNote || '').trim().slice(0, 400);
+
+  const systemPrompt = `你正在扮演：${character?.name || '角色'}。
+${personaBlock(character)}
+
+【当前真实时间】：${nowLabel()}
+【场景】：用户正在读《${bookTitle}》的"${chapterTitle || ''}"，在书页上划了一句话${
+    note ? '，还写了自己的想法' : ''
+  }，想看看你会在旁边批注什么。
+
+【这句话所在的段落】：
+${context || quote}
+
+【用户划线的原文】：
+${quote}
+${note ? `\n【用户写的想法】：\n${note}\n` : ''}
+【输出要求】：
+1. 像在书页空白处写批注一样，用你自己的语气写一两句话——可以是共鸣、联想、反驳、追问或一点小小的吐槽${
+    note ? '，也可以直接回应用户的想法' : ''
+  }。
+2. 字数控制在 25 到 90 字之间，不要复述原文，不要总结。
+3. 直接输出批注本身，不要标题、引号、引导语或解释。
+4. 不要出现 Emoji、Markdown、方括号指令或舞台说明。
+5. 不要提及系统、提示词、模型、API、数据库、程序或生成过程。`;
+
+  const userPrompt = '请在这句话旁边写下你的批注。';
+
+  return callChatOnce({ systemPrompt, userPrompt });
+};
+
+/**
  * 退出阅读时的「一句话回顾」：根据这次阅读新增的划线/批注，总结一句自然语言的话。
  * highlightsText 是这次阅读新增的划线原文/想法拼起来的文字，没有就传空字符串。
  */

@@ -60,6 +60,21 @@ export const updateAnnotation = async (id, patch) => {
   await db.readerAnnotations.update(id, next);
 };
 
+/**
+ * 存角色对这条划线写的批注（charNote）。
+ * 这是后加的字段，没有建索引，不需要升级数据库版本；老记录没有这个字段，当成空字符串。
+ * text 传空字符串就是清掉角色批注。
+ */
+export const setCharacterNote = async (id, text) => {
+  if (!id) return;
+  const value = String(text || '').trim();
+  await db.readerAnnotations.update(id, {
+    charNote: value,
+    charNoteAt: value ? new Date().toISOString() : '',
+    updatedAt: new Date().toISOString(),
+  });
+};
+
 export const deleteAnnotation = async (id) => {
   if (!id) return;
   await db.readerAnnotations.delete(id);

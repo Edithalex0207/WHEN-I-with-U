@@ -61,9 +61,14 @@ import {
   getBookAnnotations,
   getChapterAnnotations,
   sendAnnotationToChat,
+  setCharacterNote,
   updateAnnotation,
 } from './readerAnnotationService';
-import { generateReaderComment, generateReadingRecap } from './readerAiService';
+import {
+  generateAnnotationComment,
+  generateReaderComment,
+  generateReadingRecap,
+} from './readerAiService';
 import { sendReadingSummary } from './readerSummaryService';
 import { clearNativeSelection, getParagraphSelection } from './selectionOffset';
 import ReadingTimerBadge from './ReadingTimerBadge';
@@ -71,6 +76,7 @@ import ReaderSettingsPanel from './ReaderSettingsPanel';
 import ReaderTocSheet from './ReaderTocSheet';
 import SelectionToolbar from './SelectionToolbar';
 import AnnotationComposer from './AnnotationComposer';
+import AnnotationDetailSheet from './AnnotationDetailSheet';
 import ReaderCommentSheet from './ReaderCommentSheet';
 import ReaderExitSummary from './ReaderExitSummary';
 
@@ -95,7 +101,7 @@ const ChapterBody = React.memo(function ChapterBody({
   focus,
   focusIdx,
   onPickPara,
-  onEditHighlight,
+  onOpenHighlight,
   annotationsByPara,
   paraRefs,
 }) {
@@ -103,9 +109,10 @@ const ChapterBody = React.memo(function ChapterBody({
     <>
       {paragraphs.map((text, index) => {
         const dimmed = focus && index !== focusIdx;
-        const segments = buildHighlightSegments(
-          text,
-          annotationsByPara.get(index)
+        const paraAnnotations = annotationsByPara.get(index);
+        const segments = buildHighlightSegments(text, paraAnnotations);
+        const annotationById = new Map(
+          (paraAnnotations || []).map((item) => [item.id, item])
         );
 
         return (
@@ -135,20 +142,58 @@ const ChapterBody = React.memo(function ChapterBody({
                 return <React.Fragment key={segIndex}>{content}</React.Fragment>;
               }
 
+              const annotation = annotationById.get(segment.highlight.id);
+              const hasMine = Boolean(annotation?.note);
+              const hasTa = Boolean(annotation?.charNote);
+
               return (
-                <mark
-                  key={segIndex}
-                  className="mn-rd-mark"
-                  style={{
-                    background: HIGHLIGHT_COLORS[segment.highlight.color]?.bg,
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onEditHighlight(segment.highlight.id);
-                  }}
-                >
-                  {content}
-                </mark>
+                <React.Fragment key={segIndex}>
+                  <mark
+                    className="mn-rd-mark"
+                    style={{
+                      background: HIGHLIGHT_COLORS[segment.highlight.color]?.bg,
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onOpenHighlight(segment.highlight.id);
+                    }}
+                  >
+                    {content}
+                  </mark>
+                  {/* 有想法/角色批注的划线，句尾挂一个小标记，点开看批注。
+                      标记里没有文字节点，不影响选区的字符偏移计算。 */}
+                  {(hasMine || hasTa) && (
+                    <span
+                      className="mn-rd-marker"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={
+                        hasMine && hasTa
+                          ? '查看我的批注和 TA 的批注'
+                          : hasTa
+                            ? '查看 TA 的批注'
+                            : '查看我的批注'
+                      }
+                      style={{
+                        '--mk': HIGHLIGHT_COLORS[segment.highlight.color]?.dot,
+                      }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenHighlight(segment.highlight.id);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onOpenHighlight(segment.highlight.id);
+                        }
+                      }}
+                    >
+                      {hasMine && <i className="is-me" />}
+                      {hasTa && <i className="is-ta" />}
+                    </span>
+                  )}
+                </React.Fragment>
               );
             })}
           </p>
@@ -193,6 +238,7 @@ export default function ReaderPage({ bookId, onBack }) {
   const [chapterAnnotations, setChapterAnnotations] = useState([]);
   const [selection, setSelection] = useState(null); // { paragraphIndex, start, end, text, rect }
   const [composer, setComposer] = useState(null);
+  const [detailId, setDetailId] = useState(null);
   const [commentOpen, setCommentOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   const [toast, setToast] = useState('');
@@ -479,6 +525,7 @@ export default function ReaderPage({ bookId, onBack }) {
       dirtyRef.current = true;
       setFocusIdx(0);
       setSelection(null);
+      setDetailId(null);
       setTocOpen(false);
       setChapterIndex(target);
       scheduleSave();
@@ -694,11 +741,40 @@ export default function ReaderPage({ bookId, onBack }) {
     dismissSelection();
   }, [selection, dismissSelection, showToast]);
 
+  // 点正文里的划线/小标记：先打开「批注」面板（我的批注 + 角色批注），
+  // 要改的话再从面板里点「编辑」进写批注面板。
+  const handleOpenHighlight = useCallback((annotationId) => {
+    setSelection(null);
+    clearNativeSelection();
+    setDetailId(annotationId);
+  }, []);
+
+  const handleAskCharacterNote = useCallback(
+    async (annotation) => {
+      if (!character || !book || !annotation) return;
+
+      const text = await generateAnnotationComment({
+        character,
+        bookTitle: book.title,
+        chapterTitle: annotation.chapterTitle || chapter?.title || '',
+        quoteText: annotation.text,
+        userNote: annotation.note,
+        contextText: paragraphs[annotation.paragraphIndex] || '',
+      });
+
+      await setCharacterNote(annotation.id, text);
+      sessionCommentsRef.current += 1;
+      refreshChapterAnnotations();
+    },
+    [character, book, chapter, paragraphs, refreshChapterAnnotations]
+  );
+
   const handleEditHighlight = useCallback(
     (annotationId) => {
       const found = chapterAnnotations.find((item) => item.id === annotationId);
       if (!found) return;
       setSelection(null);
+      setDetailId(null);
       setComposer({
         mode: 'edit',
         annotationId: found.id,
@@ -1030,7 +1106,7 @@ export default function ReaderPage({ bookId, onBack }) {
             focus={settings.focus}
             focusIdx={focusIdx}
             onPickPara={handlePickPara}
-            onEditHighlight={handleEditHighlight}
+            onOpenHighlight={handleOpenHighlight}
             annotationsByPara={annotationsByPara}
             paraRefs={paraRefs}
           />
@@ -1139,6 +1215,16 @@ export default function ReaderPage({ bookId, onBack }) {
             handleEditFromList(annotation);
           }}
           onClose={() => setTocOpen(false)}
+        />
+      )}
+
+      {detailId && (
+        <AnnotationDetailSheet
+          annotation={chapterAnnotations.find((item) => item.id === detailId)}
+          characterName={character?.name || ''}
+          onAsk={handleAskCharacterNote}
+          onEdit={(annotation) => handleEditHighlight(annotation.id)}
+          onClose={() => setDetailId(null)}
         />
       )}
 

@@ -826,6 +826,142 @@
   color: inherit;
 }
 
+/* ---------- 句尾小标记（有想法 / 有角色批注的划线） ---------- */
+
+.mn-rd-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 1px 0 3px;
+  vertical-align: super;
+  line-height: 0;
+  text-indent: 0;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  outline: none;
+}
+
+/* 标记本身很小，用透明的伪元素把可点区域撑大一圈，手机上好点 */
+.mn-rd-marker::after {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  bottom: -10px;
+  left: -8px;
+  content: '';
+}
+
+.mn-rd-marker i {
+  display: block;
+  box-sizing: border-box;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* 我的想法：实心点，颜色跟这条划线的颜色走 */
+.mn-rd-marker .is-me {
+  background: var(--mk, var(--rd-accent));
+  box-shadow: 0 0 0 1px var(--rd-line);
+}
+
+/* 角色的批注：空心圈，用阅读主题的强调色 */
+.mn-rd-marker .is-ta {
+  border: 1.5px solid var(--rd-accent);
+  background: var(--rd-bg);
+}
+
+.mn-rd-marker:focus-visible i {
+  box-shadow: 0 0 0 2px var(--rd-accent);
+}
+
+/* ---------- 批注面板（点划线 / 小标记打开） ---------- */
+
+.mn-rd-detail__quote {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  color: var(--rd-fg);
+}
+
+.mn-rd-detail__block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--rd-chip);
+}
+
+.mn-rd-detail__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--rd-sub);
+}
+
+.mn-rd-detail__dot {
+  display: block;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.mn-rd-detail__dot--me {
+  background: var(--rd-accent);
+}
+
+.mn-rd-detail__dot--ta {
+  border: 1.5px solid var(--rd-accent);
+}
+
+.mn-rd-detail__edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 4px 2px;
+  border: none;
+  background: none;
+  color: var(--rd-accent);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.mn-rd-detail__text {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--rd-fg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mn-rd-detail__text.is-empty {
+  font-size: 13px;
+  color: var(--rd-sub);
+}
+
+.mn-rd-detail__error {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #c0564f;
+}
+
+.mn-rd-detail .mn-rd-comment__again:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* ---------- 选区工具条 ---------- */
 
 .mn-rd-seltoolbar {
