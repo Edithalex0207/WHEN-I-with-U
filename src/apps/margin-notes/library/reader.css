@@ -1200,6 +1200,265 @@
   cursor: pointer;
 }
 
+/* ---------- 请 TA 一起读 ---------- */
+
+.mn-rd-comment {
+  position: absolute;
+  z-index: 45;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 72%;
+  border-radius: 20px 20px 0 0;
+  background: var(--rd-panel);
+  color: var(--rd-fg);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.mn-rd-comment__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 6px;
+}
+
+.mn-rd-comment__title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.mn-rd-comment__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--rd-chip);
+  color: var(--rd-fg);
+  cursor: pointer;
+}
+
+.mn-rd-comment__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 18px 28px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mn-rd-comment__sub {
+  font-size: 12.5px;
+  color: var(--rd-sub);
+}
+
+.mn-rd-comment__scope {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--rd-line);
+  border-radius: 12px;
+  background: var(--rd-chip);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mn-rd-comment__scope:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mn-rd-comment__scope-label {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--rd-fg);
+}
+
+.mn-rd-comment__scope-hint {
+  font-size: 12px;
+  color: var(--rd-sub);
+}
+
+.mn-rd-comment__loading {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--rd-sub);
+}
+
+.mn-rd-comment__result {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--rd-chip);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--rd-fg);
+}
+
+.mn-rd-comment__error {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--rd-chip);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--rd-sub);
+}
+
+.mn-rd-comment__again {
+  align-self: center;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: var(--rd-accent);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ---------- 退出阅读小结 ---------- */
+
+.mn-rd-exit {
+  position: absolute;
+  z-index: 48;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 86%;
+  overflow-y: auto;
+  padding: 0 18px 26px;
+  border-radius: 20px 20px 0 0;
+  background: var(--rd-panel);
+  color: var(--rd-fg);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
+  -webkit-overflow-scrolling: touch;
+}
+
+.mn-rd-exit__head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 4px;
+  background: var(--rd-panel);
+}
+
+.mn-rd-exit__title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.mn-rd-exit__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--rd-chip);
+  color: var(--rd-fg);
+  cursor: pointer;
+}
+
+.mn-rd-exit__card {
+  padding: 14px 16px;
+  border: 1px solid var(--rd-line);
+  border-radius: 16px;
+  background: var(--rd-panel);
+}
+
+.mn-rd-exit__card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--rd-accent);
+}
+
+.mn-rd-exit__stats {
+  display: flex;
+  margin-top: 12px;
+}
+
+.mn-rd-exit__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.mn-rd-exit__stat-value {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mn-rd-exit__stat-label {
+  font-size: 11px;
+  color: var(--rd-sub);
+}
+
+.mn-rd-exit__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mn-rd-exit__row-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mn-rd-exit__row-title {
+  font-size: 14px;
+}
+
+.mn-rd-exit__row-sub {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--rd-sub);
+}
+
+.mn-rd-exit__modefield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mn-rd-exit__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mn-rd-exit__skip {
+  align-self: center;
+  padding: 4px;
+  border: none;
+  background: none;
+  color: var(--rd-sub);
+  font-size: 13px;
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mn-rd-glow,
   .mn-rd-badge__dot {

@@ -14,12 +14,14 @@ const IDLE_LIMIT_MS = 60 * 1000;
 const FLUSH_EVERY_SECONDS = 15;
 const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'touchstart', 'wheel'];
 
-export default function ReadingTimerBadge({ bookId }) {
+export default function ReadingTimerBadge({ bookId, onMinutesChange }) {
   const [minutes, setMinutes] = useState(0);
 
   const lastActiveRef = useRef(Date.now());
   const pendingRef = useRef(0);
   const sessionRef = useRef(0);
+  const onMinutesChangeRef = useRef(onMinutesChange);
+  onMinutesChangeRef.current = onMinutesChange;
 
   useEffect(() => {
     lastActiveRef.current = Date.now();
@@ -62,6 +64,7 @@ export default function ReadingTimerBadge({ bookId }) {
 
       const nextMinutes = Math.floor(sessionRef.current / 60);
       setMinutes((previous) => (previous === nextMinutes ? previous : nextMinutes));
+      onMinutesChangeRef.current?.(nextMinutes);
 
       if (pendingRef.current >= FLUSH_EVERY_SECONDS) flush();
     }, 1000);

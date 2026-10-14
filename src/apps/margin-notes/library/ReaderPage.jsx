@@ -7,12 +7,20 @@
 // 网页字体是后来才加载完的，加载完会让排版变一下，所以字体加载完成时再按比例放一次。
 //
 // 进度保存：滚动停下 0.8 秒后写一次；切到后台、关页面、离开阅读页时马上写。
-// 阅读计时在 ReadingTimerBadge 里，不在这里，免得每秒触发整页重渲染。
+// 阅读计时在 ReadingTimerBadge 里，不在这里，免得每秒触发整页重渲染
+// （这里只透过 onMinutesChange 拿「这次阅读了几分钟」这一个数，给退出小结用）。
 //
-// 选中文字（本切片新增）：选区只能落在同一段落里，选完会在上方弹出小工具条
+// 选中文字：选区只能落在同一段落里，选完会在上方弹出小工具条
 // ——四个颜色点直接划线，「批注」「发到聊天室」都会打开写批注的面板
 // （面板里有「同时发到聊天室」开关，两个入口打开的是同一个面板），
 // 「复制」把选中文字拷到剪贴板。点一下已经划好的线会打开同一个面板来改/删它。
+//
+// 请 TA 一起读：选一个范围（这一段/这一章/你划线的地方），调一次 AI，
+// 结果只在阅读页展示一次，不写进聊天记录。
+//
+// 退出阅读：点返回藏书页会先弹一个小结（这次读了几分钟、新增几条批注/留言），
+// 问要不要把摘要发到绑定的聊天室；同一本书的摘要卡片只保留一张，默认是
+// 更新上次那张，也可以选择另发一张。
 
 import React, {
   useCallback,
@@ -22,7 +30,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
 
 import db from '../../../db';
 
@@ -50,21 +58,32 @@ import {
 import {
   addAnnotation,
   deleteAnnotation,
+  getBookAnnotations,
   getChapterAnnotations,
   sendAnnotationToChat,
   updateAnnotation,
 } from './readerAnnotationService';
+import { generateReaderComment, generateReadingRecap } from './readerAiService';
+import { sendReadingSummary } from './readerSummaryService';
 import { clearNativeSelection, getParagraphSelection } from './selectionOffset';
 import ReadingTimerBadge from './ReadingTimerBadge';
 import ReaderSettingsPanel from './ReaderSettingsPanel';
 import ReaderTocSheet from './ReaderTocSheet';
 import SelectionToolbar from './SelectionToolbar';
 import AnnotationComposer from './AnnotationComposer';
+import ReaderCommentSheet from './ReaderCommentSheet';
+import ReaderExitSummary from './ReaderExitSummary';
 
 import './reader.css';
 
 const SAVE_DELAY_MS = 800;
 const TOAST_MS = 1600;
+
+const SCOPE_LABELS = {
+  para: '这一段',
+  chapter: '这一章',
+  highlights: '你划线的地方',
+};
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
 
@@ -170,9 +189,12 @@ export default function ReaderPage({ bookId, onBack }) {
 
   const [chatLabel, setChatLabel] = useState('');
   const [canSendToChat, setCanSendToChat] = useState(false);
+  const [character, setCharacter] = useState(null);
   const [chapterAnnotations, setChapterAnnotations] = useState([]);
   const [selection, setSelection] = useState(null); // { paragraphIndex, start, end, text, rect }
   const [composer, setComposer] = useState(null);
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
   const [toast, setToast] = useState('');
 
   const scrollRef = useRef(null);
@@ -186,8 +208,17 @@ export default function ReaderPage({ bookId, onBack }) {
   const chapterIndexRef = useRef(0);
   const chapterLengthsRef = useRef([]);
   const loadedSettingsRef = useRef(null);
+  const percentRef = useRef(0);
+
+  // 这次打开这本书以来的小统计，给退出时的阅读摘要用
+  const sessionMinutesRef = useRef(0);
+  const sessionChaptersRef = useRef(new Set());
+  const sessionNewAnnotationsRef = useRef(0);
+  const sessionAnnotationNotesRef = useRef([]);
+  const sessionCommentsRef = useRef(0);
 
   chapterIndexRef.current = chapterIndex;
+  percentRef.current = percent;
 
   const chapterLengths = useMemo(
     () => (chapters ? chapters.map((item) => (item.text || '').length) : []),
@@ -246,12 +277,13 @@ export default function ReaderPage({ bookId, onBack }) {
         try {
           const chat = await db.chats.get(bookRow.chatId);
           if (alive && chat) {
-            const character = chat.characterId
+            const characterRow = chat.characterId
               ? await db.characters.get(chat.characterId)
               : null;
-            const name = character?.name || '未知角色';
+            const name = characterRow?.name || '未知角色';
             setChatLabel(chat.title || `和${name}的聊天`);
             setCanSendToChat(true);
+            setCharacter(characterRow || null);
           }
         } catch (error) {
           console.warn('[阅读器] 读取绑定的聊天室失败：', error);
@@ -270,6 +302,7 @@ export default function ReaderPage({ bookId, onBack }) {
       restoreRef.current = clamp01(Number(bookRow.lastChapterOffset) || 0);
       touchedRef.current = false;
       dirtyRef.current = false;
+      sessionChaptersRef.current.add(index);
       setChapters(content);
       setChapterIndex(index);
       setPercent(Math.max(0, Math.min(100, Number(bookRow.progress) || 0)));
@@ -297,6 +330,7 @@ export default function ReaderPage({ bookId, onBack }) {
   useEffect(() => {
     if (status !== 'ready') return;
     let alive = true;
+    sessionChaptersRef.current.add(chapterIndex);
     getChapterAnnotations(bookId, chapterIndex).then((rows) => {
       if (alive) setChapterAnnotations(rows);
     });
@@ -516,6 +550,20 @@ export default function ReaderPage({ bookId, onBack }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.focus, status]);
 
+  // 找屏幕上方第一个可见的段落序号（「请 TA 一起读」选"这一段"时用）
+  const findTopVisibleParaIndex = useCallback(() => {
+    const node = scrollRef.current;
+    if (!node) return 0;
+    const top = node.getBoundingClientRect().top;
+    for (let index = 0; index < paragraphs.length; index += 1) {
+      const element = paraRefs.current[index];
+      if (element && element.getBoundingClientRect().bottom > top + 24) {
+        return index;
+      }
+    }
+    return Math.max(0, paragraphs.length - 1);
+  }, [paragraphs]);
+
   /* ---------- 选中文字 ---------- */
 
   const handleSelectionChange = useCallback(() => {
@@ -572,6 +620,11 @@ export default function ReaderPage({ bookId, onBack }) {
     setSelection(null);
   }, []);
 
+  const noteSessionAnnotation = useCallback((text, note) => {
+    sessionNewAnnotationsRef.current += 1;
+    sessionAnnotationNotesRef.current.push({ text, note: note || '' });
+  }, []);
+
   const handlePickColor = useCallback(
     async (color) => {
       if (!selection) return;
@@ -585,10 +638,19 @@ export default function ReaderPage({ bookId, onBack }) {
         text: selection.text,
         color,
       });
+      noteSessionAnnotation(selection.text, '');
       dismissSelection();
       refreshChapterAnnotations();
     },
-    [selection, bookId, chapterIndex, chapter, dismissSelection, refreshChapterAnnotations]
+    [
+      selection,
+      bookId,
+      chapterIndex,
+      chapter,
+      dismissSelection,
+      refreshChapterAnnotations,
+      noteSessionAnnotation,
+    ]
   );
 
   const openComposerForSelection = useCallback(() => {
@@ -682,6 +744,7 @@ export default function ReaderPage({ bookId, onBack }) {
           color,
           note,
         });
+        noteSessionAnnotation(composer.quoteText, note);
       } else {
         await updateAnnotation(composer.annotationId, { color, note });
         annotation = {
@@ -696,7 +759,7 @@ export default function ReaderPage({ bookId, onBack }) {
       }
 
       if (sendToChat && book) {
-        const sent = await sendAnnotationToChat({ annotation, book, percent });
+        const sent = await sendAnnotationToChat({ annotation, book, percent: percentRef.current });
         if (!sent) showToast('没能发到聊天室');
         else showToast('已发到聊天室');
       }
@@ -706,7 +769,7 @@ export default function ReaderPage({ bookId, onBack }) {
       }
       setComposer(null);
     },
-    [composer, bookId, book, percent, refreshChapterAnnotations, showToast]
+    [composer, bookId, book, refreshChapterAnnotations, showToast, noteSessionAnnotation]
   );
 
   const handleComposerDelete = useCallback(async () => {
@@ -717,6 +780,101 @@ export default function ReaderPage({ bookId, onBack }) {
     }
     setComposer(null);
   }, [composer, refreshChapterAnnotations]);
+
+  /* ---------- 请 TA 一起读 ---------- */
+
+  const handleCommentScope = useCallback(
+    async (scopeId) => {
+      if (!character || !book) return null;
+
+      let excerptText = '';
+      if (scopeId === 'para') {
+        const index = settings.focus ? focusIdx : findTopVisibleParaIndex();
+        excerptText = paragraphs[index] || '';
+      } else if (scopeId === 'chapter') {
+        excerptText = chapter?.text || '';
+      } else if (scopeId === 'highlights') {
+        const rows = await getBookAnnotations(bookId);
+        if (rows.length === 0) return null;
+        excerptText = rows
+          .map((item) => `• ${item.text}${item.note ? `（想法：${item.note}）` : ''}`)
+          .join('\n');
+      }
+
+      if (!excerptText.trim()) return null;
+
+      const text = await generateReaderComment({
+        character,
+        bookTitle: book.title,
+        scopeLabel: SCOPE_LABELS[scopeId] || '这段内容',
+        excerptText,
+      });
+
+      sessionCommentsRef.current += 1;
+      return text;
+    },
+    [character, book, bookId, chapter, paragraphs, settings.focus, focusIdx, findTopVisibleParaIndex]
+  );
+
+  /* ---------- 退出阅读 ---------- */
+
+  const handleRequestExit = useCallback(() => {
+    persist();
+    setExitOpen(true);
+  }, [persist]);
+
+  const handleLeaveWithoutSending = useCallback(() => {
+    setExitOpen(false);
+    onBack();
+  }, [onBack]);
+
+  const handleCancelExit = useCallback(() => {
+    setExitOpen(false);
+  }, []);
+
+  const buildExitStats = useCallback(
+    () => ({
+      minutes: sessionMinutesRef.current,
+      chaptersRead: sessionChaptersRef.current.size,
+      newAnnotations: sessionNewAnnotationsRef.current,
+      newComments: sessionCommentsRef.current,
+      percent: percentRef.current,
+      chapterTitle: chapter?.title || '',
+    }),
+    [chapter]
+  );
+
+  const handleSendSummary = useCallback(
+    async ({ mode, includeRecap }) => {
+      if (!book) return;
+
+      let recap = '';
+      if (includeRecap && character) {
+        try {
+          recap = await generateReadingRecap({
+            character,
+            bookTitle: book.title,
+            chapterTitle: chapter?.title || '',
+            highlightsText: sessionAnnotationNotesRef.current
+              .map((item) => `${item.text}${item.note ? `：${item.note}` : ''}`)
+              .join('\n'),
+          });
+        } catch (error) {
+          console.warn('[阅读器] 生成一句话回顾失败：', error);
+        }
+      }
+
+      try {
+        await sendReadingSummary({ book, stats: buildExitStats(), recap, mode });
+      } catch (error) {
+        console.warn('[阅读器] 发送阅读摘要失败：', error);
+      }
+
+      setExitOpen(false);
+      onBack();
+    },
+    [book, character, chapter, buildExitStats, onBack]
+  );
 
   /* ---------- 渲染 ---------- */
 
@@ -737,16 +895,11 @@ export default function ReaderPage({ bookId, onBack }) {
     '--rd-glow-b': theme.glowB,
   };
 
-  const handleBack = () => {
-    persist();
-    onBack();
-  };
-
   const backButton = (
     <button
       type="button"
       className="mn-rd-iconbtn mn-rd-iconbtn--back"
-      onClick={handleBack}
+      onClick={handleRequestExit}
       aria-label="返回藏书"
     >
       <ArrowLeft size={20} strokeWidth={1.8} />
@@ -763,7 +916,14 @@ export default function ReaderPage({ bookId, onBack }) {
 
     return (
       <div className="mn-rd-root" style={rootStyle}>
-        {backButton}
+        <button
+          type="button"
+          className="mn-rd-iconbtn mn-rd-iconbtn--back"
+          onClick={onBack}
+          aria-label="返回藏书"
+        >
+          <ArrowLeft size={20} strokeWidth={1.8} />
+        </button>
         <div className="mn-rd-empty">{message}</div>
       </div>
     );
@@ -793,7 +953,12 @@ export default function ReaderPage({ bookId, onBack }) {
       <div className="mn-rd-glow mn-rd-glow--b" aria-hidden="true" />
 
       {backButton}
-      <ReadingTimerBadge bookId={bookId} />
+      <ReadingTimerBadge
+        bookId={bookId}
+        onMinutesChange={(minutes) => {
+          sessionMinutesRef.current = minutes;
+        }}
+      />
 
       <div className="mn-rd-topright">
         <button
@@ -804,6 +969,16 @@ export default function ReaderPage({ bookId, onBack }) {
         >
           <ListIcon />
         </button>
+        {character && (
+          <button
+            type="button"
+            className="mn-rd-iconbtn"
+            onClick={() => setCommentOpen(true)}
+            aria-label={`请 ${character.name} 一起读`}
+          >
+            <MessageSquare size={18} strokeWidth={1.8} />
+          </button>
+        )}
         <button
           type="button"
           className={`mn-rd-iconbtn mn-rd-iconbtn--text${
@@ -968,6 +1143,29 @@ export default function ReaderPage({ bookId, onBack }) {
           onCancel={closeComposer}
           onSave={handleComposerSave}
           onDelete={composer.mode === 'edit' ? handleComposerDelete : null}
+        />
+      )}
+
+      {commentOpen && character && (
+        <ReaderCommentSheet
+          characterName={character.name}
+          canUseHighlights
+          onPickScope={handleCommentScope}
+          onClose={() => setCommentOpen(false)}
+        />
+      )}
+
+      {exitOpen && (
+        <ReaderExitSummary
+          bookTitle={book.title}
+          chapterTitle={chapter.title}
+          chatLabel={chatLabel}
+          canSendToChat={canSendToChat}
+          hasExistingSummary={Boolean(book.summaryMessageId)}
+          stats={buildExitStats()}
+          onCancel={handleCancelExit}
+          onLeaveWithoutSending={handleLeaveWithoutSending}
+          onSend={handleSendSummary}
         />
       )}
     </div>
