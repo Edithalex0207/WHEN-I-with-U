@@ -27,6 +27,7 @@ import {
 import {
   drawCardFromDeck, drawCustomCard, getDeck, CUSTOM_DECK_META,
 } from './flightChessCardData';
+import { getAllEffectiveDecks } from './flightChessDeckService';
 import {
   rollDie, buildForwardPath, buildBackwardPath, advanceTurn, normalizeSession,
   appendLog, bumpStat, getLoserIndexes,
@@ -49,11 +50,15 @@ import './flightChess.css';
 
 class UnmountedError extends Error {}
 
+// 掷骰反应气泡生成完之后，至少留这么久再弹翻牌弹窗，不然气泡秒没
+const ROLL_BUBBLE_READ_MS = 1300;
+
 const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
   const [session, setSession] = useState(null);
   const [board, setBoard] = useState(null);
   const [charactersById, setCharactersById] = useState({});
   const [chat, setChat] = useState(null);
+  const [deckCardsById, setDeckCardsById] = useState({});
   const [phase, setPhase] = useState('loading'); // loading | setup | idle | rolling | moving | modal | finished
   const [, setDice] = useState(1);
   const [status, setStatus] = useState('');
@@ -84,7 +89,9 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
 
   const userName = chat?.userName || '你';
 
-  ctxRef.current = { board, charactersById, userName };
+  ctxRef.current = {
+    board, charactersById, userName, deckCardsById,
+  };
   modalRef.current = modal;
   rollBubbleRef.current = rollBubble;
 
@@ -111,10 +118,11 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     if (!found) return;
     const normalized = normalizeSession(found);
 
-    const [foundBoard, chars, foundChat] = await Promise.all([
+    const [foundBoard, chars, foundChat, effectiveDecks] = await Promise.all([
       getBoardById(normalized.boardId),
       db.characters.toArray(),
       db.chats.get(normalized.mainChatId),
+      getAllEffectiveDecks(),
     ]);
     if (!mountedRef.current) return;
 
@@ -129,6 +137,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     setBoard(foundBoard);
     setCharactersById(Object.fromEntries(chars.map((c) => [c.id, c])));
     setChat(foundChat || null);
+    setDeckCardsById(effectiveDecks || {});
 
     if (normalized.status === 'setup') {
       setPhase('setup');
@@ -461,7 +470,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     return false;
   }, [commit, finishGame, movePlayer, nameOf]);
 
-  const resolveLanding = useCallback(async (playerIndex) => {
+  const resolveLanding = useCallback(async (playerIndex, rollCommentPromise) => {
     const { board: currentBoard } = ctxRef.current;
     const s = sessionRef.current;
     const position = s.players[playerIndex].position;
@@ -519,7 +528,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
       };
       const draw = deckId === 'custom'
         ? drawCustomCard(latest.questionCards, latest.drawnCardIds, names)
-        : drawCardFromDeck(deckId, latest.drawnCardIds);
+        : drawCardFromDeck(deckId, latest.drawnCardIds, ctxRef.current.deckCardsById?.[deckId]);
 
       config.needsFlip = true;
       config.deckMeta = deckId === 'custom' ? CUSTOM_DECK_META : getDeck(deckId);
@@ -547,6 +556,14 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     const { deckMeta: pendingDeck, ...pendingConfig } = config;
     await commit({ pendingTask: { ...pendingConfig, deckId: pendingDeck?.id || null } });
 
+    // 翻牌弹窗一开，掷骰反应气泡就会被盖住：先等气泡的内容生成完、
+    // 再留一点点时间让人看清楚，弹窗再出现（不影响棋子跳格子的动画）
+    if (rollCommentPromise) {
+      try { await rollCommentPromise; } catch { /* 气泡请求本身不会抛错，这里只是保险 */ }
+      if (!mountedRef.current) return;
+      await sleep(ROLL_BUBBLE_READ_MS);
+    }
+
     await openPromptModal(config);
     if (!mountedRef.current) return;
     await commit({ pendingTask: null });
@@ -554,7 +571,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     const finished = await applyEffect(playerIndex, config.effect);
     if (finished) return;
     await endTurn(playerIndex);
-  }, [applyEffect, commit, endTurn, finishGame, nameOf, openPromptModal]);
+  }, [applyEffect, commit, endTurn, finishGame, nameOf, openPromptModal, sleep]);
 
   const runTurn = useCallback(async (playerIndex) => {
     const s = sessionRef.current;
@@ -571,7 +588,9 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
       isAI: s.players[playerIndex].type === 'character',
     });
     setDice(value);
-    if (sessionRef.current.rollReactions !== false) fetchRollComment({ playerIndex, value });
+    const rollCommentPromise = sessionRef.current.rollReactions !== false
+      ? fetchRollComment({ playerIndex, value })
+      : null;
     setStatus(`${actorName} 掷出了 ${value} 点`);
     await commit({
       log: appendLog(s.log, { kind: 'system', text: `${actorName} 掷出 ${value} 点` }),
@@ -581,7 +600,7 @@ const FlightChessRoom = ({ sessionId, onBack, onChatRoomStateChange }) => {
     setPhase('moving');
     const path = buildForwardPath(sessionRef.current.players[playerIndex].position, value, lastIndex);
     await movePlayer(playerIndex, path);
-    await resolveLanding(playerIndex);
+    await resolveLanding(playerIndex, rollCommentPromise);
   }, [commit, fetchRollComment, movePlayer, nameOf, resolveLanding, showDice, sleep]);
 
   const handleRoll = useCallback(async () => {

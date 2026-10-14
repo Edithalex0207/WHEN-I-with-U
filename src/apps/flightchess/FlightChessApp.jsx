@@ -14,6 +14,7 @@ import { getAllSessions, deleteSession, getAllBoards } from './flightChessServic
 import FlightChessRoom from './FlightChessRoom';
 import FlightChessLobby from './FlightChessLobby';
 import FlightChessWizard from './FlightChessWizard';
+import FlightChessDeckManager from './FlightChessDeckManager';
 
 const FlightChessApp = ({ onBackHub, onChatRoomStateChange }) => {
   const [activeSessionId, setActiveSessionId] = useState(null);
@@ -21,6 +22,7 @@ const FlightChessApp = ({ onBackHub, onChatRoomStateChange }) => {
   const [charactersById, setCharactersById] = useState({});
   const [boardsById, setBoardsById] = useState({});
   const [showWizard, setShowWizard] = useState(false);
+  const [showDeckManager, setShowDeckManager] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const loadSessions = useCallback(async () => {
@@ -87,6 +89,7 @@ const FlightChessApp = ({ onBackHub, onChatRoomStateChange }) => {
         onOpen={setActiveSessionId}
         onNew={handleNew}
         onDelete={setDeleteTargetId}
+        onOpenDecks={() => setShowDeckManager(true)}
       />
 
       {showWizard && (
@@ -94,6 +97,10 @@ const FlightChessApp = ({ onBackHub, onChatRoomStateChange }) => {
           onCancel={() => setShowWizard(false)}
           onCreated={handleCreated}
         />
+      )}
+
+      {showDeckManager && (
+        <FlightChessDeckManager onBack={() => setShowDeckManager(false)} />
       )}
 
       {deleteTargetId && (

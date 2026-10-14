@@ -120,19 +120,26 @@ export const getDeck = (deckId) => CARD_DECKS[deckId] || null;
  * 从某副卡里抽一张。drawnIds 是本局已经抽过的卡 id，优先抽没抽过的，
  * 全抽完了才重新洗（相当于把这副卡的已抽记录清掉再抽）。
  * 返回 { card, nextDrawnIds }，卡组不存在或为空时 card 为 null。
+ *
+ * cardsOverride：用户在「卡组管理」里编辑过这副卡时，调用方会把当前生效
+ * 的卡片列表（flightChessDeckService.getEffectiveDeckCards 读出来的）传
+ * 进来，这里就从这份列表抽，而不是用代码里的内置默认文案；不传就还是
+ * 读 deck.cards，保持原来的行为不变。
  */
-export const drawCardFromDeck = (deckId, drawnIds = []) => {
+export const drawCardFromDeck = (deckId, drawnIds = [], cardsOverride = null) => {
   const deck = CARD_DECKS[deckId];
-  if (!deck || deck.cards.length === 0) {
+  if (!deck) return { card: null, nextDrawnIds: drawnIds };
+  const allCards = Array.isArray(cardsOverride) ? cardsOverride : deck.cards;
+  if (allCards.length === 0) {
     return { card: null, nextDrawnIds: drawnIds };
   }
   const drawnSet = new Set(drawnIds);
-  let pool = deck.cards.filter((card) => !drawnSet.has(card.id));
+  let pool = allCards.filter((card) => !drawnSet.has(card.id));
   let baseDrawn = drawnIds;
   if (pool.length === 0) {
-    const deckCardIds = new Set(deck.cards.map((card) => card.id));
+    const deckCardIds = new Set(allCards.map((card) => card.id));
     baseDrawn = drawnIds.filter((id) => !deckCardIds.has(id));
-    pool = deck.cards;
+    pool = allCards;
   }
   const card = pool[Math.floor(Math.random() * pool.length)];
   return { card, nextDrawnIds: [...baseDrawn, card.id] };

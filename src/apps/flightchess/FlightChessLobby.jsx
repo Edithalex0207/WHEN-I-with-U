@@ -5,7 +5,9 @@
 // 只负责显示，所有数据和动作由 FlightChessApp 通过 props 传进来。
 
 import React from 'react';
-import { ArrowLeft, ChevronRight, Lock, Plane, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft, ChevronRight, Layers, Lock, Plane, Trash2,
+} from 'lucide-react';
 
 import { PLAYER_COLORS } from './FlightChessTokens';
 import {
@@ -28,6 +30,7 @@ const FlightChessLobby = ({
   onOpen,
   onNew,
   onDelete,
+  onOpenDecks,
 }) => {
   const unfinished = sessions.filter((s) => s.status !== 'finished');
   const finished = sessions.filter((s) => s.status === 'finished');
@@ -46,16 +49,48 @@ const FlightChessLobby = ({
             <ArrowLeft />
           </button>
           <span className="fcl-eyebrow">Flight Chess</span>
-          <span className="fcl-spacer" />
+          <button
+            type="button"
+            className="fcl-iconbtn"
+            onClick={onOpenDecks}
+            aria-label="卡组管理"
+          >
+            <Layers />
+          </button>
         </div>
 
-        <h1 className="fcl-title">飞行棋</h1>
+        {unfinished.length === 0 && (
+          <div className="fcl-hero-wrap">
+            <h1 className="fcl-title">飞行棋</h1>
 
-        <div className="fcl-hero">
-          <span className="fcl-cloud" style={{ left: '2%', top: 34, width: 84 }} />
-          <span className="fcl-cloud" style={{ right: 0, top: 116, width: 64, animationDelay: '-8s' }} />
-          <IsoBoard className="fcl-iso" tw={24} depth={7} tokens={HERO_TOKENS} plane />
-        </div>
+            <div className="fcl-hero">
+              <span className="fcl-cloud" style={{ left: '2%', top: 34, width: 84 }} />
+              <span className="fcl-cloud" style={{ right: 0, top: 116, width: 64, animationDelay: '-8s' }} />
+              <IsoBoard className="fcl-iso" tw={24} depth={7} tokens={HERO_TOKENS} plane />
+            </div>
+
+            <div className="fcl-cta">
+              <p className="fcl-sub center">
+                选一位角色，挑一张棋盘，<br />和 TA 开始一局新的飞行棋。
+              </p>
+              <button type="button" className="fcl-btn" onClick={onNew}>
+                <Plane /> 起飞新的一局
+              </button>
+            </div>
+          </div>
+        )}
+
+        {unfinished.length > 0 && (
+          <>
+            <h1 className="fcl-title">飞行棋</h1>
+
+            <div className="fcl-hero">
+              <span className="fcl-cloud" style={{ left: '2%', top: 34, width: 84 }} />
+              <span className="fcl-cloud" style={{ right: 0, top: 116, width: 64, animationDelay: '-8s' }} />
+              <IsoBoard className="fcl-iso" tw={24} depth={7} tokens={HERO_TOKENS} plane />
+            </div>
+          </>
+        )}
 
         {unfinished.map((session) => {
           const board = boardsById[session.boardId];
@@ -117,18 +152,9 @@ const FlightChessLobby = ({
           );
         })}
 
-        {unfinished.length > 0 ? (
+        {unfinished.length > 0 && (
           <div className="fcl-lock-note">
             <Lock /> 一次只能开一局，玩完或删除这一局后才能新建
-          </div>
-        ) : (
-          <div className="fcl-cta">
-            <p className="fcl-sub center">
-              选一位角色，挑一张棋盘，<br />和 TA 开始一局新的飞行棋。
-            </p>
-            <button type="button" className="fcl-btn" onClick={onNew}>
-              <Plane /> 起飞新的一局
-            </button>
           </div>
         )}
 

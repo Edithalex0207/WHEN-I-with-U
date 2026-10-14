@@ -4908,4 +4908,16 @@ db.version(88).stores({
   readerAnnotations: '++id, bookId, chapterIndex, [bookId+chapterIndex], createdAt',
 });
 
+// v89：飞行棋卡组管理。内置5副卡组（心动试探/心跳升温/灵魂深聊/甜蜜暴击/
+// 赢家福利）的题目原本写死在 flightChessCardData.js 里，现在用户可以在
+// 「卡组管理」页里改文字、增删卡片——这张表只存「跟内置默认不一样的部分」，
+// 一副卡组一条记录（deckId 当主键，不用自增 id），cards 是覆盖后的完整
+// 卡片列表。库里没有对应 deckId 的记录，就说明用户没改过这副卡，直接用
+// 代码里的内置默认。赢家福利卡这种带固定 effect 的卡组，保存时 effect
+// 和张数都锁死在内置默认上，只会搬动文字，所以不需要在表结构里单独
+// 校验（见 flightChessDeckService.js 的 saveDeckCards）。
+db.version(89).stores({
+  flightChessDeckOverrides: 'deckId, updatedAt',
+});
+
 export default db;
