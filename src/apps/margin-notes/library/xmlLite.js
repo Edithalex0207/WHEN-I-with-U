@@ -1,225 +1,168 @@
-// src/apps/margin-notes/library/epubParser.js
+// src/apps/margin-notes/library/xmlLite.js
 //
-// epub 解析的核心逻辑，不直接依赖任何库：
-// 传进来的 archive 是个很薄的接口（见下方 parseEpubArchive 的说明），
-// 浏览器里由 bookImport.js 用 jszip 包一层，沙箱测试里用普通文件夹包一层。
-//
-// 产出：{ title, author, chapters: [{ title, text }], cover: { bytes, mime } | null }
-// 章节顺序以 OPF 里的 spine 为准；章节标题优先取目录（nav / ncx），
-// 取不到就用文件里第一个标题，再取不到就叫「第 N 部分」。
-// 本切片只提取文字，章节里的插图、样式一律丢弃。
+// 解析 epub 用的几个小工具。故意不用 DOMParser：
+//   1. epub 里的章节是 XHTML，严格按 XML 解析时遇到 &nbsp; 这类实体会整篇报错；
+//   2. 不依赖浏览器 DOM，这样同一份代码在沙箱里也能直接跑测试。
+// 只处理 epub 里会用到的那一小部分（容器、OPF、目录、章节正文），不是通用解析器。
 
-import {
-  decodeEntities,
-  findElements,
-  htmlToChapter,
-  textOf,
-} from './xmlLite.js';
-
-/** 路径规范化：解析 ./ 和 ../，去掉开头的 /。 */
-const normalizePath = (path) => {
-  const parts = [];
-  for (const part of String(path || '').split('/')) {
-    if (!part || part === '.') continue;
-    if (part === '..') parts.pop();
-    else parts.push(part);
-  }
-  return parts.join('/');
-};
-
-const dirOf = (path) => {
-  const index = String(path).lastIndexOf('/');
-  return index === -1 ? '' : String(path).slice(0, index);
-};
-
-const resolveHref = (baseDir, href) => {
-  const clean = String(href || '').split('#')[0].split('?')[0];
-  let decoded = clean;
-  try {
-    decoded = decodeURIComponent(clean);
-  } catch (error) {
-    decoded = clean;
-  }
-  return normalizePath(baseDir ? `${baseDir}/${decoded}` : decoded);
+const NAMED_ENTITIES = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+  hellip: '…',
+  mdash: '—',
+  ndash: '–',
+  ldquo: '“',
+  rdquo: '”',
+  lsquo: '‘',
+  rsquo: '’',
+  middot: '·',
+  copy: '©',
+  times: '×',
 };
 
 /**
- * 读目录，返回 Map：章节文件路径 -> 目录里写的标题（同一个文件多个条目时取第一个）。
+ * 解码实体：&amp; 这类命名实体（常见的几个）和 &#123; / &#x1F; 数字实体。
  */
-const readTocTitles = async (archive, manifest, opfDir) => {
-  const titles = new Map();
-
-  const remember = (basePath, href, title) => {
-    const clean = String(title || '').replace(/\s+/g, ' ').trim();
-    if (!clean || !href) return;
-    const path = resolveHref(dirOf(basePath), href);
-    if (!titles.has(path)) titles.set(path, clean);
-  };
-
-  // EPUB3：nav 文档（manifest 里 properties 含 nav）
-  const navItem = manifest.find((item) =>
-    String(item.properties || '').split(/\s+/).includes('nav')
-  );
-  if (navItem) {
-    const navPath = resolveHref(opfDir, navItem.href);
-    if (await archive.has(navPath)) {
-      const navXml = await archive.readText(navPath);
-      const tocNav =
-        findElements(navXml, 'nav').find((nav) =>
-          /toc/i.test(nav.attrs.type || '')
-        ) || findElements(navXml, 'nav')[0];
-      if (tocNav) {
-        for (const anchor of findElements(tocNav.inner, 'a')) {
-          remember(navPath, anchor.attrs.href, textOf(anchor.inner));
-        }
-      }
-    }
-  }
-
-  // EPUB2：ncx（navLabel 和 content 在文档里按条目成对出现）
-  if (!titles.size) {
-    const ncxItem = manifest.find(
-      (item) => item['media-type'] === 'application/x-dtbncx+xml'
-    );
-    if (ncxItem) {
-      const ncxPath = resolveHref(opfDir, ncxItem.href);
-      if (await archive.has(ncxPath)) {
-        const ncxXml = await archive.readText(ncxPath);
-        const tokenPattern =
-          /<\s*(?:[A-Za-z0-9_-]+:)?navLabel[^>]*>([\s\S]*?)<\/\s*(?:[A-Za-z0-9_-]+:)?navLabel\s*>|<\s*(?:[A-Za-z0-9_-]+:)?content\b([^>]*)>/gi;
-        let pendingLabel = '';
-        let token = tokenPattern.exec(ncxXml);
-        while (token) {
-          if (token[1] !== undefined) {
-            pendingLabel = textOf(token[1]);
-          } else if (token[2] !== undefined) {
-            const srcMatch = token[2].match(/src\s*=\s*("([^"]*)"|'([^']*)')/i);
-            const src = srcMatch ? srcMatch[2] ?? srcMatch[3] : '';
-            remember(ncxPath, decodeEntities(src), pendingLabel);
-            pendingLabel = '';
+export const decodeEntities = (text) =>
+  String(text || '').replace(
+    /&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z]+);/g,
+    (whole, body) => {
+      if (body[0] === '#') {
+        const code =
+          body[1] === 'x' || body[1] === 'X'
+            ? parseInt(body.slice(2), 16)
+            : parseInt(body.slice(1), 10);
+        if (Number.isFinite(code) && code > 0 && code <= 0x10ffff) {
+          try {
+            return String.fromCodePoint(code);
+          } catch (error) {
+            return '';
           }
-          token = tokenPattern.exec(ncxXml);
         }
+        return '';
       }
+      return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, body)
+        ? NAMED_ENTITIES[body]
+        : whole;
     }
-  }
-
-  return titles;
-};
-
-/**
- * 找封面图在压缩包里的路径和类型，找不到返回 null。
- */
-const findCoverItem = (manifest, opfXml, opfDir) => {
-  // EPUB3：properties 含 cover-image
-  let item = manifest.find((entry) =>
-    String(entry.properties || '').split(/\s+/).includes('cover-image')
   );
 
-  // EPUB2：<meta name="cover" content="某个 manifest id">
-  if (!item) {
-    const coverMeta = findElements(opfXml, 'meta').find(
-      (meta) => String(meta.attrs.name || '').toLowerCase() === 'cover'
-    );
-    if (coverMeta?.attrs.content) {
-      item = manifest.find((entry) => entry.id === coverMeta.attrs.content);
-    }
+/**
+ * 去掉标签名里的命名空间前缀：dc:title -> title。
+ */
+const stripPrefix = (name) => String(name || '').replace(/^[A-Za-z0-9_-]+:/, '');
+
+/**
+ * 解析一个起始标签字符串里的属性，属性名统一去掉命名空间前缀并转小写。
+ * 例：'<item id="a" href="b.xhtml" media-type="x"/>' -> { id, href, 'media-type' }
+ */
+export const parseAttributes = (tagText) => {
+  const attrs = {};
+  const body = String(tagText || '').replace(/^<\s*[^\s/>]+/, '');
+  const pattern = /([^\s=/>]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+  let match = pattern.exec(body);
+  while (match) {
+    const name = stripPrefix(match[1]).toLowerCase();
+    const value = match[3] !== undefined ? match[3] : match[4];
+    attrs[name] = decodeEntities(value);
+    match = pattern.exec(body);
   }
-
-  if (!item || !/^image\//i.test(item['media-type'] || '')) return null;
-
-  return {
-    path: resolveHref(opfDir, item.href),
-    mime: item['media-type'],
-  };
+  return attrs;
 };
 
 /**
- * 解析一本 epub。
- *
- * archive 需要提供三个异步方法：
- *   has(path) -> boolean            压缩包里有没有这个文件
- *   readText(path) -> string        读文本文件（UTF-8）
- *   readBytes(path) -> Uint8Array   读二进制文件（只用来取封面）
- * path 都是压缩包内部的相对路径，不带开头的斜杠。
+ * 找出所有叫 tagName 的标签（忽略命名空间前缀和大小写），
+ * 返回 [{ attrs, inner, raw }]；自闭合标签的 inner 为空字符串。
  */
-export const parseEpubArchive = async (archive) => {
-  if (!(await archive.has('META-INF/container.xml'))) {
-    throw new Error('这个文件不像是有效的 epub（缺少 container.xml）。');
+export const findElements = (xml, tagName) => {
+  const results = [];
+  const source = String(xml || '');
+  const name = String(tagName).toLowerCase();
+  const openPattern = /<\s*([A-Za-z0-9_:-]+)([^>]*)>/g;
+  let match = openPattern.exec(source);
+
+  while (match) {
+    const fullName = match[1];
+    if (stripPrefix(fullName).toLowerCase() === name) {
+      const startTag = match[0];
+      const selfClosing = /\/\s*>$/.test(startTag);
+      let inner = '';
+      let raw = startTag;
+
+      if (!selfClosing) {
+        const closePattern = new RegExp(
+          `</\\s*${fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*>`,
+          'ig'
+        );
+        closePattern.lastIndex = openPattern.lastIndex;
+        const closeMatch = closePattern.exec(source);
+        if (closeMatch) {
+          inner = source.slice(openPattern.lastIndex, closeMatch.index);
+          raw = source.slice(match.index, closePattern.lastIndex);
+        }
+      }
+
+      results.push({ attrs: parseAttributes(startTag), inner, raw });
+    }
+    match = openPattern.exec(source);
   }
 
-  const containerXml = await archive.readText('META-INF/container.xml');
-  const rootfile = findElements(containerXml, 'rootfile')[0];
-  const opfPath = normalizePath(rootfile?.attrs['full-path'] || '');
+  return results;
+};
 
-  if (!opfPath || !(await archive.has(opfPath))) {
-    throw new Error('这个 epub 找不到内容清单（OPF），可能已经损坏。');
-  }
+/**
+ * 把一段标签内部内容变成纯文本（去掉里面所有标签、解码实体、压缩空白）。
+ */
+export const textOf = (inner) =>
+  decodeEntities(String(inner || '').replace(/<[^>]*>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  const opfXml = await archive.readText(opfPath);
-  const opfDir = dirOf(opfPath);
+/**
+ * 把 XHTML 章节转成纯文本，段落之间用空行分隔。
+ * 返回 { title, text }：title 是文件里第一个 h1-h3 的文字（没有则为空字符串），
+ * text 里如果第一段就是这个标题，会去掉，避免和章节标题重复。
+ */
+export const htmlToChapter = (html) => {
+  let source = String(html || '');
 
-  const manifest = findElements(opfXml, 'item').map((item) => item.attrs);
-  const manifestById = new Map(manifest.map((item) => [item.id, item]));
+  const bodyMatch = source.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  if (bodyMatch) source = bodyMatch[1];
 
-  const title =
-    textOf(findElements(opfXml, 'title')[0]?.inner || '') || '';
-  const author = findElements(opfXml, 'creator')
-    .map((creator) => textOf(creator.inner))
-    .filter(Boolean)
-    .join('、');
+  source = source
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<rt[\s\S]*?<\/rt>/gi, '')
+    .replace(/<rp[\s\S]*?<\/rp>/gi, '');
 
-  const spineIds = findElements(opfXml, 'itemref')
-    .map((ref) => ref.attrs.idref)
+  let heading = '';
+  const headingMatch = source.match(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/i);
+  if (headingMatch) heading = textOf(headingMatch[1]);
+
+  const withBreaks = source
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|tr|blockquote|section|article|pre)\s*>/gi, '\n\n')
+    .replace(/<[^>]*>/g, '');
+
+  const paragraphs = decodeEntities(withBreaks)
+    .split(/\n\s*\n/)
+    .map((part) =>
+      part
+        .split('\n')
+        .map((line) => line.replace(/[ \t 　]+/g, ' ').trim())
+        .filter(Boolean)
+        .join('\n')
+    )
     .filter(Boolean);
 
-  if (!spineIds.length) {
-    throw new Error('这个 epub 没有可阅读的章节。');
+  if (heading && paragraphs.length && paragraphs[0] === heading) {
+    paragraphs.shift();
   }
 
-  const tocTitles = await readTocTitles(archive, manifest, opfDir);
-
-  const chapters = [];
-  for (const idref of spineIds) {
-    const item = manifestById.get(idref);
-    if (!item) continue;
-
-    const mime = String(item['media-type'] || '');
-    if (!/xhtml|html/i.test(mime)) continue;
-
-    const path = resolveHref(opfDir, item.href);
-    if (!(await archive.has(path))) continue;
-
-    const { title: headingTitle, text } = htmlToChapter(
-      await archive.readText(path)
-    );
-    if (!text.trim()) continue;
-
-    chapters.push({
-      title:
-        tocTitles.get(path) ||
-        headingTitle ||
-        `第 ${chapters.length + 1} 部分`,
-      text,
-    });
-  }
-
-  if (!chapters.length) {
-    throw new Error('这个 epub 里没有读到文字内容（可能全是图片）。');
-  }
-
-  let cover = null;
-  const coverItem = findCoverItem(manifest, opfXml, opfDir);
-  if (coverItem && (await archive.has(coverItem.path))) {
-    try {
-      cover = {
-        bytes: await archive.readBytes(coverItem.path),
-        mime: coverItem.mime,
-      };
-    } catch (error) {
-      cover = null;
-    }
-  }
-
-  return { title, author, chapters, cover };
+  return { title: heading, text: paragraphs.join('\n\n') };
 };

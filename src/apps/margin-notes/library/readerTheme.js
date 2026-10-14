@@ -148,6 +148,69 @@ export const splitParagraphs = (text) =>
     .map((part) => part.trim())
     .filter(Boolean);
 
+// 划线的四种颜色。dot 是选区工具栏/批注面板里圆点按钮的颜色，
+// bg 是正文里 <mark> 的背景色（半透明，照设计稿 ChatCard/Selection 来的）。
+export const HIGHLIGHT_COLORS = {
+  yellow: { id: 'yellow', label: '黄色', dot: '#F2C94C', bg: 'rgba(238, 196, 72, 0.5)' },
+  pink: { id: 'pink', label: '粉色', dot: '#F1A5B4', bg: 'rgba(241, 165, 180, 0.45)' },
+  blue: { id: 'blue', label: '蓝色', dot: '#8EC5F0', bg: 'rgba(142, 197, 240, 0.45)' },
+  green: { id: 'green', label: '绿色', dot: '#A8D8A0', bg: 'rgba(168, 216, 160, 0.45)' },
+};
+export const HIGHLIGHT_COLOR_IDS = Object.keys(HIGHLIGHT_COLORS);
+export const DEFAULT_HIGHLIGHT_COLOR = 'yellow';
+
+export const normalizeHighlightColor = (color) =>
+  Object.prototype.hasOwnProperty.call(HIGHLIGHT_COLORS, color)
+    ? color
+    : DEFAULT_HIGHLIGHT_COLOR;
+
+/**
+ * 把一段文字和这段里的若干条划线区间，切成一串片段：
+ *   [{ text, highlight: null }]            普通文字
+ *   [{ text, highlight: { id, color } }]   被划线盖住的文字
+ * 区间按起点排序；如果有重叠，后面的区间会被掐掉重叠的那一截（不叠加着色）。
+ */
+export const buildHighlightSegments = (text, annotations) => {
+  const full = String(text || '');
+  const length = full.length;
+
+  const ranges = (annotations || [])
+    .map((item) => ({
+      id: item.id,
+      color: normalizeHighlightColor(item.color),
+      start: Math.max(0, Math.min(length, Number(item.start) || 0)),
+      end: Math.max(0, Math.min(length, Number(item.end) || 0)),
+    }))
+    .filter((item) => item.end > item.start)
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const clipped = [];
+  let cursor = 0;
+  for (const range of ranges) {
+    const start = Math.max(range.start, cursor);
+    if (start >= range.end) continue;
+    clipped.push({ ...range, start });
+    cursor = range.end;
+  }
+
+  const segments = [];
+  let pos = 0;
+  for (const range of clipped) {
+    if (range.start > pos) {
+      segments.push({ text: full.slice(pos, range.start), highlight: null });
+    }
+    segments.push({
+      text: full.slice(range.start, range.end),
+      highlight: { id: range.id, color: range.color },
+    });
+    pos = range.end;
+  }
+  if (pos < length) segments.push({ text: full.slice(pos, length), highlight: null });
+  if (segments.length === 0) segments.push({ text: full, highlight: null });
+
+  return segments;
+};
+
 /**
  * 词首加粗：把一个段落切成 [{ b, t }]，b 是词首要加粗的部分，t 是其余部分。
  * 每个词（连同后面的空白）一项，加粗长度取字母数的 45%（向上取整）。

@@ -8,6 +8,11 @@
 //
 // 进度保存：滚动停下 0.8 秒后写一次；切到后台、关页面、离开阅读页时马上写。
 // 阅读计时在 ReadingTimerBadge 里，不在这里，免得每秒触发整页重渲染。
+//
+// 选中文字（本切片新增）：选区只能落在同一段落里，选完会在上方弹出小工具条
+// ——四个颜色点直接划线，「批注」「发到聊天室」都会打开写批注的面板
+// （面板里有「同时发到聊天室」开关，两个入口打开的是同一个面板），
+// 「复制」把选中文字拷到剪贴板。点一下已经划好的线会打开同一个面板来改/删它。
 
 import React, {
   useCallback,
@@ -18,6 +23,8 @@ import React, {
   useState,
 } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+
+import db from '../../../db';
 
 import { getBook, getBookContent } from './readerLibraryService';
 import {
@@ -30,20 +37,34 @@ import {
 } from './readerProgressService';
 import {
   DEFAULT_READER_SETTINGS,
+  DEFAULT_HIGHLIGHT_COLOR,
+  HIGHLIGHT_COLORS,
   READER_THEMES,
+  buildHighlightSegments,
   computeLayout,
   isMostlyLatin,
   normalizeReaderSettings,
   splitParagraphs,
   tokenizeBionic,
 } from './readerTheme';
+import {
+  addAnnotation,
+  deleteAnnotation,
+  getChapterAnnotations,
+  sendAnnotationToChat,
+  updateAnnotation,
+} from './readerAnnotationService';
+import { clearNativeSelection, getParagraphSelection } from './selectionOffset';
 import ReadingTimerBadge from './ReadingTimerBadge';
 import ReaderSettingsPanel from './ReaderSettingsPanel';
 import ReaderTocSheet from './ReaderTocSheet';
+import SelectionToolbar from './SelectionToolbar';
+import AnnotationComposer from './AnnotationComposer';
 
 import './reader.css';
 
 const SAVE_DELAY_MS = 800;
+const TOAST_MS = 1600;
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
 
@@ -55,15 +76,23 @@ const ChapterBody = React.memo(function ChapterBody({
   focus,
   focusIdx,
   onPickPara,
+  onEditHighlight,
+  annotationsByPara,
   paraRefs,
 }) {
   return (
     <>
       {paragraphs.map((text, index) => {
         const dimmed = focus && index !== focusIdx;
+        const segments = buildHighlightSegments(
+          text,
+          annotationsByPara.get(index)
+        );
+
         return (
           <p
             key={index}
+            data-para-index={index}
             ref={(node) => {
               paraRefs.current[index] = node;
             }}
@@ -72,14 +101,37 @@ const ChapterBody = React.memo(function ChapterBody({
             }`}
             onClick={focus ? () => onPickPara(index) : undefined}
           >
-            {bionic && latin
-              ? tokenizeBionic(text).map((token, tokenIndex) => (
-                  <React.Fragment key={tokenIndex}>
-                    <b>{token.b}</b>
-                    {token.t}
-                  </React.Fragment>
-                ))
-              : text}
+            {segments.map((segment, segIndex) => {
+              const content =
+                bionic && latin
+                  ? tokenizeBionic(segment.text).map((token, tokenIndex) => (
+                      <React.Fragment key={tokenIndex}>
+                        <b>{token.b}</b>
+                        {token.t}
+                      </React.Fragment>
+                    ))
+                  : segment.text;
+
+              if (!segment.highlight) {
+                return <React.Fragment key={segIndex}>{content}</React.Fragment>;
+              }
+
+              return (
+                <mark
+                  key={segIndex}
+                  className="mn-rd-mark"
+                  style={{
+                    background: HIGHLIGHT_COLORS[segment.highlight.color]?.bg,
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEditHighlight(segment.highlight.id);
+                  }}
+                >
+                  {content}
+                </mark>
+              );
+            })}
           </p>
         );
       })}
@@ -116,6 +168,13 @@ export default function ReaderPage({ bookId, onBack }) {
   const [tocOpen, setTocOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(0);
 
+  const [chatLabel, setChatLabel] = useState('');
+  const [canSendToChat, setCanSendToChat] = useState(false);
+  const [chapterAnnotations, setChapterAnnotations] = useState([]);
+  const [selection, setSelection] = useState(null); // { paragraphIndex, start, end, text, rect }
+  const [composer, setComposer] = useState(null);
+  const [toast, setToast] = useState('');
+
   const scrollRef = useRef(null);
   const paraRefs = useRef([]);
   const fractionRef = useRef(0);
@@ -123,6 +182,7 @@ export default function ReaderPage({ bookId, onBack }) {
   const touchedRef = useRef(false);
   const dirtyRef = useRef(false);
   const saveTimerRef = useRef(null);
+  const toastTimerRef = useRef(null);
   const chapterIndexRef = useRef(0);
   const chapterLengthsRef = useRef([]);
   const loadedSettingsRef = useRef(null);
@@ -144,7 +204,22 @@ export default function ReaderPage({ bookId, onBack }) {
   const layout = useMemo(() => computeLayout(settings, latin), [settings, latin]);
   const theme = READER_THEMES[settings.theme] || READER_THEMES.paper;
 
-  /* ---------- 读取书、正文、设置 ---------- */
+  const annotationsByPara = useMemo(() => {
+    const map = new Map();
+    for (const item of chapterAnnotations) {
+      if (!map.has(item.paragraphIndex)) map.set(item.paragraphIndex, []);
+      map.get(item.paragraphIndex).push(item);
+    }
+    return map;
+  }, [chapterAnnotations]);
+
+  const showToast = useCallback((message) => {
+    setToast(message);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(''), TOAST_MS);
+  }, []);
+
+  /* ---------- 读取书、正文、设置、绑定的聊天室 ---------- */
 
   useEffect(() => {
     let alive = true;
@@ -166,6 +241,22 @@ export default function ReaderPage({ bookId, onBack }) {
         return;
       }
       setBook(bookRow);
+
+      if (bookRow.chatId) {
+        try {
+          const chat = await db.chats.get(bookRow.chatId);
+          if (alive && chat) {
+            const character = chat.characterId
+              ? await db.characters.get(chat.characterId)
+              : null;
+            const name = character?.name || '未知角色';
+            setChatLabel(chat.title || `和${name}的聊天`);
+            setCanSendToChat(true);
+          }
+        } catch (error) {
+          console.warn('[阅读器] 读取绑定的聊天室失败：', error);
+        }
+      }
 
       if (!Array.isArray(content) || content.length === 0) {
         setStatus('nofile');
@@ -189,6 +280,30 @@ export default function ReaderPage({ bookId, onBack }) {
       alive = false;
     };
   }, [bookId]);
+
+  /* ---------- 每章的划线/批注 ---------- */
+
+  const refreshChapterAnnotations = useCallback(() => {
+    if (!bookId) return;
+    const askedIndex = chapterIndexRef.current;
+    getChapterAnnotations(bookId, askedIndex).then((rows) => {
+      // 读的时候可能已经换章了，换了就别用这份过时的数据覆盖
+      if (chapterIndexRef.current === askedIndex) {
+        setChapterAnnotations(rows);
+      }
+    });
+  }, [bookId]);
+
+  useEffect(() => {
+    if (status !== 'ready') return;
+    let alive = true;
+    getChapterAnnotations(bookId, chapterIndex).then((rows) => {
+      if (alive) setChapterAnnotations(rows);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [status, bookId, chapterIndex]);
 
   /* ---------- 设置变化后保存（所有书共用） ---------- */
 
@@ -329,11 +444,22 @@ export default function ReaderPage({ bookId, onBack }) {
       restoreRef.current = clamp01(fraction);
       dirtyRef.current = true;
       setFocusIdx(0);
+      setSelection(null);
       setTocOpen(false);
       setChapterIndex(target);
       scheduleSave();
     },
     [chapters, scheduleSave]
+  );
+
+  const paragraphFraction = useCallback(
+    (targetChapterIndex, paragraphIndex) => {
+      const text = chapters?.[targetChapterIndex]?.text;
+      const total = splitParagraphs(text).length;
+      if (!total) return 0;
+      return clamp01(paragraphIndex / total);
+    },
+    [chapters]
   );
 
   /* ---------- 段落聚焦 ---------- */
@@ -389,6 +515,208 @@ export default function ReaderPage({ bookId, onBack }) {
     // 只在开关变化时执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.focus, status]);
+
+  /* ---------- 选中文字 ---------- */
+
+  const handleSelectionChange = useCallback(() => {
+    if (composer) return; // 面板开着的时候不管选区
+
+    const sel = window.getSelection ? window.getSelection() : null;
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      setSelection(null);
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const anchor =
+      range.commonAncestorContainer.nodeType === 1
+        ? range.commonAncestorContainer
+        : range.commonAncestorContainer.parentElement;
+    const paraEl = anchor ? anchor.closest('.mn-rd-para') : null;
+    if (!paraEl) {
+      setSelection(null);
+      return;
+    }
+
+    const result = getParagraphSelection(paraEl);
+    if (!result) {
+      setSelection(null);
+      return;
+    }
+
+    const paragraphIndex = Number(paraEl.dataset.paraIndex);
+    const text = (paragraphs[paragraphIndex] || '').slice(result.start, result.end);
+    if (!text) {
+      setSelection(null);
+      return;
+    }
+
+    setSelection({
+      paragraphIndex,
+      start: result.start,
+      end: result.end,
+      text,
+      rect: result.rect,
+    });
+  }, [composer, paragraphs]);
+
+  useEffect(() => {
+    if (status !== 'ready') return undefined;
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () =>
+      document.removeEventListener('selectionchange', handleSelectionChange);
+  }, [status, handleSelectionChange]);
+
+  const dismissSelection = useCallback(() => {
+    clearNativeSelection();
+    setSelection(null);
+  }, []);
+
+  const handlePickColor = useCallback(
+    async (color) => {
+      if (!selection) return;
+      await addAnnotation({
+        bookId,
+        chapterIndex,
+        chapterTitle: chapter?.title || '',
+        paragraphIndex: selection.paragraphIndex,
+        start: selection.start,
+        end: selection.end,
+        text: selection.text,
+        color,
+      });
+      dismissSelection();
+      refreshChapterAnnotations();
+    },
+    [selection, bookId, chapterIndex, chapter, dismissSelection, refreshChapterAnnotations]
+  );
+
+  const openComposerForSelection = useCallback(() => {
+    if (!selection) return;
+    setComposer({
+      mode: 'new',
+      chapterIndex,
+      chapterTitle: chapter?.title || '',
+      paragraphIndex: selection.paragraphIndex,
+      start: selection.start,
+      end: selection.end,
+      quoteText: selection.text,
+      color: DEFAULT_HIGHLIGHT_COLOR,
+      note: '',
+      alreadySent: false,
+    });
+    setSelection(null);
+    clearNativeSelection();
+  }, [selection, chapterIndex, chapter]);
+
+  const handleCopy = useCallback(async () => {
+    if (!selection) return;
+    try {
+      await navigator.clipboard.writeText(selection.text);
+      showToast('已复制');
+    } catch (error) {
+      console.warn('[阅读器] 复制失败：', error);
+      showToast('没能复制，请手动选中再试');
+    }
+    dismissSelection();
+  }, [selection, dismissSelection, showToast]);
+
+  const handleEditHighlight = useCallback(
+    (annotationId) => {
+      const found = chapterAnnotations.find((item) => item.id === annotationId);
+      if (!found) return;
+      setSelection(null);
+      setComposer({
+        mode: 'edit',
+        annotationId: found.id,
+        chapterIndex: found.chapterIndex,
+        chapterTitle: found.chapterTitle,
+        quoteText: found.text,
+        color: found.color,
+        note: found.note,
+        alreadySent: found.sentToChat,
+      });
+    },
+    [chapterAnnotations]
+  );
+
+  const handleEditFromList = useCallback((annotation) => {
+    setComposer({
+      mode: 'edit',
+      annotationId: annotation.id,
+      chapterIndex: annotation.chapterIndex,
+      chapterTitle: annotation.chapterTitle,
+      quoteText: annotation.text,
+      color: annotation.color,
+      note: annotation.note,
+      alreadySent: annotation.sentToChat,
+    });
+  }, []);
+
+  const handlePickAnnotationFromList = useCallback(
+    (annotation) => {
+      const fraction = paragraphFraction(annotation.chapterIndex, annotation.paragraphIndex);
+      goToChapter(annotation.chapterIndex, fraction);
+    },
+    [paragraphFraction, goToChapter]
+  );
+
+  const closeComposer = useCallback(() => {
+    setComposer(null);
+  }, []);
+
+  const handleComposerSave = useCallback(
+    async ({ color, note, sendToChat }) => {
+      if (!composer) return;
+
+      let annotation;
+      if (composer.mode === 'new') {
+        annotation = await addAnnotation({
+          bookId,
+          chapterIndex: composer.chapterIndex,
+          chapterTitle: composer.chapterTitle,
+          paragraphIndex: composer.paragraphIndex,
+          start: composer.start,
+          end: composer.end,
+          text: composer.quoteText,
+          color,
+          note,
+        });
+      } else {
+        await updateAnnotation(composer.annotationId, { color, note });
+        annotation = {
+          id: composer.annotationId,
+          bookId,
+          chapterIndex: composer.chapterIndex,
+          chapterTitle: composer.chapterTitle,
+          text: composer.quoteText,
+          color,
+          note,
+        };
+      }
+
+      if (sendToChat && book) {
+        const sent = await sendAnnotationToChat({ annotation, book, percent });
+        if (!sent) showToast('没能发到聊天室');
+        else showToast('已发到聊天室');
+      }
+
+      if (annotation.chapterIndex === chapterIndexRef.current) {
+        refreshChapterAnnotations();
+      }
+      setComposer(null);
+    },
+    [composer, bookId, book, percent, refreshChapterAnnotations, showToast]
+  );
+
+  const handleComposerDelete = useCallback(async () => {
+    if (!composer?.annotationId) return;
+    await deleteAnnotation(composer.annotationId);
+    if (composer.chapterIndex === chapterIndexRef.current) {
+      refreshChapterAnnotations();
+    }
+    setComposer(null);
+  }, [composer, refreshChapterAnnotations]);
 
   /* ---------- 渲染 ---------- */
 
@@ -472,7 +800,7 @@ export default function ReaderPage({ bookId, onBack }) {
           type="button"
           className="mn-rd-iconbtn"
           onClick={() => setTocOpen(true)}
-          aria-label="目录"
+          aria-label="目录与批注"
         >
           <ListIcon />
         </button>
@@ -516,6 +844,8 @@ export default function ReaderPage({ bookId, onBack }) {
             focus={settings.focus}
             focusIdx={focusIdx}
             onPickPara={handlePickPara}
+            onEditHighlight={handleEditHighlight}
+            annotationsByPara={annotationsByPara}
             paraRefs={paraRefs}
           />
 
@@ -587,6 +917,22 @@ export default function ReaderPage({ bookId, onBack }) {
         <div className="mn-rd-bar__fill" style={{ width: `${percent}%` }} />
       </div>
 
+      {selection && !composer && (
+        <SelectionToolbar
+          rect={selection.rect}
+          onPickColor={handlePickColor}
+          onAnnotate={openComposerForSelection}
+          onSendToChat={openComposerForSelection}
+          onCopy={handleCopy}
+        />
+      )}
+
+      {toast && (
+        <div className="mn-rd-toast" role="status">
+          {toast}
+        </div>
+      )}
+
       {panelOpen && (
         <ReaderSettingsPanel
           settings={settings}
@@ -599,8 +945,29 @@ export default function ReaderPage({ bookId, onBack }) {
         <ReaderTocSheet
           chapters={chapters}
           currentIndex={chapterIndex}
-          onPick={(index) => goToChapter(index, 0)}
+          bookId={bookId}
+          onPickChapter={(index) => goToChapter(index, 0)}
+          onPickAnnotation={handlePickAnnotationFromList}
+          onEditAnnotation={(annotation) => {
+            setTocOpen(false);
+            handleEditFromList(annotation);
+          }}
           onClose={() => setTocOpen(false)}
+        />
+      )}
+
+      {composer && (
+        <AnnotationComposer
+          quoteText={composer.quoteText}
+          initialColor={composer.color}
+          initialNote={composer.note}
+          chatLabel={chatLabel}
+          canSendToChat={canSendToChat}
+          isEditing={composer.mode === 'edit'}
+          alreadySent={composer.alreadySent}
+          onCancel={closeComposer}
+          onSave={handleComposerSave}
+          onDelete={composer.mode === 'edit' ? handleComposerDelete : null}
         />
       )}
     </div>

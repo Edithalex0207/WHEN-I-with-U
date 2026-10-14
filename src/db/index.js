@@ -4903,4 +4903,9 @@ db.version(87).stores({
   readerDailyReading: '++id, &[bookId+date], bookId, date',
 });
 
+// v88：划线和批注。[bookId+chapterIndex] 方便只取当前这一章的。
+db.version(88).stores({
+  readerAnnotations: '++id, bookId, chapterIndex, [bookId+chapterIndex], createdAt',
+});
+
 export default db;

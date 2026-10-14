@@ -815,6 +815,391 @@
   overflow-wrap: anywhere;
 }
 
+/* ---------- 划线 ---------- */
+
+.mn-rd-mark {
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* ---------- 选区工具条 ---------- */
+
+.mn-rd-seltoolbar {
+  position: fixed;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-radius: 14px;
+  background: #23262b;
+  color: #ffffff;
+  font-size: 13px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.mn-rd-seltoolbar__colors {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mn-rd-seltoolbar__dot {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.mn-rd-seltoolbar__sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.mn-rd-seltoolbar__btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mn-rd-seltoolbar__btn--primary {
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: #8fb4d9;
+  color: #14171b;
+  font-weight: 500;
+}
+
+.mn-rd-seltoolbar__icon {
+  display: flex;
+  align-items: center;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.mn-rd-seltoolbar__arrow {
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  background: #23262b;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* ---------- 小提示 ---------- */
+
+.mn-rd-toast {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  padding: 9px 16px;
+  border-radius: 18px;
+  background: rgba(20, 22, 26, 0.85);
+  color: #ffffff;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* ---------- 写批注面板 ---------- */
+
+.mn-rd-composer {
+  position: absolute;
+  z-index: 45;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 86%;
+  border-radius: 20px 20px 0 0;
+  background: var(--rd-panel);
+  color: var(--rd-fg);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.mn-rd-composer__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 6px;
+}
+
+.mn-rd-composer__title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.mn-rd-composer__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--rd-chip);
+  color: var(--rd-fg);
+  cursor: pointer;
+}
+
+.mn-rd-composer__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 18px 26px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mn-rd-composer__quote-label {
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--rd-sub);
+}
+
+.mn-rd-composer__quote {
+  margin-top: -6px;
+  padding: 1px 2px;
+  border-radius: 6px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.mn-rd-composer__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100px;
+  resize: none;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--rd-chip);
+  color: var(--rd-fg);
+  font-size: 15px;
+  line-height: 1.6;
+  outline: none;
+}
+
+.mn-rd-composer__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mn-rd-composer__row-label {
+  font-size: 13px;
+  color: var(--rd-sub);
+}
+
+.mn-rd-composer__colors {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mn-rd-composer__swatch {
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.mn-rd-composer__swatch.is-active {
+  border-color: var(--rd-accent);
+}
+
+.mn-rd-composer__chat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--rd-sel);
+}
+
+.mn-rd-composer__chat.is-disabled {
+  opacity: 0.6;
+}
+
+.mn-rd-composer__chat-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mn-rd-composer__chat-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rd-sel-fg);
+}
+
+.mn-rd-composer__chat-sub {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--rd-sub);
+}
+
+.mn-rd-composer__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mn-rd-composer__btn {
+  flex: 1;
+  height: 46px;
+  border-radius: 23px;
+  border: 1px solid var(--rd-line);
+  background: transparent;
+  color: var(--rd-fg);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.mn-rd-composer__btn--primary {
+  flex: 2;
+  border: none;
+  background: var(--rd-accent);
+  color: var(--rd-on-accent);
+  font-weight: 500;
+}
+
+.mn-rd-composer__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mn-rd-composer__delete {
+  align-self: center;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: #c0564f;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ---------- 目录面板的分页 ---------- */
+
+.mn-rd-sheet__tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.mn-rd-sheet__tab {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 14px;
+  background: var(--rd-chip);
+  color: var(--rd-sub);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mn-rd-sheet__tab.is-active {
+  background: var(--rd-accent);
+  color: var(--rd-on-accent);
+  font-weight: 500;
+}
+
+.mn-rd-sheet__empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--rd-sub);
+}
+
+.mn-rd-notes-group {
+  padding: 6px 4px 4px;
+}
+
+.mn-rd-notes-group__title {
+  padding: 8px 6px 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--rd-sub);
+}
+
+.mn-rd-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 6px;
+}
+
+.mn-rd-note__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: none;
+  border-radius: 12px;
+  background: var(--rd-chip);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mn-rd-note__quote {
+  border-radius: 4px;
+  padding: 1px 2px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--rd-fg);
+}
+
+.mn-rd-note__text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--rd-sub);
+}
+
+.mn-rd-note__edit {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--rd-sub);
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mn-rd-glow,
   .mn-rd-badge__dot {

@@ -46,6 +46,7 @@ import GiftCard from './cards/GiftCard';
 import FoodDeliveryCard from './cards/FoodDeliveryCard';
 import KinshipCard from './cards/KinshipCard';
 import CouponCard from './cards/CouponCard';
+import MarginNoteCard from './cards/MarginNoteCard';
 import OrderRequestCard from './cards/OrderRequestCard';
 import StickerCard from './cards/StickerCard';
 import PhotoCard from './cards/PhotoCard';
@@ -631,6 +632,10 @@ const MessageRow = ({
 {msg.type === 'coupon' && (
   <CouponCard metadata={msg.metadata} messageId={msg.id} isUser={isUser} />
 )}
+{msg.type === 'margin_note' && (
+  <MarginNoteCard metadata={msg.metadata} />
+)}
+
 
               
               {msg.type === 'order_request' && (
