@@ -26,6 +26,7 @@ import {
   RARE_UNLOCK_EVENTS,
 } from './companionEventData';
 import { findShopItem } from './companionShopData';
+import { generateDiaryEntry } from './diary/companionDiaryService';
 
 const MAX_ACTIVE_EVENTS = 2;
 const EVENT_ACTIVE_DAYS = 3; // 自然日
@@ -260,9 +261,21 @@ export const checkCompanionEvents = async (companionId) => {
 
       // eslint-disable-next-line no-await-in-loop
       await insertCompanionChatLine(companion, line, { companionEventId: def.id });
+
+      // 日记：选项事件要等用户选完才知道"结果"，更值得写一篇，所以这里
+      // 跳过，留给 resolveCompanionChoiceEvent 去写；其余几种事件触发
+      // 当下就写一篇（用 title 当"发生了什么"，bannerText 当补充细节）。
+      if (def.kind !== EVENT_KINDS.CHOICE) {
+        // eslint-disable-next-line no-await-in-loop
+        await generateDiaryEntry(companionId, {
+          triggerDefId: def.id,
+          triggerLabel: def.title,
+          triggerDetail: def.bannerText,
+        });
+      }
     }
   } catch (error) {
-    console.error('[CompanionEvent] 写入聊天消息失败:', error);
+    console.error('[CompanionEvent] 写入聊天消息/日记失败:', error);
   }
 
   return {
@@ -378,8 +391,16 @@ export const resolveCompanionChoiceEvent = async (companionId, activeEventId, op
       companionEventId: def.id,
       companionEventChoice: optionId,
     });
+
+    // 选项事件的日记放在"结果出来之后"写，这样日记里写的是真正发生的事，
+    // 不是还没选的两个选项（避免剧透/日记内容跟最终结果对不上）。
+    await generateDiaryEntry(companionId, {
+      triggerDefId: def.id,
+      triggerLabel: def.title,
+      triggerDetail: resolvedText,
+    });
   } catch (error) {
-    console.error('[CompanionEvent] 选项结果写入聊天消息失败:', error);
+    console.error('[CompanionEvent] 选项结果写入聊天消息/日记失败:', error);
   }
 
   return { companion: updated, outcomeText: resolvedText || null };

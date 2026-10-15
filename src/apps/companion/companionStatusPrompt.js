@@ -75,7 +75,29 @@ export const buildCompanionStatusPromptBlock = async (chatId) => {
       console.warn('[CompanionStatus] 拉取最近动态失败：', error);
     }
 
-    return `\n【你们共同养的小伙伴"${companion.name}"目前的状态（这次恰好想到/感知到了，不是每次都要提，用户问起它、聊天里自然聊到它、或者你单纯想随口提一句都可以，不要生硬地汇报数值，也别刻意为了提而提）】：\n${moodText}，${satietyText}${idleText}。${recentLogText}\n`;
+    // 最近一篇日记（含用户有没有点赞/留言）——日记本身是"重要事件触发"写的，
+    // 比普通动态更值得被角色感知到、甚至主动提起，所以单独拎出来一段，
+    // 不跟上面的 recentLogText 合并。同样只在 3 天以内才带上，太旧的日记
+    // 角色去聊它会显得很奇怪（"事后很久才提起"）。
+    let recentDiaryText = '';
+    try {
+      const recentDiaries = await db.companionDiaries
+        .where('companionId')
+        .equals(companion.id)
+        .reverse()
+        .sortBy('timestamp');
+      const latestDiary = recentDiaries[0];
+      if (latestDiary?.content && now - latestDiary.timestamp < 3 * 86400000) {
+        let userReactionText = '';
+        if (latestDiary.liked) userReactionText += '，用户点了赞';
+        if (latestDiary.userComment) userReactionText += `，用户留言说"${latestDiary.userComment}"`;
+        recentDiaryText = `\n${companion.name}最近写了一篇日记：「${latestDiary.content}」${userReactionText}。`;
+      }
+    } catch (error) {
+      console.warn('[CompanionStatus] 拉取最近日记失败：', error);
+    }
+
+    return `\n【你们共同养的小伙伴"${companion.name}"目前的状态（这次恰好想到/感知到了，不是每次都要提，用户问起它、聊天里自然聊到它、或者你单纯想随口提一句都可以，不要生硬地汇报数值，也别刻意为了提而提）】：\n${moodText}，${satietyText}${idleText}。${recentLogText}${recentDiaryText}\n`;
   } catch (error) {
     console.warn('[CompanionStatus] 生成小伙伴状态提示词失败：', error);
     return '';

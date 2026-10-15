@@ -217,6 +217,7 @@ export const openCompanionSession = async (chatId) => {
 export { getActiveEvents };
 export { claimCompanionEvent, resolveCompanionChoiceEvent } from './companionEventService';
 export { getBackpack, useBackpackItem } from './backpack/companionBackpackService';
+export { getDiaries, toggleDiaryLike, commentOnDiary } from './diary/companionDiaryService';
 
 export const adoptCompanion = async ({ chatId, characterId, name, avatarUrl }) => {
   const existing = await db.companions.where('chatId').equals(chatId).first();

@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import {
   Activity,
   ArrowLeft,
+  BookOpen,
   Check,
   Droplets,
   Gamepad2,
@@ -48,6 +49,7 @@ import CompanionHeartIcon from './CompanionHeartIcon';
 import CompanionFortuneModal from './fortune/CompanionFortuneModal';
 import CompanionCatchGameModal from './play/CompanionCatchGameModal';
 import CompanionBackpackModal from './backpack/CompanionBackpackModal';
+import CompanionDiaryModal from './diary/CompanionDiaryModal';
 import './companionPage.css';
 
 /*
@@ -225,6 +227,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showHeartsInfo, setShowHeartsInfo] = useState(false);
   const [showFortune, setShowFortune] = useState(false);
   const [showCatchGame, setShowCatchGame] = useState(false);
+  const [showDiary, setShowDiary] = useState(false);
   const [chatStreakCount, setChatStreakCount] = useState(0);
   const [isPoking, setIsPoking] = useState(false);
   const [floaters, setFloaters] = useState([]);
@@ -1171,6 +1174,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               </span>
               小游戏
             </button>
+            <button
+              type="button"
+              onClick={() => setShowDiary(true)}
+              className="cp-dock-btn"
+              aria-label="日记"
+            >
+              <span className="cp-dock-ico">
+                <BookOpen className="cp-ic" />
+              </span>
+              日记
+            </button>
           </div>
         </div>
 
@@ -1304,6 +1318,14 @@ const CompanionPage = ({ chatId, character, onBack }) => {
             setLogs(await getRecentLogs(updatedCompanion.id));
           }}
           onClose={() => setShowCatchGame(false)}
+        />
+      )}
+
+      {showDiary && (
+        <CompanionDiaryModal
+          companionId={companion.id}
+          companionName={companion.name}
+          onClose={() => setShowDiary(false)}
         />
       )}
 

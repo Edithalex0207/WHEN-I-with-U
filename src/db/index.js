@@ -4920,4 +4920,17 @@ db.version(89).stores({
   flightChessDeckOverrides: 'deckId, updatedAt',
 });
 
+// v90：小伙伴日记（companion.js「小伙伴」板块新一轮功能第一个切片）。
+// 由重要事件触发写一篇第一人称小日记，用户可以点赞/留言，这个互动会在
+// companionStatusPrompt.js 里被概率性地喂给角色感知/提起。完全新表，
+// 跟 companionLogs（互动/自主照料的轻量流水日志）是两回事，不共用。
+db.version(90).stores({
+  companionDiaries: `
+    ++id,
+    companionId,
+    timestamp,
+    [companionId+timestamp]
+  `,
+});
+
 export default db;
