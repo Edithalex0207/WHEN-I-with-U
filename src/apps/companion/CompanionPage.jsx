@@ -49,7 +49,8 @@ import CompanionHeartIcon from './CompanionHeartIcon';
 import CompanionFortuneModal from './fortune/CompanionFortuneModal';
 import CompanionCatchGameModal from './play/CompanionCatchGameModal';
 import CompanionBackpackModal from './backpack/CompanionBackpackModal';
-import CompanionDiaryModal from './diary/CompanionDiaryModal';
+   import CompanionDiaryBook from './diary/CompanionDiaryBook';
+   import CompanionDiaryIcon from './diary/CompanionDiaryIcon';
 import './companionPage.css';
 
 /*
@@ -1181,7 +1182,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               aria-label="日记"
             >
               <span className="cp-dock-ico">
-                <BookOpen className="cp-ic" />
+                   <CompanionDiaryIcon />
               </span>
               日记
             </button>
@@ -1322,11 +1323,12 @@ const CompanionPage = ({ chatId, character, onBack }) => {
       )}
 
       {showDiary && (
-        <CompanionDiaryModal
-          companionId={companion.id}
-          companionName={companion.name}
-          onClose={() => setShowDiary(false)}
-        />
+          <CompanionDiaryBook
+     companionId={companion.id}
+     companionName={companion.name}
+     companionAvatarUrl={companion.avatarUrl}
+     onClose={() => setShowDiary(false)}
+   />
       )}
 
       {eventPopup && (

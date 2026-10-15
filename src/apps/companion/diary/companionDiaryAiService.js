@@ -37,8 +37,8 @@ export const generateDiaryText = async ({ chatId, chat, character, companion, tr
 
 【注意：这不是一句普通聊天，而是你正在以"${companion.name}"（你们共同养的小伙伴）自己的身份、自己的口吻写一篇私人日记】
 刚刚发生的事：${triggerLabel}${triggerDetail ? `（${triggerDetail}）` : ''}。
-请用小伙伴自己第一人称的语气写一篇简短日记（60-150字），可以写当时的心情、一些细节、小小的念头，
-不需要提到这件事具体是怎么发生的机制，只写感受和经过即可。
+请用小伙伴自己第一人称的语气（用"我"）写一篇简短日记（60-120字），口吻要像小朋友或小动物写日记：软萌、直白、带点撒娇和小心思，可以有一点点小得意或小委屈，可以写当时的心情、一些细节、小小的念头，
+写感受和经过即可。
 不要出现"系统"、"面板"、"程序"、"App"这类词，不要使用表情符号，不要加引号，不要署名，不要分点，写成一段自然的文字。`;
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
