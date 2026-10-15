@@ -11,8 +11,7 @@ import {
   Palette,
   Pencil,
   Shirt,
-  ShoppingBag,
-  ShoppingBasket,
+    ShoppingBag,
   Sparkles,
   Store,
   Upload,
@@ -51,6 +50,11 @@ import CompanionCatchGameModal from './play/CompanionCatchGameModal';
 import CompanionBackpackModal from './backpack/CompanionBackpackModal';
    import CompanionDiaryBook from './diary/CompanionDiaryBook';
    import CompanionDiaryIcon from './diary/CompanionDiaryIcon';
+import CompanionBackpackIcon from './backpack/CompanionBackpackIcon';
+import CompanionFortuneIcon from './fortune/CompanionFortuneIcon';
+import CompanionGameIcon from './play/CompanionGameIcon';
+import CompanionMoodCalendar from './mood/CompanionMoodCalendar';
+import { CompanionMoodEntryIcon } from './mood/companionMoodIcons';
 import './companionPage.css';
 
 /*
@@ -228,7 +232,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showHeartsInfo, setShowHeartsInfo] = useState(false);
   const [showFortune, setShowFortune] = useState(false);
   const [showCatchGame, setShowCatchGame] = useState(false);
-  const [showDiary, setShowDiary] = useState(false);
+    const [showDiary, setShowDiary] = useState(false);
+  const [showMoodCalendar, setShowMoodCalendar] = useState(false);
   const [chatStreakCount, setChatStreakCount] = useState(0);
   const [isPoking, setIsPoking] = useState(false);
   const [floaters, setFloaters] = useState([]);
@@ -920,7 +925,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         )}
       </div>
 
-      {floatingBackButton}
+            {floatingBackButton}
+
+      <button
+        type="button"
+        onClick={() => setShowMoodCalendar(true)}
+        title="心情日历"
+        aria-label="心情日历"
+        className="cp-round-btn right2"
+      >
+        <CompanionMoodEntryIcon />
+      </button>
 
       <button
         type="button"
@@ -1134,8 +1149,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               className="cp-dock-btn"
               aria-label="背包"
             >
-              <span className="cp-dock-ico">
-                <ShoppingBasket className="cp-ic" />
+                           <span className="cp-dock-ico">
+                <CompanionBackpackIcon />
                 {backpackItems.length > 0 && <b className="cp-badge">{backpackItems.length}</b>}
               </span>
               背包
@@ -1152,10 +1167,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               className="cp-dock-btn"
               aria-label="宠物日签"
             >
-              <span className="cp-dock-ico">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
+                            <span className="cp-dock-ico">
+                <CompanionFortuneIcon />
               </span>
               日签
             </button>
@@ -1165,13 +1178,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               className="cp-dock-btn"
               aria-label="小游戏：接住掉落物"
             >
-              <span className="cp-dock-ico">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="2" y="8" width="20" height="10" rx="5" />
-                  <path d="M7 11v4M5 13h4" />
-                  <circle cx="15" cy="12" r="1" />
-                  <circle cx="18" cy="14" r="1" />
-                </svg>
+                            <span className="cp-dock-ico">
+                <CompanionGameIcon />
               </span>
               小游戏
             </button>
@@ -1326,9 +1334,16 @@ const CompanionPage = ({ chatId, character, onBack }) => {
           <CompanionDiaryBook
      companionId={companion.id}
      companionName={companion.name}
-     companionAvatarUrl={companion.avatarUrl}
+        companionAvatarUrl={companion.avatarUrl}
      onClose={() => setShowDiary(false)}
    />
+      )}
+
+      {showMoodCalendar && (
+        <CompanionMoodCalendar
+          companionId={companion.id}
+          onClose={() => setShowMoodCalendar(false)}
+        />
       )}
 
       {eventPopup && (

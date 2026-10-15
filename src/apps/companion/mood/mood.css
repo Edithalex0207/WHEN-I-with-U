@@ -1,0 +1,41 @@
+/*
+ * mood.css —— 心情日历专用样式，类名统一 md- 前缀。
+ * 颜色全部复用 companionPage.css 里已经定义好的 --cp-* 变量，这个文件
+ * 只负责布局/间距，不重新定义颜色（这个组件也始终渲染在 .cp-root 内部）。
+ */
+
+.md-scroll { padding-top: 2px; }
+
+.md-month-nav { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 0 0 10px; }
+.md-month-nav span { font-size: 14px; font-weight: 800; color: var(--cp-text); min-width: 96px; text-align: center; }
+.md-month-nav button {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--cp-soft); color: var(--cp-sub);
+  font-size: 17px; font-weight: 800; display: grid; place-items: center; line-height: 1;
+}
+.md-month-nav button:disabled { opacity: 0.35; }
+.md-month-nav button:active:not(:disabled) { transform: scale(0.88); }
+
+.md-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+.md-weekdays span { text-align: center; font-size: 11px; font-weight: 800; color: var(--cp-muted); }
+
+.md-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.md-cell {
+  aspect-ratio: 1; border-radius: 12px; background: var(--cp-soft);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+}
+.md-cell-empty { background: transparent; }
+.md-cell.is-today { background: var(--cp-accent-soft); }
+.md-cell.is-future { opacity: 0.4; }
+.md-cell:active:not(:disabled) { transform: scale(0.92); }
+.md-date { font-size: 11px; font-weight: 700; color: var(--cp-sub); }
+.md-dots { display: flex; gap: 3px; align-items: center; }
+.md-dot-empty { width: 9px; height: 9px; border-radius: 50%; background: var(--cp-border); display: block; }
+
+.md-hint { margin: 10px 2px 2px; font-size: 11.5px; line-height: 1.5; color: var(--cp-muted); }
+
+.md-picker { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--cp-border); }
+.md-picker-title { margin: 0 0 8px; font-size: 13px; font-weight: 800; color: var(--cp-text); text-align: center; }
+.md-picker-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.md-picker-face { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--cp-sub); }
+.md-picker-face:active { transform: scale(0.9); }
+.md-picker-face:disabled { opacity: 0.5; }

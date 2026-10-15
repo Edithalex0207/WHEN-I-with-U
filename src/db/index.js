@@ -4933,4 +4933,18 @@ db.version(90).stores({
   `,
 });
 
+// v91：小伙伴心情日历（companion.js「小伙伴」板块新一轮功能第二个切片）。
+// 一天一条记录，date 是本地日期字符串 'YYYY-MM-DD'。charMood 是小伙伴当天
+// 的心情（每天晚上由 AI 固定判断一次，见后续切片的调度器，这张表先只有
+// 字段，写入逻辑还没做），userMood 是用户自己点格子选的、覆盖式，不留
+// 历史版本。完全新表，跟 companionDiaries/companionLogs 都不共用。
+db.version(91).stores({
+  companionMoods: `
+    ++id,
+    companionId,
+    date,
+    [companionId+date]
+  `,
+});
+
 export default db;
