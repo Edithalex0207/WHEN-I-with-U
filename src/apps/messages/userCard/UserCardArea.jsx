@@ -47,8 +47,7 @@ export const UserCardArea = ({ characters = [] }) => {
   if (!isReady) return null;
 
   return (
-    // 紧贴在上方"新建聊天"按钮的下面，所以把默认的列表间距往上收一点。
-    <div className="space-y-2" style={{ marginTop: -8 }}>
+    <div className="space-y-2">
       <div className="uc-mini-row">
         <button
           type="button"
