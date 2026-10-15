@@ -10,7 +10,8 @@ import {
   getAwayOfferNote,
   applyAwayDirective,
 } from '../apps/messages/away/awayService';
-
+import { buildUserStatusPromptNote } from '../apps/messages/userCard/userStatusPrompt';
+import { maybeSendUserAutoReply } from '../apps/messages/userCard/userAutoReplyService';
 import {
   getChatMemoryContext,
   getCharacterEmotionContext,
@@ -2609,7 +2610,13 @@ const trickButtonNote = (!options.ignoreAway && isHalloweenSeasonActive())
 完全自愿，不是每次回复都需要带这个标签，想用再用。`
   : '';
 
+// 用户在名片里设置的状态（暂时不在线 / 忙碌等）。名片没开、状态是普通在线、
+// 或用户设为对这个角色不可见时返回空字符串，一个字都不加。
+const userStatusNote = await buildUserStatusPromptNote({ characterId: character.id });
+
 const userReturnContext = `${buildUserReturnContext(recentMsgs)}${
+  userStatusNote ? `\n\n${userStatusNote}` : ''
+}${
   awayOfferNote ? `\n\n${awayOfferNote}` : ''
 }${
   companionOfferNote ? `\n\n${companionOfferNote}` : ''
@@ -3954,6 +3961,9 @@ void scheduleMemoryProcessing(chatId);
       timestamp: nowIso,
       isCurrentPageVisible: isDocumentVisible()
     });
+
+       // 用户把状态设为"暂时不在线"并开着自动回复时，这次主动联系之后补发一条自动回复。
+    void maybeSendUserAutoReply({ chatId, characterId: character.id });
 
     return insertedMessageIds[insertedMessageIds.length - 1];
 

@@ -30,6 +30,7 @@ import CheckInSettings from './check-in/CheckInSettings';
 import CompanionshipPage from './companionship/CompanionshipPage';
 import BroadcastComposer from './components/BroadcastComposer';
 import './check-in/check-in.css';
+import UserCardArea from './userCard/UserCardArea';
 
 // "群发"一次最多能选几个目标聊天窗。
 const MAX_BROADCAST_TARGETS = 5;
@@ -364,6 +365,10 @@ export const MessagesApp = ({ onBackHub, onChatRoomStateChange }) => {
           </div>
         </div>
       )}
+            {view === 'chats' && !broadcastMode && (
+        <UserCardArea characters={characters} />
+      )}
+
 
       {view === 'chats' && (
         <div className="space-y-4">

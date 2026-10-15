@@ -23,6 +23,7 @@ import ChatParcelArrivedNotice from '../parcel/ChatParcelArrivedNotice';
 import ChatParallelOrbitNotice from './ChatParallelOrbitNotice';
 import ProfileTraceCard from '../profile/ProfileTraceCard';
 import ChatTrickNotice from '../interactions/halloween/ChatTrickNotice';
+import ChatUserAutoReply from '../userCard/ChatUserAutoReply';
 import SpiderEgg from '../interactions/halloween/SpiderEgg';
 import OfflineInviteCard from '../../offline/OfflineInviteCard';
 import RealVoiceCard from '../../../features/real-voice/components/RealVoiceCard';
@@ -277,6 +278,11 @@ const MessageRow = ({
         activeUserName={activeUserName}
       />
     );
+  }
+
+    // 用户"暂时不在线"自动回复：用户一侧的小气泡，带"自动回复"标记。
+  if (msg.type === 'user_auto_reply') {
+    return <ChatUserAutoReply message={msg} />;
   }
 
   if (msg.type === 'trick') {

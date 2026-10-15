@@ -2,6 +2,7 @@ import db from '../db';
 import { isInQuietHours } from './aiService';
 import { buildRhythmChatContext } from './rhythmContextService';
 import { hasAnyLiveCall } from './callService';
+import { maybeSendUserAutoReply } from '../apps/messages/userCard/userAutoReplyService';
 
 // 距离上一条消息（不论发送方）多久以内，视为"用户正在这个对话里"，
 // 此时不主动插入提醒消息，避免打断正在进行的对话。
@@ -566,6 +567,9 @@ ${
         })
       );
     }
+
+        // 用户把状态设为"暂时不在线"并开着自动回复时，寄语之后补发一条自动回复。
+    void maybeSendUserAutoReply({ chatId, characterId: character.id });
 
     return {
       status: 'success',

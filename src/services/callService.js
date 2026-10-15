@@ -23,6 +23,10 @@ import {
 import { synthesizeMiniMaxSpeech } from '../features/real-voice/minimaxClient';
 import { getAwayState } from '../apps/messages/away/awayState';
 import {
+  getActiveUserAutoReply,
+  maybeSendUserAutoReply,
+} from '../apps/messages/userCard/userAutoReplyService';
+import {
   VOICEMAIL_AUDIO_SAFETY_MS,
   estimateVoicemailReadMs,
   getVoicemail,
@@ -1125,6 +1129,22 @@ export const startIncomingCall = async ({ chatId, characterId, inviteId = null, 
       .first();
 
     if (existing) return null;
+  }
+
+    // 用户把状态设为"暂时不在线"、开着自动回复、并且对这个角色可见时：
+  // 不让电话响铃，直接记成一通未接来电，再补发一条自动回复。
+  if (await getActiveUserAutoReply(characterId)) {
+    const awayCharacter = await db.characters.get(characterId);
+    const missedId = await recordMissedCloudCall({
+      chatId,
+      characterId,
+      characterName: awayCharacter?.name,
+      inviteId,
+    });
+
+    void maybeSendUserAutoReply({ chatId, characterId });
+
+    return missedId;
   }
 
   const timestamp = new Date().toISOString();
