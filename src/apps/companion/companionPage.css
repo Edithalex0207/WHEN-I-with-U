@@ -301,7 +301,12 @@
 .cp-grabber::before, .cp-grabber::after { content: ""; width: 9px; height: 9px; background: var(--cp-butter-fg); opacity: 0.7; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: cp-twinkle 3s ease-in-out infinite; }
 .cp-grabber::after { animation-delay: -1.4s; background: var(--cp-accent); }
 
-.cp-dock { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cp-dock-main { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+/* 第二排固定项太多会把弹窗越撑越高，改成横向滑动；以后新功能往这一排
+   右边续，不再往下新增一行。*/
+.cp-dock-extra { display: flex; gap: 14px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
+.cp-dock-extra::-webkit-scrollbar { display: none; }
+.cp-dock-extra .cp-dock-btn { flex: 0 0 auto; width: 52px; }
 .cp-dock-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--cp-sub); }
 .cp-dock-ico {
   position: relative; width: 60px; height: 60px; border-radius: 24px / 26px 26px 22px 22px; display: grid; place-items: center; font-size: 25px;

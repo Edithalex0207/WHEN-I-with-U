@@ -53,6 +53,7 @@ import PhotoCard from './cards/PhotoCard';
 import McpUsageTraceCard from './cards/McpUsageTraceCard';
 import ApiFallbackHint from './cards/ApiFallbackHint';
 import CompanionOfferCard from './cards/CompanionOfferCard';
+import CompanionStatusAlertCard from './cards/CompanionStatusAlertCard';
 import BubbleCssCard from './cards/BubbleCssCard';
 import ConfirmCard from './cards/ConfirmCard';
 
@@ -513,6 +514,13 @@ const MessageRow = ({
               message={msg}
               chatId={msg.chatId}
               onAccept={() => onOpenCompanionOffer?.()}
+            />
+          ) : msg.type === 'companion_status_alert' ? (
+            // 复用 onOpenCompanionOffer：它本来做的事就是"打开小伙伴页面"，
+            // 跟这张卡片点击要跳转的地方完全一样，没必要再接一条新的 prop。
+            <CompanionStatusAlertCard
+              message={msg}
+              onOpen={() => onOpenCompanionOffer?.()}
             />
                    ) : msg.type === 'bubble_css_card' ? (
             <BubbleCssCard message={msg} />

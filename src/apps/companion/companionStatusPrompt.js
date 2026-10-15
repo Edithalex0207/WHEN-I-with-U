@@ -22,6 +22,12 @@
 
 import db from '../../db';
 
+const pad2 = (n) => String(n).padStart(2, '0');
+const getTodayDateStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
+
 const describeMood = (mood) => {
   if (mood >= 80) return '心情很好';
   if (mood >= 50) return '心情还不错';
@@ -97,7 +103,24 @@ export const buildCompanionStatusPromptBlock = async (chatId) => {
       console.warn('[CompanionStatus] 拉取最近日记失败：', error);
     }
 
-    return `\n【你们共同养的小伙伴"${companion.name}"目前的状态（这次恰好想到/感知到了，不是每次都要提，用户问起它、聊天里自然聊到它、或者你单纯想随口提一句都可以，不要生硬地汇报数值，也别刻意为了提而提）】：\n${moodText}，${satietyText}${idleText}。${recentLogText}${recentDiaryText}\n`;
+    // 每日问答——严格只在 char 和 user 今天都回答了之后才带上这一段；
+    // 只要有一边没答（甚至今天根本还没出题），dailyQaText 就保持空字符串，
+    // 不会多占一个字的 token，也不会主动提醒"还没回答"去催用户。
+    let dailyQaText = '';
+    try {
+      const todayStr = getTodayDateStr();
+      const todayQa = await db.companionDailyQA
+        .where('[companionId+date]')
+        .equals([companion.id, todayStr])
+        .first();
+      if (todayQa?.charAnswer && todayQa?.userAnswer) {
+        dailyQaText = `\n今天的每日问答都答完了——问${companion.name}的问题是"${todayQa.questionForChar}"，TA 答的是"${todayQa.charAnswer}"；问用户的问题是"${todayQa.questionForUser}"，用户答的是"${todayQa.userAnswer}"。`;
+      }
+    } catch (error) {
+      console.warn('[CompanionStatus] 拉取每日问答失败：', error);
+    }
+
+    return `\n【你们共同养的小伙伴"${companion.name}"目前的状态（这次恰好想到/感知到了，不是每次都要提，用户问起它、聊天里自然聊到它、或者你单纯想随口提一句都可以，不要生硬地汇报数值，也别刻意为了提而提）】：\n${moodText}，${satietyText}${idleText}。${recentLogText}${recentDiaryText}${dailyQaText}\n`;
   } catch (error) {
     console.warn('[CompanionStatus] 生成小伙伴状态提示词失败：', error);
     return '';

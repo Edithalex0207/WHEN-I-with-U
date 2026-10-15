@@ -38,6 +38,7 @@ import { checkAlmanacGreetings } from '../apps/almanac/services/almanacGreetingS
 import { checkAlmanacPortraitAutoGeneration } from '../apps/almanac/services/almanacCharacterPortraitService';
 import { runChallengeScheduler } from '../apps/challenges/challengeScheduler';
 import { checkCompanionMoods } from '../apps/companion/mood/companionMoodScheduler';
+import { checkCompanionStatusAlerts } from '../apps/companion/companionStatusAlertService';
 
 const BASE_TICK_MS = 3 * 60 * 1000;
 
@@ -52,6 +53,9 @@ const REGISTRATIONS = [
   // 本身是"过了 22 点才真的检查"的一次性日结，检查本身很便宜（没到点
   // 就立刻 return），用跟 rhythm/almanacGreeting 一样的 3 分钟间隔没问题。
   { name: 'companionMood', intervalMs: 3 * 60 * 1000, run: checkCompanionMoods },
+  // #4 状态不佳卡片：检查本身也很便宜（没养小伙伴/还在冷却就立刻
+  // return），3 分钟间隔足够及时，不会错过状态刚掉下阈值的时机。
+  { name: 'companionStatusAlert', intervalMs: 3 * 60 * 1000, run: checkCompanionStatusAlerts },
 ];
 
 // 原本就不在启动瞬间立即检查一次的调度器，见文件顶部说明。
@@ -110,7 +114,7 @@ export const startGlobalChatScheduler = () => {
     void runDueSchedulers();
   }, BASE_TICK_MS);
 
-    console.log('[globalChatScheduler] 已启动，基准 tick 3 分钟，合并 rhythm/call/snapshotGlobal/almanacGreeting/almanacPortrait/parallelOrbit/challenge/companionMood。');
+    console.log('[globalChatScheduler] 已启动，基准 tick 3 分钟，合并 rhythm/call/snapshotGlobal/almanacGreeting/almanacPortrait/parallelOrbit/challenge/companionMood/companionStatusAlert。');
 };
 
 export const stopGlobalChatScheduler = () => {

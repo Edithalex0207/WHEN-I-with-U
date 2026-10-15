@@ -4950,4 +4950,32 @@ db.version(91).stores({
   `,
 });
 
+// v92：每日问答（companion.js「小伙伴」板块新一轮功能第三个切片）。小伙伴
+// 每天出一对问题——一个问 char（角色，小伙伴背后真正在聊天的那个角色），
+// 一个问 user——两边的回答互相可见。一天一条记录，date 是本地日期字符串
+// 'YYYY-MM-DD'，[companionId+date] 保证一天只有一条。
+//
+// questionForChar/questionForUser 当天定下来之后不再变；charAnswer 是 AI
+// 代入角色视角给出的回答，生成失败就先留 null（界面上会显示"还没想好"的
+// 空状态 + 重roll 按钮，用户可以随时再试，不会因为失败一次就卡死一整天，
+// 也不跟"今天出没出题"这件事绑在一起）。userAnswer 是用户自己写的回答，
+// 提交前会有二次确认，提交后 userAnsweredAt 就有值，界面侧会把它当成"已
+// 锁定、不能再改"的标记（这张表本身不做任何校验，锁定逻辑在
+// companionDailyQaService.js 的 submitUserAnswer 里）。
+//
+// 历史记录只保留最近 5 天：companionDailyQaService.js 每次确保今天的题目
+// 存在时，会顺手删掉超过 5 天的旧记录（不单独起定时任务，省事且足够——
+// 用户打开小伙伴页面、或小伙伴页面在后台被 globalChatScheduler 触发检查
+// 的频率本身就够密了），另外历史 tab 里也留了手动"现在清空"的入口。
+//
+// 完全新表，跟 companionDiaries/companionMoods/companionLogs 都不共用。
+db.version(92).stores({
+  companionDailyQA: `
+    ++id,
+    companionId,
+    date,
+    [companionId+date]
+  `,
+});
+
 export default db;

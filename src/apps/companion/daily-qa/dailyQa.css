@@ -1,0 +1,94 @@
+/*
+ * dailyQa.css —— 每日问答专属样式，qa- 前缀，不污染 companionPage.css。
+ *
+ * 外层弹窗壳（.cp-overlay/.cp-panel.bottom/.cp-tabs/.cp-confirm/.cp-btn）
+ * 都复用 companionPage.css 已有的约定，这里只补问答卡片、历史卡盒这些
+ * 专属的部分。
+ *
+ * 字体上故意不只用一套：问题本身用标题圆体（--cp-font-display，页面已经
+ * 引入），TA 的回答用一款手写体（像在小纸条上写的字，呼应日记"便利贴"
+ * 的调性），其它正文用系统字体——三种混搭，比单一字体更有层次。
+ *
+ * 注意：@import 必须放在文件最前面（注释除外）。
+ */
+@import url("https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap");
+
+.qa-scroll { display: flex; flex-direction: column; gap: 12px; }
+
+.qa-card { border-radius: 16px; padding: 12px 14px; }
+.qa-card-char { background: var(--cp-accent-soft); }
+.qa-card-user { background: var(--cp-heart-soft); }
+
+.qa-card-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 6px; }
+.qa-card-label { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; margin: 0 0 6px; }
+.qa-card-head .qa-card-label { margin: 0; }
+.qa-label-char { color: var(--cp-sky-fg); }
+.qa-label-user { color: var(--cp-heart); }
+
+.qa-question {
+  font-family: var(--cp-font-display); font-weight: 400; font-size: 14.5px;
+  line-height: 1.5; margin: 0 0 10px; color: var(--cp-text);
+}
+
+.qa-char-answer {
+  margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--cp-card);
+  font-family: "Zhi Mang Xing", var(--cp-font-body); font-size: 15px; line-height: 1.5; color: var(--cp-sub);
+}
+.qa-char-answer.is-empty {
+  font-family: var(--cp-font-body); font-size: 12px; color: var(--cp-muted); text-align: center;
+}
+
+.qa-reroll-btn {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--cp-card);
+  display: flex; align-items: center; justify-content: center; transition: transform 0.3s ease-out;
+}
+.qa-reroll-btn:active { transform: rotate(150deg); }
+.qa-reroll-btn:disabled { opacity: 0.6; }
+
+.qa-input {
+  width: 100%; border: none; border-radius: 10px; background: var(--cp-card); padding: 9px 11px;
+  font-size: 13px; line-height: 1.5; color: var(--cp-text); font-family: var(--cp-font-body); resize: none;
+}
+.qa-input::placeholder { color: var(--cp-muted); }
+
+.qa-error { margin: 6px 2px 0; font-size: 11px; font-weight: 700; color: var(--cp-heart); }
+
+.qa-submit-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+.qa-submit-btn {
+  background: var(--cp-accent); color: var(--cp-on-accent); font-size: 12px; font-weight: 800;
+  padding: 7px 18px; border-radius: 999px; transition: transform 0.2s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+.qa-submit-btn:active { transform: scale(0.92); }
+
+.qa-user-answer {
+  margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--cp-card);
+  font-size: 13px; line-height: 1.5; color: var(--cp-text);
+}
+.qa-user-answer.is-empty { color: var(--cp-muted); font-size: 12px; text-align: center; }
+
+.qa-hint { margin: 2px 0 0; font-size: 11px; color: var(--cp-muted); text-align: center; }
+
+/* 历史 tab */
+.qa-history-note { margin: 0 0 10px; font-size: 11px; line-height: 1.6; color: var(--cp-muted); text-align: center; }
+.qa-clear-link { color: var(--cp-accent); font-weight: 800; }
+
+.qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.qa-day-card {
+  aspect-ratio: 3 / 4; border-radius: 16px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  background: linear-gradient(135deg, var(--cp-sky-bg), var(--cp-heart-soft));
+  transition: transform 0.25s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+.qa-day-card:active { transform: scale(0.94) rotate(-1.5deg); }
+.qa-day-date { font-size: 13px; font-weight: 800; color: var(--cp-text); }
+.qa-day-tag { font-size: 10px; font-weight: 700; color: var(--cp-sub); }
+
+.qa-opened-card { padding: 2px; animation: qa-card-pop 0.3s cubic-bezier(0.3, 1.7, 0.4, 1); }
+.qa-opened-date { margin: 0 0 12px; font-size: 12px; font-weight: 800; color: var(--cp-sub); text-align: center; }
+.qa-opened-block { margin-bottom: 12px; }
+.qa-opened-block .qa-question { font-size: 13.5px; }
+
+@keyframes qa-card-pop {
+  from { opacity: 0; transform: scale(0.9) rotateY(25deg); }
+  to { opacity: 1; transform: none; }
+}

@@ -55,8 +55,9 @@ import CompanionFortuneIcon from './fortune/CompanionFortuneIcon';
 import CompanionGameIcon from './play/CompanionGameIcon';
 import CompanionMoodCalendar from './mood/CompanionMoodCalendar';
 import { CompanionMoodEntryIcon } from './mood/companionMoodIcons';
+import CompanionDailyQaModal from './daily-qa/CompanionDailyQaModal';
+import CompanionDailyQaIcon from './daily-qa/CompanionDailyQaIcon';
 import './companionPage.css';
-
 /*
  * 把用户上传的图片压到一个头像该有的尺寸、保留透明通道、输出 PNG。
  *
@@ -232,8 +233,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showHeartsInfo, setShowHeartsInfo] = useState(false);
   const [showFortune, setShowFortune] = useState(false);
   const [showCatchGame, setShowCatchGame] = useState(false);
-    const [showDiary, setShowDiary] = useState(false);
-  const [showMoodCalendar, setShowMoodCalendar] = useState(false);
+     const [showMoodCalendar, setShowMoodCalendar] = useState(false);
+  const [showDailyQa, setShowDailyQa] = useState(false);
   const [chatStreakCount, setChatStreakCount] = useState(0);
   const [isPoking, setIsPoking] = useState(false);
   const [floaters, setFloaters] = useState([]);
@@ -1119,7 +1120,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
           onPointerCancel={(event) => finishPeekDrag(event, true)}
         >
           <div className="cp-grabber"><i /></div>
-          <div className="cp-dock">
+          <div className="cp-dock-main">
             {ACTIONS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -1132,7 +1133,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
                 {label}
               </button>
             ))}
-                        <button
+            <button
               type="button"
               onClick={() => setShowShop(true)}
               className="cp-dock-btn shop"
@@ -1143,13 +1144,16 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               </span>
               商店
             </button>
-                        <button
+          </div>
+
+          <div className="cp-dock-extra">
+            <button
               type="button"
               onClick={() => setShowBackpack(true)}
               className="cp-dock-btn"
               aria-label="背包"
             >
-                           <span className="cp-dock-ico">
+              <span className="cp-dock-ico">
                 <CompanionBackpackIcon />
                 {backpackItems.length > 0 && <b className="cp-badge">{backpackItems.length}</b>}
               </span>
@@ -1167,7 +1171,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               className="cp-dock-btn"
               aria-label="宠物日签"
             >
-                            <span className="cp-dock-ico">
+              <span className="cp-dock-ico">
                 <CompanionFortuneIcon />
               </span>
               日签
@@ -1178,7 +1182,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               className="cp-dock-btn"
               aria-label="小游戏：接住掉落物"
             >
-                            <span className="cp-dock-ico">
+              <span className="cp-dock-ico">
                 <CompanionGameIcon />
               </span>
               小游戏
@@ -1190,9 +1194,20 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               aria-label="日记"
             >
               <span className="cp-dock-ico">
-                   <CompanionDiaryIcon />
+                <CompanionDiaryIcon />
               </span>
               日记
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDailyQa(true)}
+              className="cp-dock-btn"
+              aria-label="每日问答"
+            >
+              <span className="cp-dock-ico">
+                <CompanionDailyQaIcon />
+              </span>
+              问答
             </button>
           </div>
         </div>
@@ -1343,6 +1358,15 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         <CompanionMoodCalendar
           companionId={companion.id}
           onClose={() => setShowMoodCalendar(false)}
+        />
+      )}
+
+      {showDailyQa && (
+        <CompanionDailyQaModal
+          chatId={chatId}
+          character={character}
+          companion={companion}
+          onClose={() => setShowDailyQa(false)}
         />
       )}
 
