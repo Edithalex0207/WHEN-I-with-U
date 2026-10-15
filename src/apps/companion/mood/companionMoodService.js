@@ -1,11 +1,13 @@
 /*
  * 心情日历——数据 CRUD。
  *
- * 【已确认的设计】：日历里每一天一格，左边是小伙伴当天的心情（AI 在每天
- * 晚上 22 点固定判断一次，见 Slice B 的 companionMoodScheduler.js /
- * companionMoodAiService.js，这一片暂时还没有），右边是用户自己的心情
- * （用户点格子自己选，覆盖式——一天只留最后一次选择，不留历史版本，
- * 跟日记留言、改名是一个思路）。用户只能设置今天及之前的日期。
+ * 【已确认的设计】：日历里每一天一格，左边是 char（角色，也就是小伙伴
+ * 背后真正在聊天的那个角色，不是 companion.mood 那个养成数值）当天的
+ * 心情——AI 在每天晚上 22 点固定判断一次，见 Slice B 的
+ * companionMoodScheduler.js / companionMoodAiService.js，这一片暂时还
+ * 没有；右边是用户自己的心情（用户点格子自己选，覆盖式——一天只留最后
+ * 一次选择，不留历史版本，跟日记留言、改名是一个思路）。用户只能设置
+ * 今天及之前的日期。
  *
  * 完全新表 companionMoods（db.version(91)），跟 companionDiaries/
  * companionLogs 都是两回事，不共用。
@@ -71,6 +73,32 @@ export const setUserMood = async (companionId, dateStr, moodKey) => {
     userMoodAt: now,
     charMood: null,
     charMoodAt: null,
+  });
+  return await db.companionMoods.get(id);
+};
+
+/*
+ * char（角色）当天的心情，由 companionMoodScheduler.js 在每天晚上判断完
+ * 之后调用，写入。覆盖式，一天只留最后一次判断结果。
+ */
+export const setCharMood = async (companionId, dateStr, moodKey) => {
+  if (!companionId || !dateStr || !moodKey) return null;
+
+  const existing = await getRecord(companionId, dateStr);
+  const now = Date.now();
+
+  if (existing) {
+    await db.companionMoods.update(existing.id, { charMood: moodKey, charMoodAt: now });
+    return await db.companionMoods.get(existing.id);
+  }
+
+  const id = await db.companionMoods.add({
+    companionId,
+    date: dateStr,
+    charMood: moodKey,
+    charMoodAt: now,
+    userMood: null,
+    userMoodAt: null,
   });
   return await db.companionMoods.get(id);
 };

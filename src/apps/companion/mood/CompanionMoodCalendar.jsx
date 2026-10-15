@@ -1,8 +1,13 @@
 /*
  * CompanionMoodCalendar.jsx —— 心情日历（Slice A：只有日历本身 + 用户自己
- * 点格子记录心情；小伙伴那边的心情由 AI 在每天晚上自动判断，见 Slice B
- * 的 companionMoodScheduler.js / companionMoodAiService.js，这一片还没做，
- * 所以现在每个格子左边的"小伙伴心情"点一直是空的灰点，是正常的）。
+ * 点格子记录心情；char（角色，也就是小伙伴背后的那个聊天角色）那边的心情
+ * 由 AI 在每天晚上自动判断，见 Slice B 的 companionMoodScheduler.js /
+ * companionMoodAiService.js，这一片还没做，所以现在每个格子左边的
+ * "char 心情"点一直是空的灰点，是正常的）。
+ *
+ * 【命名澄清】：这里的 charMood 是角色在对话里的情绪判断，跟
+ * companion.mood（小伙伴自己的养成数值，满意度那种）完全是两回事，
+ * 两者互不读写。
  *
  * 外层弹窗壳沿用项目里其它 companion 弹窗的 .cp-overlay / .cp-backdrop /
  * .cp-panel.bottom 约定（照抄 CompanionSceneModal.jsx 的结构）。
@@ -139,7 +144,7 @@ const CompanionMoodCalendar = ({ companionId, onClose }) => {
           </div>
 
           <p className="md-hint">
-            左边是小伙伴当天的心情（每天晚上自动判断），右边是你的——点格子可以记录/修改你那天的心情。
+            左边是 TA（角色）当天的心情（每天晚上自动判断），右边是你的——点格子可以记录/修改你那天的心情。
           </p>
 
           {pickerDate && (

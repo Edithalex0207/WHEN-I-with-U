@@ -4,7 +4,8 @@
  * 五种心情直接复用 companionPage.css 里已经有的配色（butter/mint/sky/
  * accent-soft/heart-soft），没有引入新颜色。CompanionMoodFace 是日历
  * 格子、选择器里都会用到的那张小圆脸；CompanionMoodEntryIcon 是小伙伴
- * 主界面上打开日历的那个圆按钮用的图标（两张叠在一起的小脸，不画五官，
+ * 主界面上打开日历的那个圆按钮用的图标（代表 char 和用户各一张，叠在
+ * 一起，不画五官，
  * 跟 CompanionDiaryIcon 一样是自带颜色的扁平小图，不跟随 currentColor）。
  */
 
