@@ -365,9 +365,7 @@ export const MessagesApp = ({ onBackHub, onChatRoomStateChange }) => {
           </div>
         </div>
       )}
-            {view === 'chats' && !broadcastMode && (
-        <UserCardArea characters={characters} />
-      )}
+      
 
 
       {view === 'chats' && (
@@ -404,7 +402,11 @@ export const MessagesApp = ({ onBackHub, onChatRoomStateChange }) => {
             >
               <Plus className="w-4 h-4" />
             </button>
-          </div>
+                   </div>
+
+          {!broadcastMode && (
+            <UserCardArea characters={characters} />
+          )}
 
           {filteredChats.length === 0 ? (
             <GlassCard className="py-12 text-center space-y-2 opacity-60">

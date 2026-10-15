@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+  import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronDown, Pencil, X } from 'lucide-react';
 
 import { compressImageFile } from '../../snapshots/services/snapshotMediaService';
@@ -13,6 +13,12 @@ import { UserCardIcon, USER_CARD_ICON_KEYS } from './userCardIcons';
 import './userCard.css';
 
 const SAVE_DELAY_MS = 500;
+
+const BANNER_STYLE_OPTIONS = [
+  { id: 'blank', label: '纯空白' },
+  { id: 'clear', label: '纯透明' },
+  { id: 'image', label: '上传图片' },
+];
 
 const firstChar = (text, fallback) => (String(text || '').trim().charAt(0) || fallback);
 
@@ -32,6 +38,7 @@ export const UserCard = ({ characters = [] }) => {
   const dirtyRef = useRef(false);
   const timerRef = useRef(null);
   const fileRef = useRef(null);
+  const bannerFileRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +108,7 @@ export const UserCard = ({ characters = [] }) => {
     updateCard({
       statusPreset: preset.id,
       statusIcon: preset.icon,
-           statusText: preset.text || data?.card?.statusText || '',
+      statusText: preset.text || data?.card?.statusText || '',
       statusSince: preset.id === data?.card?.statusPreset
         ? data?.card?.statusSince || ''
         : new Date().toISOString(),
@@ -132,6 +139,21 @@ export const UserCard = ({ characters = [] }) => {
       setErrorText('');
     } catch (error) {
       setErrorText(error?.message || '头像处理失败，请换一张图片。');
+    }
+  };
+
+  const handleBannerFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    try {
+      const compressed = await compressImageFile(file, 1000, 400, 0.82);
+      updateCard({ bannerImage: compressed, bannerStyle: 'image' });
+      setErrorText('');
+    } catch (error) {
+      setErrorText(error?.message || '横幅图片处理失败，请换一张图片。');
     }
   };
 
@@ -170,6 +192,10 @@ export const UserCard = ({ characters = [] }) => {
   const visibleCount = visibleCharacters.length;
   const initial = firstChar(data.name, '我');
 
+  // 没有传图片就按纯空白处理；纯空白/纯透明又没有文字时，整条横幅不占位。
+  const bannerMode = card.bannerStyle === 'image' && !card.bannerImage ? 'blank' : card.bannerStyle;
+  const showBanner = bannerMode === 'image' || Boolean(card.bannerText);
+
   let visibleSummary = `共 ${visibleCount} 位`;
   if (characters.length === 0) visibleSummary = '还没有角色';
   else if (visibleCount === 0) visibleSummary = '所有角色都看不到';
@@ -197,9 +223,14 @@ export const UserCard = ({ characters = [] }) => {
           </button>
         </div>
 
-        <div className="uc-banner uc-gingham">
-          <div className="uc-banner-text">{card.bannerText || ' '}</div>
-        </div>
+        {showBanner && (
+          <div
+            className={`uc-banner is-${bannerMode}`}
+            style={bannerMode === 'image' ? { backgroundImage: `url(${card.bannerImage})` } : undefined}
+          >
+            <div className="uc-banner-text">{card.bannerText}</div>
+          </div>
+        )}
 
         <div className="uc-addr">
           <div className="uc-round"><UserCardIcon name="star" size={11} /></div>
@@ -360,6 +391,44 @@ export const UserCard = ({ characters = [] }) => {
                     <span>横幅小字</span>
                     <input type="text" maxLength={16} value={card.bannerText} onChange={(e) => updateCard({ bannerText: e.target.value })} />
                   </label>
+                </div>
+
+                <div className="uc-field">
+                  <span>横幅底色</span>
+                  <div className="uc-seg" role="group" aria-label="横幅底色">
+                    {BANNER_STYLE_OPTIONS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`uc-seg-opt ${card.bannerStyle === item.id ? 'is-sel' : ''}`}
+                        aria-pressed={card.bannerStyle === item.id}
+                        onClick={() => {
+                          if (item.id === 'image' && !card.bannerImage) {
+                            bannerFileRef.current?.click();
+                          } else {
+                            updateCard({ bannerStyle: item.id });
+                          }
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input ref={bannerFileRef} type="file" accept="image/*" hidden onChange={handleBannerFile} />
+                  {card.bannerStyle === 'image' && card.bannerImage && (
+                    <div className="uc-seg">
+                      <button type="button" className="uc-pill-btn" onClick={() => bannerFileRef.current?.click()}>
+                        更换图片
+                      </button>
+                      <button
+                        type="button"
+                        className="uc-pill-btn"
+                        onClick={() => updateCard({ bannerImage: '', bannerStyle: 'blank' })}
+                      >
+                        移除图片
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

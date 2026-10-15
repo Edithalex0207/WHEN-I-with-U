@@ -36,9 +36,14 @@ export const getPreset = (id) => (
   STATUS_PRESETS.find((item) => item.id === id) || STATUS_PRESETS[0]
 );
 
+export const BANNER_STYLES = ['blank', 'clear', 'image'];
+
 const DEFAULT_CARD = Object.freeze({
   title: 'HELLO!',
   bannerText: '( ˘ ᵕ ˘ )',
+  // 横幅底色：blank 纯空白 / clear 纯透明 / image 自己上传的图片。
+  bannerStyle: 'blank',
+  bannerImage: '',
   mood: '',
   doing: '',
   listen: '',
@@ -64,6 +69,8 @@ export const normalizeUserCard = (raw) => {
   return {
     title: asString(source.title, DEFAULT_CARD.title),
     bannerText: asString(source.bannerText, DEFAULT_CARD.bannerText),
+    bannerStyle: BANNER_STYLES.includes(source.bannerStyle) ? source.bannerStyle : DEFAULT_CARD.bannerStyle,
+    bannerImage: asString(source.bannerImage),
     mood: asString(source.mood),
     doing: asString(source.doing),
     listen: asString(source.listen),
