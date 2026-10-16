@@ -28,8 +28,9 @@ import {
   REPORT_KIND,
   findSubject,
   findSchoolTeacher,
+  findMeetingResponse,
 } from './companionSchoolData';
-import { getDayKey, getSchoolRecord } from './companionSchoolService';
+import { SchoolError, getDayKey, getSchoolRecord } from './companionSchoolService';
 import {
   generateLifeNarrative,
   generateWeeklyComment,
@@ -124,6 +125,11 @@ export const ensureTodayLifeNarrative = async (companionId, ctx = {}) => {
 
 /* ---------------- 周：日期工具 ---------------- */
 const pad2 = (n) => String(n).padStart(2, '0');
+
+/* 跟 companionSchoolQuizService.js 的两个同名小工具一样的写法（那边没有
+ * export，这里就各写一份，省得为了两行小函数专门建一个 import 关系）。 */
+const round1 = (value) => Math.round(value * 10) / 10;
+const clamp100 = (value) => Math.max(0, Math.min(100, value));
 
 /** 本地时区的"周一"日期字符串 'YYYY-MM-DD'，周日算上一周的周日不单独成周 */
 export const getWeekKey = (timestamp = Date.now()) => {
@@ -275,4 +281,69 @@ export const ensureWeeklyReport = async (companionId, ctx = {}) => {
 /** 家长签字：只记一个时间戳，不做其它校验（评语本身不会因为签字而改变） */
 export const signWeeklyReport = async (reportId) => {
   await db.companionSchoolReports.update(reportId, { signedAt: Date.now() });
+};
+
+/* ---------------- 三方会谈：回应 ---------------- */
+/**
+ * 对一条待处理的三方会谈选一个回应（表扬 / 鼓励 / 带TA去玩 / 认真听完）。
+ * 写法照抄 companionSchoolQuizService.js 的 finishQuizSet：数值变化和状态
+ * 落库都在同一个事务里；心心不够时不是把结果 clamp 到 0，而是直接拒绝这次
+ * 回应（跟 companionService.js 里"花心心"的那几处写法一样）。
+ *
+ * @param {number} meetingId  companionSchoolReports 里 kind='meeting' 的那一行的 id
+ * @param {string} responseId MEETING_RESPONSES 里的某个 id（praise/cheer/play/listen）
+ * @returns {{meeting:object, companion:object, response:object}}
+ */
+export const respondToMeeting = async (meetingId, responseId) => {
+  const response = findMeetingResponse(responseId);
+  if (!response) throw new SchoolError('bad_response', '回应方式不对');
+
+  const now = Date.now();
+  let meetingRow = null;
+
+  await db.transaction(
+    'rw',
+    [db.companions, db.companionSchoolReports, db.companionLogs],
+    async () => {
+      const meeting = await db.companionSchoolReports.get(meetingId);
+      if (!meeting || meeting.kind !== REPORT_KIND.MEETING) {
+        throw new SchoolError('no_meeting', '这场会谈不存在');
+      }
+      if (meeting.responseId) throw new SchoolError('already_responded', '已经回应过这场会谈啦');
+
+      const { companionId } = meeting;
+      const companion = await db.companions.get(companionId);
+      if (!companion) throw new SchoolError('no_companion', '小伙伴不存在');
+
+      if ((companion.hearts || 0) < response.heartsCost) {
+        throw new SchoolError('no_hearts', '心心不够啦');
+      }
+
+      await db.companions.update(companionId, {
+        hearts: round1((companion.hearts || 0) - response.heartsCost),
+        mood: clamp100((companion.mood ?? 0) + response.moodDelta),
+        updatedAt: now,
+      });
+
+      await db.companionSchoolReports.update(meetingId, {
+        responseId: response.id,
+        respondedAt: now,
+      });
+      meetingRow = { ...meeting, responseId: response.id, respondedAt: now };
+
+      await db.companionLogs.add({
+        companionId,
+        logType: 'user_action',
+        actionType: 'school_meeting',
+        content: `三方会谈选了"${response.label}"，心情 ${response.moodDelta >= 0 ? '+' : ''}${response.moodDelta}${response.heartsCost > 0 ? `，花了 ${response.heartsCost} 心心` : ''}。`,
+        timestamp: now,
+      });
+    },
+  );
+
+  return {
+    meeting: meetingRow,
+    companion: await db.companions.get(meetingRow.companionId),
+    response,
+  };
 };

@@ -1,0 +1,50 @@
+/* =========================================================
+ * schoolMeeting.css —— 「三方会谈」弹窗专属样式。
+ * 前缀约定：mt-。外壳继续用 school.css 的 .sd-root/.sd-head/.sd-body，
+ * 颜色变量复用 companionPage.css 的 --cp-*、school.css 的 --sd-*、
+ * 以及 .sd-tone-* 提供的 --sd-t-bg/--sd-t-fg。
+ * ========================================================= */
+
+/* ================= 对话气泡 ================= */
+.mt-bubble { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 12px; }
+.mt-bubble.mt-pet { flex-direction: row-reverse; }
+
+.mt-bubble-box {
+  flex: 1; background: var(--cp-card); border-radius: 20px; padding: 10px 13px;
+  box-shadow: 0 10px 16px -12px var(--cp-shadow);
+}
+.mt-bubble.mt-pet .mt-bubble-box { background: var(--cp-sky-bg); }
+.mt-who { display: block; font-size: 11px; font-weight: 800; color: var(--cp-muted); margin-bottom: 3px; }
+.mt-bubble-box p { margin: 0; font-size: 13px; font-weight: 700; color: var(--cp-text); line-height: 1.5; }
+
+.mt-pet-face {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; background: var(--cp-soft);
+}
+.mt-pet-face img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ================= 回应选项 ================= */
+.mt-prompt { margin: 4px 0 10px; font-size: 13px; font-weight: 800; color: var(--cp-sub); text-align: center; }
+.mt-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mt-opt {
+  position: relative; border-radius: 20px; padding: 12px 10px; text-align: left;
+  background: var(--sd-t-bg); color: var(--sd-t-fg);
+  box-shadow: 0 10px 16px -12px var(--cp-shadow);
+  transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.mt-opt:active:not(:disabled) { transform: scale(0.96); }
+.mt-opt:disabled { opacity: 0.55; }
+.mt-opt b { display: block; font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+.mt-opt span { display: block; font-size: 11px; font-weight: 800; opacity: 0.85; }
+.mt-opt-lock {
+  position: absolute; right: 10px; top: 10px; font-size: 10px; font-weight: 800;
+  background: #fff; color: var(--cp-sub); border-radius: 99px; padding: 2px 8px;
+}
+
+/* ================= 回应完成 ================= */
+.mt-done { text-align: center; padding: 10px 4px 4px; }
+.mt-done p { margin: 0 0 14px; font-size: 13.5px; font-weight: 800; color: var(--cp-text); line-height: 1.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-opt { transition: none !important; }
+}

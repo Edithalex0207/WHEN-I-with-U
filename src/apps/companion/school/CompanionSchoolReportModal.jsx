@@ -23,7 +23,7 @@
  *   onClose    function  —— 关闭弹窗
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import './school.css';
 import './schoolReport.css';
@@ -43,6 +43,7 @@ import {
   signWeeklyReport,
 } from './companionSchoolReportService';
 import { CloseGlyph, BookGlyph, StarGlyph, TeacherAvatar } from './SchoolArt';
+import CompanionSchoolMeetingModal from './CompanionSchoolMeetingModal';
 
 const TABS = [
   { id: 'schedule', label: '课程表' },
@@ -76,14 +77,7 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
   const [reportLoading, setReportLoading] = useState(false);
   const [reportLoaded, setReportLoaded] = useState(false);
   const [signing, setSigning] = useState(false);
-  const [toast, setToast] = useState('');
-  const toastTimer = useRef(null);
-
-  const notifyLater = (label) => {
-    clearTimeout(toastTimer.current);
-    setToast(`${label}下一轮就能点开啦，这轮先露个面～`);
-    toastTimer.current = setTimeout(() => setToast(''), 2200);
-  };
+  const [showMeeting, setShowMeeting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -159,9 +153,10 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
     : [[], [], [], [], []];
 
   return (
-    <div className="cp-overlay center">
-      <div className="cp-backdrop" onClick={onClose} />
-      <div className="sd-root" role="dialog" aria-label="家校练习册">
+    <>
+      <div className="cp-overlay center">
+        <div className="cp-backdrop" onClick={onClose} />
+        <div className="sd-root" role="dialog" aria-label="家校练习册">
         <div className="sd-head">
           <button type="button" className="sd-round" aria-label="关闭" onClick={onClose}><CloseGlyph /></button>
           <div className="sd-title"><b>家校练习册</b></div>
@@ -278,7 +273,7 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
                     </div>
 
                     {meeting && (
-                      <button type="button" className="sr-meeting-tile" onClick={() => notifyLater('三方会谈')}>
+                      <button type="button" className="sr-meeting-tile" onClick={() => setShowMeeting(true)}>
                         <span className="sr-meeting-ic"><StarGlyph size={18} /></span>
                         <div>
                           <h6>老师想和你聊聊</h6>
@@ -289,13 +284,24 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
                   </>
                 );
               })()}
-
-              {toast && <p className="sd-notice" role="status">{toast}</p>}
             </>
           )}
         </div>
       </div>
-    </div>
+      </div>
+
+      {showMeeting && meeting && (
+        <CompanionSchoolMeetingModal
+          companion={companion}
+          meeting={meeting}
+          onClose={() => setShowMeeting(false)}
+          onResponded={() => {
+            setMeeting(null);
+            setShowMeeting(false);
+          }}
+        />
+      )}
+    </>
   );
 };
 
