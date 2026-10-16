@@ -14,13 +14,22 @@
  *   来源分段、点小伙伴换话、点老师徽章冒口头禅）。
  * - 没入学 -> 打开 SchoolEnrollFlow（mode="enroll"）；满 20 节 -> 打开同一个
  *   组件的 mode="promote"。
- * - "去上课"和四个入口点击：做题界面、错题本、我出的题、家校练习册、学校
- *   相册这几个界面还没做，先弹一句"下一轮就做啦"占位，不是忘了接。
+ * - "去上课" -> 打开 CompanionSchoolQuizModal（这一轮接上，之前一直是占位，
+ *   没有真的接——同一批顺手修掉）；错题本 tile -> 打开
+ *   CompanionSchoolWrongBookModal。这两个弹窗跟 enroll/promote 一样，由这个
+ *   首页弹窗统一调度跳转（结算页点"错题本" -> 关做题开错题本；错题本点
+ *   "只考错题" -> 关错题本、以 WRONG 模式重开做题），避免互相 import 出现
+ *   循环依赖。
+ * - 我出的题、家校练习册、学校相册：界面还没做，先弹一句"下一轮就做啦"占位，
+ *   不是忘了接。
  * - 秋游横条（预览里"秋游开放中"那一条）：特别活动功能还没做，这一轮完全
  *   不画这块，等那一轮接上真实的开放判断再加。
  *
  * Props:
  *   companion  object    —— 当前小伙伴（用 id / name / avatarUrl / hearts）
+ *   chatId     number    —— 当前聊天窗 id（家校练习册的评语/三方会谈要用来调
+ *              AI，这一轮先收下，自己还不用）
+ *   character  object    —— 当前角色（同上，先收下备用）
  *   onClose    function  —— 关闭弹窗
  */
 
@@ -47,6 +56,8 @@ import {
 } from './SchoolArt';
 import CompanionSchoolIcon from './CompanionSchoolIcon';
 import SchoolEnrollFlow from './SchoolEnrollFlow';
+import CompanionSchoolQuizModal from './CompanionSchoolQuizModal';
+import CompanionSchoolWrongBookModal from './CompanionSchoolWrongBookModal';
 
 /** 「今天的小课堂」的题目来源分段，顺序跟预览一致 */
 const SOURCE_OPTIONS = [
@@ -64,7 +75,7 @@ const formatCountdown = (ms) => {
   return `${m}:${String(s).padStart(2, '0')}`;
 };
 
-const CompanionSchoolModal = ({ companion, onClose }) => {
+const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [status, setStatus] = useState(null);
   const [wrongCount, setWrongCount] = useState(0);
   const [customCount, setCustomCount] = useState(0);
@@ -79,6 +90,8 @@ const CompanionSchoolModal = ({ companion, onClose }) => {
   const [toast, setToast] = useState('');
   const [showEnroll, setShowEnroll] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showWrongBook, setShowWrongBook] = useState(false);
   const toastTimer = useRef(null);
 
   /* ---------------- 拉取 / 刷新数据 ---------------- */
@@ -296,7 +309,7 @@ const CompanionSchoolModal = ({ companion, onClose }) => {
                   </div>
 
                   {status.canPlay && (
-                    <button type="button" className="sh-go" onClick={() => notifyComingSoon('去上课')}>
+                    <button type="button" className="sh-go" onClick={() => setShowQuiz(true)}>
                       去上课 <small>一节 5 个小问题</small>
                     </button>
                   )}
@@ -342,7 +355,7 @@ const CompanionSchoolModal = ({ companion, onClose }) => {
 
                 {/* 四个入口 */}
                 <div className="sh-tiles">
-                  <button type="button" className="sh-tile sd-tone-heart" onClick={() => notifyComingSoon('错题本')}>
+                  <button type="button" className="sh-tile sd-tone-heart" onClick={() => setShowWrongBook(true)}>
                     {wrongCount > 0 && <b className="sh-tilebadge">{wrongCount}</b>}
                     <span className="sh-ti"><NotebookGlyph size={20} /></span>
                     <span><b>错题本</b><small>{wrongCount} 道待复习</small></span>
@@ -383,6 +396,30 @@ const CompanionSchoolModal = ({ companion, onClose }) => {
           schoolRecord={status.record}
           onDone={refresh}
           onClose={() => setShowPromote(false)}
+        />
+      )}
+      {showQuiz && (
+        <CompanionSchoolQuizModal
+          companion={companion}
+          mode={selectedMode}
+          subjectIds={selectedSubjectId ? [selectedSubjectId] : []}
+          onClose={() => setShowQuiz(false)}
+          onFinished={() => refresh()}
+          onReviewWrong={() => {
+            setShowQuiz(false);
+            setShowWrongBook(true);
+          }}
+        />
+      )}
+      {showWrongBook && (
+        <CompanionSchoolWrongBookModal
+          companion={companion}
+          onClose={() => setShowWrongBook(false)}
+          onStartReview={() => {
+            setShowWrongBook(false);
+            setSelectedMode(QUIZ_MODE.WRONG);
+            setShowQuiz(true);
+          }}
         />
       )}
     </>

@@ -61,6 +61,47 @@ export const StarGlyph = ({ size = 18 }) => (
   </Glyph>
 );
 
+/*
+ * 下面这 4 个是首页弹窗四个入口用的图标（错题本 / 我出的题 / 家校练习册 /
+ * 学校相册）。之前 CompanionSchoolModal.jsx 已经在 import 它们了，但这里
+ * 一直没有真的导出——这是个会让整个 Vite 构建直接失败的漏洞（named import
+ * 对不上 named export），这次顺手补上。画法照抄预览 HTML 里已经定稿的
+ * notebook / edit / book / photo 四个 <symbol>，同样 fill="currentColor"
+ * 打底、内部细节用白色勾一道，跟其它图标的配色方式一致。
+ */
+export const NotebookGlyph = ({ size = 20 }) => (
+  <Glyph size={size}>
+    <rect x="5" y="3" width="14" height="18" rx="3" fill="currentColor" />
+    <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+  </Glyph>
+);
+
+export const EditGlyph = ({ size = 20 }) => (
+  <Glyph size={size}>
+    <rect x="4" y="5" width="12" height="15" rx="3" fill="currentColor" />
+    <path d="M8 10h4M8 14h3" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    <path d="M15 17l1-3.5 5-5 2.5 2.5-5 5z" fill="currentColor" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
+  </Glyph>
+);
+
+export const BookGlyph = ({ size = 20 }) => (
+  <Glyph size={size}>
+    <path
+      d="M4 5.5c3-1.3 5.5-1.1 8 .8 2.5-1.9 5-2.1 8-.8v12.5c-3-1.3-5.5-1.1-8 .8-2.5-1.9-5-2.1-8-.8z"
+      fill="currentColor"
+    />
+    <path d="M12 6.3v12.5" stroke="#fff" strokeWidth="1.6" />
+  </Glyph>
+);
+
+export const PhotoGlyph = ({ size = 20 }) => (
+  <Glyph size={size}>
+    <rect x="3" y="5" width="18" height="14" rx="3.5" fill="currentColor" />
+    <circle cx="9" cy="10.5" r="2" fill="#fff" />
+    <path d="M5 17l4.5-4 3.5 3 3-2.5 3 3.5" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+  </Glyph>
+);
+
 /* ---------------- 占位小脸 ---------------- */
 /*
  * 没有头像图时的兜底脸。skin / ear 可以换色，用来区分不同的老师。

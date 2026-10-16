@@ -1422,6 +1422,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
       {showSchool && (
         <CompanionSchoolModal
           companion={companion}
+          chatId={chatId}
+          character={character}
           onClose={() => {
             setShowSchool(false);
             refreshSchoolDot();
