@@ -240,6 +240,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showCatchGame, setShowCatchGame] = useState(false);
      const [showMoodCalendar, setShowMoodCalendar] = useState(false);
   const [showDailyQa, setShowDailyQa] = useState(false);
+  const [showDiary, setShowDiary] = useState(false);
    const [showClaw, setShowClaw] = useState(false);
   const [showSchool, setShowSchool] = useState(false);
   const [schoolDotOn, setSchoolDotOn] = useState(false);
