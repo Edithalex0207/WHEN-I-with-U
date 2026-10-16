@@ -1,0 +1,96 @@
+/* =========================================================
+ * quiz.css —— 做题闯关 + 本组结算 + 错题本，三个界面共用的样式。
+ * 前缀约定：qz-（跟 sd- / sh- 分开）。外壳继续用 school.css 的 .sd-root，
+ * 这里只管闯关专属的头部（进度条）、题卡、选项、解析、结算、错题本列表。
+ * 颜色变量复用 companionPage.css 的 --cp-*、school.css 的 --sd-*。
+ * =========================================================*/
+
+/* ================= 闯关头部（进度条 + 心心小计） ================= */
+.qz-head { position: relative; z-index: 2; flex: none; display: flex; align-items: center; gap: 10px; padding: 16px 16px 6px; }
+.qz-round-sm { width: 34px; height: 34px; }
+.qz-bar { flex: 1; height: 14px; border-radius: 99px; background: var(--cp-border); overflow: hidden; }
+.qz-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #7FD6B6, #3DBE9C); transition: width 0.35s cubic-bezier(0.3, 1.4, 0.5, 1); }
+.qz-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 99px; background: #fff;
+  font-size: 12px; font-weight: 800; color: var(--sd-heart-deep, #D95F72); box-shadow: 0 4px 10px -6px var(--cp-shadow); flex: none;
+}
+
+/* ================= 题目状态行 ================= */
+.qz-meta { display: flex; justify-content: space-between; align-items: center; margin: 6px 0 2px; }
+.qz-subj { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; background: var(--cp-mint-bg); color: var(--cp-mint-fg); font-weight: 800; font-size: 12px; }
+.qz-count { font-size: 12px; font-weight: 800; color: var(--cp-muted); }
+
+/* ================= 小伙伴加油气泡 ================= */
+.qz-cheer { display: flex; align-items: flex-end; gap: 8px; margin: 10px 0 4px; min-height: 46px; }
+.qz-cheer .qz-bub {
+  position: relative; background: #fff; border-radius: 18px 18px 18px 5px; padding: 8px 12px; font-size: 12.5px; font-weight: 800;
+  color: var(--cp-sub); box-shadow: 0 6px 12px -8px var(--cp-shadow); margin-bottom: 12px;
+}
+
+/* ================= 题卡 ================= */
+.qz-card { background: var(--cp-card); border-radius: 28px; padding: 18px 18px 16px; box-shadow: 0 12px 22px -14px var(--cp-shadow); margin-top: 4px; }
+.qz-card small { display: block; color: var(--cp-muted); font-weight: 800; font-size: 12px; margin-bottom: 6px; }
+.qz-card h3 { margin: 0; font-family: var(--cp-font-display); font-weight: 400; font-size: 20px; line-height: 1.4; color: var(--cp-text); }
+
+.qz-opts { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.qz-opt {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 20px; background: #fff;
+  border: 2.5px solid var(--cp-border); font-weight: 800; font-size: 15px; box-shadow: 0 5px 0 -1px var(--cp-border);
+  text-align: left; transition: transform 0.15s, opacity 0.2s;
+}
+.qz-opt b.qz-mark { flex: none; width: 28px; height: 28px; border-radius: 10px; background: var(--cp-soft); color: var(--cp-sub); display: grid; place-items: center; font-size: 13px; }
+.qz-opt .qz-ok-ico { margin-left: auto; color: #3DBE9C; }
+.qz-opt .qz-wrong-ico { margin-left: auto; color: var(--sd-heart-deep, #D95F72); }
+.qz-opt:active:not(:disabled) { transform: scale(0.98); }
+.qz-opt.is-ok { background: var(--cp-mint-bg); border-color: #58C9A7; box-shadow: 0 5px 0 -1px #58C9A7; color: #1C7A62; }
+.qz-opt.is-ok .qz-mark { background: #3DBE9C; color: #fff; }
+.qz-opt.is-wrong { background: var(--cp-heart-soft); border-color: var(--cp-heart); box-shadow: 0 5px 0 -1px var(--cp-heart); color: var(--sd-heart-deep, #D95F72); }
+.qz-opt.is-wrong .qz-mark { background: var(--cp-heart); color: #fff; }
+.qz-opt.is-dim { opacity: 0.55; }
+
+/* ================= 解析 ================= */
+.qz-expl { margin-top: 12px; border-radius: 22px; padding: 12px 14px; display: flex; gap: 10px; }
+.qz-expl.is-ok { background: var(--cp-mint-bg); }
+.qz-expl.is-wrong { background: var(--cp-heart-soft); }
+.qz-expl .qz-expl-ico { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.qz-expl.is-ok .qz-expl-ico { background: #3DBE9C; }
+.qz-expl.is-wrong .qz-expl-ico { background: var(--cp-heart); }
+.qz-expl h5 { margin: 0 0 2px; font-family: var(--cp-font-display); font-weight: 400; font-size: 16px; }
+.qz-expl.is-ok h5 { color: #1C7A62; }
+.qz-expl.is-wrong h5 { color: var(--sd-heart-deep, #D95F72); }
+.qz-expl p { margin: 0; font-size: 12.5px; line-height: 1.55; font-weight: 700; }
+.qz-expl.is-ok p { color: #2E6F5E; }
+.qz-expl.is-wrong p { color: #9B4A57; }
+
+/* ================= 底部按钮（闯关用 sd-btn，这里只补两个一排的布局） ================= */
+.qz-two { display: flex; gap: 10px; }
+.qz-two .sd-btn.ghost { flex: none; }
+.qz-two .sd-btn.main, .qz-two .sd-btn.heart { flex: 1; margin: 0; }
+
+/* ================= 结算 ================= */
+.qz-res { align-items: center; text-align: center; padding-top: 10px; }
+.qz-stars { display: flex; gap: 6px; align-items: flex-end; justify-content: center; margin: 6px 0 2px; }
+.qz-stars svg.is-dim { color: var(--cp-border) !important; }
+.qz-res h2 { font-family: var(--cp-font-display); font-weight: 400; font-size: 26px; margin: 4px 0; color: var(--cp-text); }
+.qz-res .qz-sub { color: var(--cp-sub); font-weight: 700; font-size: 13px; }
+.qz-stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin: 16px 0 12px; }
+.qz-stat div { background: #fff; border-radius: 22px; padding: 12px 4px; box-shadow: 0 8px 14px -10px var(--cp-shadow); }
+.qz-stat b { display: block; font-family: var(--cp-font-display); font-weight: 400; font-size: 22px; margin-bottom: 2px; }
+.qz-stat span { font-size: 11.5px; color: var(--cp-sub); font-weight: 800; }
+.qz-wrong { width: 100%; background: #fff; border-radius: 22px; padding: 10px 14px; text-align: left; box-shadow: 0 8px 14px -10px var(--cp-shadow); }
+.qz-wrong h6 { margin: 0 0 6px; font-size: 12px; color: var(--cp-sub); font-weight: 800; }
+.qz-wrong p { margin: 0; font-size: 12.5px; font-weight: 700; padding: 6px 0; border-top: 2px dotted var(--cp-border); display: flex; gap: 6px; align-items: center; color: var(--cp-text); }
+.qz-wrong p:first-of-type { border-top: 0; }
+.qz-cool { font-size: 12px; color: var(--cp-muted); font-weight: 800; margin-top: 10px; }
+
+/* ================= 错题本 ================= */
+.qz-wb-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.qz-wb-count { font-size: 12.5px; font-weight: 800; color: var(--cp-sub); }
+.qz-wb-list { display: flex; flex-direction: column; gap: 12px; padding: 4px 2px; }
+.qz-wb-card { background: #fff; border-radius: 24px; padding: 14px 16px; box-shadow: 0 10px 18px -12px var(--cp-shadow); }
+.qz-wb-card .qz-wb-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.qz-wb-stem { font-size: 14px; font-weight: 800; color: var(--cp-text); line-height: 1.5; margin: 0 0 6px; }
+.qz-wb-answer { font-size: 12.5px; font-weight: 700; color: #1C7A62; background: var(--cp-mint-bg); border-radius: 14px; padding: 6px 10px; margin: 0 0 6px; }
+.qz-wb-explain { font-size: 12px; font-weight: 700; color: var(--cp-sub); line-height: 1.5; margin: 0; }
+.qz-wb-streak { font-size: 11px; font-weight: 800; color: var(--cp-muted); margin-left: auto; }
+.qz-wb-empty { text-align: center; padding: 30px 10px; color: var(--cp-muted); font-size: 13px; font-weight: 700; line-height: 1.7; }
