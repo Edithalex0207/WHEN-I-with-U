@@ -2,8 +2,8 @@
  *
  * 全局"玻璃质感"风格开关：在现有 4(+1) 套 data-theme 配色之上，再叠加
  * 一个独立维度 data-glass-style（frosted 白色毛玻璃 / liquid 液态玻璃），
- * 通过 GlassCard.jsx 统一读取这里定义的 CSS 变量来决定模糊强度和卡片
- * 背景的透明度。
+ * 通过 GlassCard.jsx 统一读取这里定义的 CSS 变量来决定模糊强度、卡片
+ * 背景的透明度，以及卡片边缘的高光（--glass-edge-highlight）。
  *
  * 不直接改 themes.css：两个维度（配色 / 玻璃风格）正交，用复合属性
  * 选择器 :root[data-theme="x"][data-glass-style="liquid"] 组合，比起
@@ -12,21 +12,44 @@
  * 默认（未设置 data-glass-style，或值为 "frosted"）完全保持现状：
  * --glass-card-background 直接等于原来的 --card-bg-gradient，
  * --glass-blur-amount / --glass-saturate-amount 跟 GlassCard.jsx 原来
- * 写死的 blur(22px) saturate(120%) 完全一致，不会影响任何现有页面。
+ * 写死的 blur(22px) saturate(120%) 完全一致，--glass-edge-highlight
+ * 是一个不产生任何视觉效果的空 inset 阴影，叠加在 GlassCard.jsx 原有的
+ * boxShadow 后面，不会影响任何现有页面。
  */
 
 :root {
   --glass-blur-amount: 22px;
   --glass-saturate-amount: 120%;
   --glass-card-background: var(--card-bg-gradient);
+  --glass-edge-highlight: inset 0 0 0 0 transparent;
 }
 
-/* 液态玻璃（基础款）：只调「更透 + 更饱和度的背景模糊」，不加边缘高光，
-   不加流光动画。每套配色主题各自给一个贴着自己底色的半透明卡片背景，
-   保证透出来的主页背景颜色跟卡片本身的色温是搭的，而不是统一发灰。 */
+/* 液态玻璃：更透 + 更高饱和度的背景模糊，再叠加一圈边缘高光——
+   顶部一条亮边模拟光从上方打在玻璃棱边上的反光，底部一条暗边做
+   景深，左右两条更弱的亮/暗边收出一个完整的斜切棱面轮廓。这圈高光
+   是静态的（不做流光动画），纯靠 box-shadow 的 inset 叠加，开销
+   跟普通阴影一样低，不会在 backdrop-filter 之外再引入额外的性能
+   负担。每套配色主题各自给一个贴着自己底色的半透明卡片背景，保证
+   透出来的主页背景颜色跟卡片本身的色温是搭的，而不是统一发灰。 */
 :root[data-glass-style="liquid"] {
   --glass-blur-amount: 36px;
   --glass-saturate-amount: 180%;
+  --glass-edge-highlight:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 0 rgba(255, 255, 255, 0.16),
+    inset -1px 0 0 0 rgba(0, 0, 0, 0.05);
+}
+
+/* 深色主题背景本身更暗，顶部高光稍微收一点亮度，不然在暗底上会显得
+   过曝、不自然；底部暗边也相应收一点，避免两条边的对比度失衡。 */
+:root[data-theme="obsidian-dark"][data-glass-style="liquid"],
+:root[data-theme="cyber-velvet"][data-glass-style="liquid"] {
+  --glass-edge-highlight:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.35),
+    inset 1px 0 0 0 rgba(255, 255, 255, 0.08),
+    inset -1px 0 0 0 rgba(0, 0, 0, 0.18);
 }
 
 :root[data-theme="mono-mist"][data-glass-style="liquid"] {

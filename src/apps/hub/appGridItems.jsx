@@ -133,7 +133,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Snapshots" zh="快照" mode={nameMode} />
+          <AppTitle en="Snapshots" zh="快照" ko="스냅샷" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Polaroid Feed
           </p>
@@ -162,7 +162,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Pebbling" zh="传石" mode={nameMode} />
+          <AppTitle en="Pebbling" zh="传石" ko="조약돌" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Nest Exchange
           </p>
@@ -192,7 +192,7 @@ export const buildAppGridItems = ({
           </div>
 
           <div>
-            <AppTitle en="Living Habitat" zh="生态瓶" mode={nameMode} />
+            <AppTitle en="Living Habitat" zh="生态瓶" ko="생태 서식지" mode={nameMode} />
             <p className="mt-0.5 text-[11px] uppercase tracking-wider opacity-50">
               {habitatCount > 0
                 ? `${habitatCount} lives breathing`
@@ -228,7 +228,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Imaginarium" zh="幻想沙龙" mode={nameMode} />
+          <AppTitle en="Imaginarium" zh="幻想沙龙" ko="환상 살롱" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Virtual Salon
           </p>
@@ -257,7 +257,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="The Ensemble" zh="羁绊圈" mode={nameMode} />
+          <AppTitle en="The Ensemble" zh="羁绊圈" ko="인연의 고리" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Bonded Group
           </p>
@@ -286,7 +286,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Bubble" zh="泡泡" mode={nameMode} />
+          <AppTitle en="Bubble" zh="泡泡" ko="버블" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Group Bubbles装修中
           </p>
@@ -315,7 +315,7 @@ export const buildAppGridItems = ({
         </div>
 
                <div>
-          <AppTitle en="RP" zh="长文" mode={nameMode} />
+          <AppTitle en="RP" zh="长文" ko="장문 롤플레이" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Immersive Roleplay
           </p>
@@ -344,7 +344,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Studio" zh="生图室" mode={nameMode} />
+          <AppTitle en="Studio" zh="生图室" ko="이미지 스튜디오" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Image Studio
           </p>
@@ -373,7 +373,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Diaries" zh="日记" mode={nameMode} />
+          <AppTitle en="Diaries" zh="日记" ko="일기" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-40">
             Sync Memories
           </p>
@@ -402,7 +402,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Memory Room" zh="记忆室" mode={nameMode} />
+          <AppTitle en="Memory Room" zh="记忆室" ko="기억의 방" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-40">
             Private Archive
           </p>
@@ -431,7 +431,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Archive Room" zh="存档室" mode={nameMode} />
+          <AppTitle en="Archive Room" zh="存档室" ko="보관함" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-40">
             Old Messages
           </p>
@@ -460,7 +460,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Call History" zh="通话记录" mode={nameMode} />
+          <AppTitle en="Call History" zh="通话记录" ko="통화 기록" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-40">
             Voice Calls
           </p>
@@ -489,7 +489,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Ephemera" zh="时光票根" mode={nameMode} />
+          <AppTitle en="Ephemera" zh="时光票根" ko="시간의 조각" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Time Tickets
           </p>
@@ -518,7 +518,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Daily Post" zh="晨报" mode={nameMode} />
+          <AppTitle en="Daily Post" zh="晨报" ko="아침 소식" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Morning Press
           </p>
@@ -548,7 +548,7 @@ export const buildAppGridItems = ({
           </div>
 
           <div>
-            <AppTitle en="Workflows" zh="定时工作流" mode={nameMode} />
+            <AppTitle en="Workflows" zh="定时工作流" ko="예약 워크플로우" mode={nameMode} />
             <p className="mt-0.5 text-[11px] uppercase tracking-wider opacity-50">
               {activeWorkflowCount > 0
                 ? `${activeWorkflowCount} running quietly`
@@ -583,7 +583,7 @@ export const buildAppGridItems = ({
 
           <div>
             <div className="flex items-center gap-2">
-              <AppTitle en="Ask Box" zh="匿名信箱" mode={nameMode} />
+              <AppTitle en="Ask Box" zh="匿名信箱" ko="익명 사서함" mode={nameMode} />
 
               {askCount > 0 && (
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
@@ -620,7 +620,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Tidal Shell" zh="潮汐贝壳" mode={nameMode} />
+          <AppTitle en="Tidal Shell" zh="潮汐贝壳" ko="파도의 조개" mode={nameMode} />
           <p className="mt-0.5 text-[11px] uppercase tracking-wider opacity-50">
             Fragments washed ashore
           </p>
@@ -638,7 +638,7 @@ export const buildAppGridItems = ({
           <Heart className="h-5 w-5 opacity-90" style={{ color: 'var(--text-main)' }} />
         </div>
         <div>
-          <AppTitle en="First-Aid" zh="情绪急救盒" mode={nameMode} />
+          <AppTitle en="First-Aid" zh="情绪急救盒" ko="감정 응급상자" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">Draw a Note</p>
         </div>
       </GlassCard>
@@ -666,7 +666,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Travel" zh="旅行" mode={nameMode} />
+          <AppTitle en="Travel" zh="旅行" ko="여행" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Journey Log
           </p>
@@ -695,7 +695,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Planner" zh="日程" mode={nameMode} />
+          <AppTitle en="Planner" zh="日程" ko="일정" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Shared Schedule
           </p>
@@ -724,7 +724,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Rhythm" zh="律动" mode={nameMode} />
+          <AppTitle en="Rhythm" zh="律动" ko="리듬" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Study Rhythm
           </p>
@@ -753,7 +753,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Almanac" zh="岁时纪" mode={nameMode} />
+          <AppTitle en="Almanac" zh="岁时纪" ko="세시기" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Seasonal Notes
           </p>
@@ -782,7 +782,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Badges" zh="限定图标" mode={nameMode} />
+          <AppTitle en="Badges" zh="限定图标" ko="한정 배지" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Monthly Exchange
           </p>
@@ -811,7 +811,7 @@ export const buildAppGridItems = ({
       </div>
 
       <div>
-        <AppTitle en="Hourglass" zh="信号沙漏" mode={nameMode} />
+        <AppTitle en="Hourglass" zh="信号沙漏" ko="신호 모래시계" mode={nameMode} />
         <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
           API Signal Log
         </p>
@@ -840,7 +840,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Text Game Hall" zh="文字游戏" mode={nameMode} />
+          <AppTitle en="Text Game Hall" zh="文字游戏" ko="텍스트 게임" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Issue Index
           </p>
@@ -869,7 +869,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Flight Chess" zh="飞行棋" mode={nameMode} />
+          <AppTitle en="Flight Chess" zh="飞行棋" ko="루도 게임" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Roll the Dice
           </p>
@@ -900,7 +900,7 @@ export const buildAppGridItems = ({
         </div>
 
         <div>
-          <AppTitle en="Shared World" zh="共享世界" mode={nameMode} />
+          <AppTitle en="Shared World" zh="共享世界" ko="공유 세계" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Booklets
           </p>

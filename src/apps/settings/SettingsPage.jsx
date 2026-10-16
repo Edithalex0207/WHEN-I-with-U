@@ -97,6 +97,8 @@ export const SettingsPage = ({
   onOpenManual,
   currentTheme,
   onChangeTheme,
+  currentGlassStyle,
+  onChangeGlassStyle,
   showTitle,
   onToggleTitle,
   currentHubBackground,
@@ -107,6 +109,13 @@ export const SettingsPage = ({
   const saveToastTimerRef = useRef(null);
 
   const [draftTheme, setDraftTheme] = useState(currentTheme);
+// 玻璃质感风格（毛玻璃 frosted / 液态玻璃 liquid）：跟 draftTheme 一样
+// 走 App.jsx 的 onChangeGlassStyle 回写，另外再多存一份到 db.settings
+// 里（theme 目前没有持久化，glassStyle 这里补上，App.jsx 启动时会从
+// 这个 key 读回来）。
+const [draftGlassStyle, setDraftGlassStyle] = useState(
+  currentGlassStyle || 'frosted',
+);
 const [draftShowTitle, setDraftShowTitle] = useState(showTitle);
 const [draftHubBackground, setDraftHubBackground] = useState(
   currentHubBackground || '',
@@ -354,6 +363,10 @@ const [isCompanionLoading, setIsCompanionLoading] = useState(true);
           setDraftTheme(settingMap.theme);
         }
 
+        if (typeof settingMap.glassStyle === 'string') {
+          setDraftGlassStyle(settingMap.glassStyle);
+        }
+
         if (typeof settingMap.showTitle === 'boolean') {
           setDraftShowTitle(settingMap.showTitle);
         }
@@ -488,6 +501,7 @@ setIsCompanionLoading(false);
 
   const hasUnsavedChanges =
   draftTheme !== currentTheme ||
+  draftGlassStyle !== (currentGlassStyle || 'frosted') ||
   draftShowTitle !== showTitle ||
    draftHubBackground !== (currentHubBackground || '') ||
   draftAppNameDisplayMode !== initialAppNameDisplayMode ||
@@ -812,6 +826,7 @@ const handleDeletePreloaderQuote = (categoryId, quoteIndex) => {
       await db.transaction('rw', db.settings, async () => {
         await db.settings.bulkPut([
           { key: 'theme', value: draftTheme },
+          { key: 'glassStyle', value: draftGlassStyle },
           { key: 'showTitle', value: draftShowTitle },
                  {
   key: 'hubBackground',
@@ -852,6 +867,10 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
 
       if (draftTheme !== currentTheme) {
         onChangeTheme(draftTheme);
+      }
+
+      if (draftGlassStyle !== (currentGlassStyle || 'frosted')) {
+        onChangeGlassStyle(draftGlassStyle);
       }
 
       if (draftShowTitle !== showTitle) {
@@ -1199,6 +1218,35 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="border-t border-black/5 pt-3 dark:border-white/5">
+            <label className="mb-2 block opacity-60">
+              玻璃质感 (Glass Style)
+            </label>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {[
+                { id: 'frosted', name: 'Frosted (毛玻璃)' },
+                { id: 'liquid', name: 'Liquid (液态玻璃)' },
+              ].map((style) => (
+                <button
+                  key={style.id}
+                  type="button"
+                  onClick={() => setDraftGlassStyle(style.id)}
+                  className={`rounded-xl py-3 font-medium transition-all ${
+                    draftGlassStyle === style.id
+                      ? 'bg-black text-white dark:bg-white dark:text-black font-semibold'
+                      : 'bg-black/5 dark:bg-white/10 hover:bg-black/10'
+                  }`}
+                >
+                  {style.name}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] leading-relaxed opacity-50">
+              液态玻璃更透、更亮，卡片边缘会带一圈高光，玻璃感更明显；
+              毛玻璃是原本柔和的磨砂质感。
+            </p>
           </div>
 
           <div className="flex items-center justify-between border-t border-black/5 pt-3 dark:border-white/5">

@@ -58,7 +58,9 @@ export const GlassCard = ({
           : 'var(--card-border)',
         borderWidth: '1px',
         borderStyle: 'solid',
-        boxShadow: isInk ? 'var(--ink-card-shadow)' : 'var(--card-shadow)',
+        boxShadow: isInk
+          ? 'var(--ink-card-shadow)'
+          : 'var(--card-shadow), var(--glass-edge-highlight, inset 0 0 0 0 transparent)',
         color: isInk ? 'var(--text-on-ink)' : 'var(--text-main)',
                 backdropFilter: blur && isSettled ? blurValue : 'none',
         WebkitBackdropFilter: blur && isSettled ? blurValue : 'none',

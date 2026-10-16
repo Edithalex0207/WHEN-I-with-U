@@ -692,6 +692,34 @@ const [hubBackground, setHubBackground] = useState('');
     };
   }, []);
 
+  // 玻璃质感风格（毛玻璃 frosted / 液态玻璃 liquid）持久化读取，写法
+  // 对照上面的 loadHubBackground：只在挂载时读一次，设置页保存时再
+  // 通过 onChangeGlassStyle 回写这里的状态。
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadGlassStyle = async () => {
+      try {
+        const setting = await db.settings.get('glassStyle');
+
+        if (!cancelled && typeof setting?.value === 'string') {
+          setActiveGlassStyle(setting.value);
+        }
+      } catch (error) {
+        console.warn(
+          '[App] 读取玻璃质感风格失败:',
+          error,
+        );
+      }
+    };
+
+    void loadGlassStyle();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     const applyStoredPwaIcon = async () => {
       try {
