@@ -1,3 +1,4 @@
+
 /*
  * CompanionSchoolModal.jsx —— 「上学」首页弹窗（学校首页 v2）。
  * 对应预览 school-home-preview2.html，布局照着预览来：
@@ -20,7 +21,9 @@
  *   首页弹窗统一调度跳转（结算页点"错题本" -> 关做题开错题本；错题本点
  *   "只考错题" -> 关错题本、以 WRONG 模式重开做题），避免互相 import 出现
  *   循环依赖。
- * - 我出的题、家校练习册、学校相册：界面还没做，先弹一句"下一轮就做啦"占位，
+ * - 家校练习册 -> 打开 CompanionSchoolReportModal（这一轮接上课程表 tab，
+ *   评语卡那半块它自己里面还是占位，不是这里忘了接）。
+ * - 我出的题、学校相册：界面还没做，先弹一句"下一轮就做啦"占位，
  *   不是忘了接。
  * - 秋游横条（预览里"秋游开放中"那一条）：特别活动功能还没做，这一轮完全
  *   不画这块，等那一轮接上真实的开放判断再加。
@@ -58,6 +61,7 @@ import CompanionSchoolIcon from './CompanionSchoolIcon';
 import SchoolEnrollFlow from './SchoolEnrollFlow';
 import CompanionSchoolQuizModal from './CompanionSchoolQuizModal';
 import CompanionSchoolWrongBookModal from './CompanionSchoolWrongBookModal';
+import CompanionSchoolReportModal from './CompanionSchoolReportModal';
 
 /** 「今天的小课堂」的题目来源分段，顺序跟预览一致 */
 const SOURCE_OPTIONS = [
@@ -92,6 +96,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [showPromote, setShowPromote] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [showWrongBook, setShowWrongBook] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const toastTimer = useRef(null);
 
   /* ---------------- 拉取 / 刷新数据 ---------------- */
@@ -364,7 +369,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
                     <span className="sh-ti"><EditGlyph size={20} /></span>
                     <span><b>我出的题</b><small>共 {customCount} 道</small></span>
                   </button>
-                  <button type="button" className="sh-tile sd-tone-sky" onClick={() => notifyComingSoon('家校练习册')}>
+                  <button type="button" className="sh-tile sd-tone-sky" onClick={() => setShowReport(true)}>
                     <span className="sh-ti"><BookGlyph size={20} /></span>
                     <span><b>家校练习册</b><small>课表 · 评语</small></span>
                   </button>
@@ -420,6 +425,14 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
             setSelectedMode(QUIZ_MODE.WRONG);
             setShowQuiz(true);
           }}
+        />
+      )}
+      {showReport && (
+        <CompanionSchoolReportModal
+          companion={companion}
+          chatId={chatId}
+          character={character}
+          onClose={() => setShowReport(false)}
         />
       )}
     </>

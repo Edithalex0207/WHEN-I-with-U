@@ -1,0 +1,96 @@
+/* =========================================================
+ * schoolReport.css —— 「家校练习册」专属样式（课程表 / 评语卡 / 三方会谈）。
+ * 前缀约定：sr-（跟 sd- / sh- / qz- 分开）。外壳继续用 school.css 的
+ * .sd-root/.sd-head/.sd-body，颜色变量复用 companionPage.css 的 --cp-*、
+ * school.css 的 --sd-*。
+ *
+ * 第 2 轮：顶部 tab 切换 + 课程表 + "今天在学校"卡片。
+ * 第 3 轮：评语卡（.sr-cmt / .sr-paper / .sr-sign）+ 本周小统计
+ * （.sr-mini）+ "老师想和你聊聊"提示（.sr-meeting-tile）。三方会谈本身
+ * 的样式（对话气泡、回应按钮）下一轮真的做界面时再加。
+ * ========================================================= */
+
+/* ================= 顶部 tab 切换 ================= */
+.sr-tabs {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px;
+  border-radius: 99px; background: var(--cp-soft); margin: 2px 0 14px;
+}
+.sr-tabs-ind {
+  position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc(50% - 4px);
+  border-radius: 99px; background: #fff; box-shadow: 0 3px 8px -4px var(--cp-shadow);
+  transition: transform 0.3s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.sr-tabs button {
+  position: relative; z-index: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: 800; color: var(--cp-muted);
+}
+.sr-tabs button.is-on { color: var(--cp-text); }
+
+/* ================= 课程表 ================= */
+.sr-book { background: var(--cp-card); border-radius: 28px; padding: 14px 12px; box-shadow: 0 12px 22px -14px var(--cp-shadow); }
+.sr-grid { display: grid; grid-template-columns: 34px repeat(5, 1fr); gap: 6px; align-items: stretch; }
+.sr-dh { font-size: 12px; font-weight: 800; color: var(--cp-sub); text-align: center; padding: 4px 0; }
+.sr-dh.is-today { background: var(--cp-heart-soft); color: var(--sd-heart-deep); border-radius: 12px; }
+.sr-tm { font-size: 10.5px; font-weight: 800; color: var(--cp-muted); display: grid; place-items: center; text-align: center; line-height: 1.1; }
+.sr-cell {
+  height: 50px; border-radius: 15px; display: grid; place-items: center; font-size: 12px; font-weight: 800;
+  text-align: center; line-height: 1.15; position: relative; background: var(--sd-t-bg); color: var(--sd-t-fg);
+}
+.sr-cell.is-now { outline: 3px solid var(--cp-heart); outline-offset: 1px; }
+.sr-cell.is-now::after {
+  content: ""; position: absolute; right: -5px; top: -6px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--cp-heart); border: 2px solid #fff;
+}
+.sr-lunch {
+  grid-column: 1 / -1; height: 22px; border-radius: 99px;
+  background: repeating-linear-gradient(90deg, var(--cp-soft) 0 10px, #fff 10px 20px);
+  display: grid; place-items: center; font-size: 11px; font-weight: 800; color: var(--cp-muted);
+}
+.sr-weekend { text-align: center; font-size: 12.5px; color: var(--cp-sub); font-weight: 700; padding: 18px 0; }
+
+/* ================= 今天在学校 ================= */
+.sr-today { margin-top: 14px; background: var(--cp-card); border-radius: 26px; padding: 14px; box-shadow: 0 12px 22px -14px var(--cp-shadow); }
+.sr-today h5 { margin: 0 0 8px; font-family: var(--cp-font-display); font-weight: 400; font-size: 16px; display: flex; align-items: center; gap: 6px; color: var(--cp-text); }
+.sr-li { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; font-weight: 700; color: var(--cp-sub); line-height: 1.55; }
+.sr-li i { flex: none; width: 22px; height: 22px; border-radius: 8px; display: grid; place-items: center; background: var(--cp-sky-bg); color: var(--cp-sky-fg); }
+.sr-today-empty { font-size: 12.5px; color: var(--cp-muted); font-weight: 700; text-align: center; padding: 4px 0; }
+.sr-today-loading { font-size: 12.5px; color: var(--cp-muted); font-weight: 700; text-align: center; padding: 4px 0; }
+
+/* ================= 评语卡 ================= */
+.sr-cmt { background: var(--cp-card); border-radius: 28px; padding: 16px; box-shadow: 0 12px 22px -14px var(--cp-shadow); }
+.sr-cmt-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sr-cmt-top h4 { margin: 0; font-family: var(--cp-font-display); font-weight: 400; font-size: 17px; color: var(--cp-text); }
+.sr-cmt-top span { font-size: 12px; color: var(--cp-muted); font-weight: 800; }
+.sr-paper {
+  background: repeating-linear-gradient(transparent 0 25px, var(--cp-soft) 25px 27px);
+  border-radius: 16px; padding: 2px 10px 4px; font-size: 13.5px; line-height: 27px; font-weight: 700; color: var(--cp-text);
+}
+.sr-sign { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; border-top: 3px dashed var(--cp-border); padding-top: 12px; }
+.sr-sign-who { font-size: 12px; font-weight: 800; color: var(--cp-sub); }
+.sr-sign-ok {
+  width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--cp-heart); color: var(--cp-heart);
+  display: grid; place-items: center; transform: rotate(12deg); font-family: var(--cp-font-display); font-size: 11px; line-height: 1;
+}
+
+/* ================= 本周小统计 ================= */
+.sr-mini { display: flex; gap: 10px; margin-top: 12px; }
+.sr-mini > div { flex: 1; background: var(--cp-card); border-radius: 22px; padding: 11px; box-shadow: 0 10px 16px -12px var(--cp-shadow); }
+.sr-mini h6 { margin: 0 0 5px; font-size: 11.5px; color: var(--cp-muted); font-weight: 800; }
+.sr-mini p { margin: 0; font-size: 12.5px; font-weight: 800; color: var(--cp-text); line-height: 1.4; }
+
+/* ================= 老师想和你聊聊（提示，不是真的会谈界面） ================= */
+.sr-meeting-tile {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 12px; padding: 11px 12px;
+  border-radius: 22px; background: var(--sd-lav-bg, #EBE3FF); text-align: left;
+  box-shadow: 0 10px 16px -12px var(--cp-shadow); transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.sr-meeting-tile:active { transform: scale(0.97); }
+.sr-meeting-ic {
+  flex: none; width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center;
+  background: #fff; color: var(--sd-lav-fg, #7B5FCF);
+}
+.sr-meeting-tile h6 { margin: 0; font-size: 12.5px; font-weight: 800; color: var(--sd-lav-fg, #7B5FCF); }
+.sr-meeting-tile p { margin: 2px 0 0; font-size: 11.5px; font-weight: 800; color: var(--sd-lav-fg, #7B5FCF); opacity: 0.85; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-tabs-ind, .sr-meeting-tile { transition: none !important; }
+}
