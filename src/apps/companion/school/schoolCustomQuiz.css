@@ -1,0 +1,87 @@
+/* =========================================================
+ * schoolCustomQuiz.css —— 「我出的题」弹窗（列表 / 手动出题表单 / AI 出题）。
+ * 前缀：cq-（custom quiz，不跟 sd- / sh- / sr- / mt- / sa- 冲突）。
+ * 外壳、tone 配色都复用 school.css 的 .sd-root 体系。
+ * ========================================================= */
+
+/* ================= 列表页头部 ================= */
+.cq-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.cq-count { font-size: 12.5px; font-weight: 800; color: var(--cp-sub); }
+.cq-head-btns { display: flex; gap: 8px; }
+.cq-add {
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 99px;
+  background: var(--cp-accent); color: #fff; font-size: 12.5px; font-weight: 800;
+  box-shadow: 0 5px 0 -1px var(--sd-blue-deep); transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+.cq-add:active:not(:disabled) { transform: translateY(2px); box-shadow: none; }
+.cq-add:disabled { opacity: 0.5; cursor: default; }
+.cq-add.is-ghost { background: var(--cp-card); color: var(--cp-sub); border: 2px solid var(--cp-border); box-shadow: 0 5px 0 -2px var(--cp-border); }
+
+.cq-limit-hint { margin: 0 0 10px; font-size: 12px; font-weight: 700; color: var(--sd-heart-deep); text-align: center; }
+
+/* ================= 题目列表 ================= */
+.cq-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 4px; }
+.cq-card { background: var(--cp-card); border-radius: 24px; padding: 14px 16px; box-shadow: 0 10px 18px -12px var(--cp-shadow); }
+.cq-top { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.cq-chip { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; background: var(--sd-t-bg); color: var(--sd-t-fg); }
+.cq-type { font-size: 11px; font-weight: 800; color: var(--cp-muted); }
+.cq-ops { margin-left: auto; display: flex; gap: 6px; }
+.cq-op-btn { width: 28px; height: 28px; border-radius: 10px; display: grid; place-items: center; background: var(--cp-soft); color: var(--cp-sub); transition: background 0.2s, color 0.2s; }
+.cq-op-btn:active { transform: scale(0.9); }
+.cq-op-btn.is-del.is-confirm { background: var(--cp-heart-soft); color: var(--sd-heart-deep); }
+.cq-stem { font-size: 14px; font-weight: 800; color: var(--cp-text); line-height: 1.5; margin: 0 0 6px; }
+.cq-answer { font-size: 12.5px; font-weight: 700; color: #1C7A62; background: var(--cp-mint-bg); border-radius: 14px; padding: 6px 10px; margin: 0 0 4px; display: inline-block; }
+.cq-explain { font-size: 12px; font-weight: 700; color: var(--cp-sub); line-height: 1.5; margin: 2px 0 0; }
+
+/* ================= 空列表 ================= */
+.cq-empty { text-align: center; padding: 50px 14px 20px; color: var(--cp-muted); }
+.cq-empty-pic { width: 96px; height: 96px; margin: 0 auto 14px; border-radius: 26px; background: var(--sd-lav-bg); color: var(--sd-lav-fg); display: grid; place-items: center; transform: rotate(-4deg); box-shadow: 0 14px 22px -14px var(--cp-shadow); }
+.cq-empty h4 { margin: 0 0 4px; font-family: var(--cp-font-display); font-weight: 400; font-size: 18px; color: var(--cp-text); }
+.cq-empty p { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.6; }
+
+/* ================= 表单通用 ================= */
+.cq-field { margin-bottom: 16px; }
+.cq-label { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; font-weight: 800; color: var(--cp-sub); margin-bottom: 8px; gap: 8px; }
+.cq-counter { font-weight: 700; color: var(--cp-muted); white-space: nowrap; }
+.cq-counter.is-over { color: var(--sd-heart-deep); }
+
+.cq-pickrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.cq-pick { padding: 7px 14px; border-radius: 99px; font-size: 12.5px; font-weight: 800; background: var(--cp-card); border: 2px solid var(--cp-border); color: var(--cp-sub); transition: transform 0.2s, background 0.2s, color 0.2s, border-color 0.2s; }
+.cq-pick:active { transform: scale(0.95); }
+.cq-pick.is-on { background: var(--sd-t-bg, var(--cp-accent-soft)); color: var(--sd-t-fg, var(--cp-accent)); border-color: transparent; }
+
+.cq-seg { display: flex; background: var(--cp-soft); border-radius: 99px; padding: 4px; }
+.cq-seg button { flex: 1; padding: 9px 0; border-radius: 99px; font-size: 13px; font-weight: 800; color: var(--cp-sub); text-align: center; transition: background 0.2s, color 0.2s; }
+.cq-seg button.is-on { background: #fff; color: var(--cp-accent); box-shadow: 0 4px 10px -4px var(--cp-shadow); }
+
+.cq-textarea {
+  width: 100%; border: 2px solid var(--cp-border); border-radius: 18px; padding: 12px 14px;
+  font-size: 14px; font-weight: 700; color: var(--cp-text); resize: none; background: var(--cp-card);
+  line-height: 1.5; font-family: inherit;
+}
+.cq-textarea:focus { outline: none; border-color: var(--cp-accent); }
+.cq-textarea.is-small { font-size: 12.5px; font-weight: 600; }
+
+/* ================= 选择题选项 ================= */
+.cq-opts { display: flex; flex-direction: column; gap: 10px; }
+.cq-opt-row { display: flex; align-items: center; gap: 8px; }
+.cq-opt-mark { flex: none; width: 30px; height: 30px; border-radius: 10px; border: 2px solid var(--cp-border); display: grid; place-items: center; color: var(--cp-muted); transition: background 0.2s, border-color 0.2s, color 0.2s; }
+.cq-opt-mark.is-correct { background: #3DBE9C; border-color: #3DBE9C; color: #fff; }
+.cq-opt-input { flex: 1; min-width: 0; border: 2px solid var(--cp-border); border-radius: 14px; padding: 9px 12px; font-size: 13.5px; font-weight: 700; color: var(--cp-text); background: var(--cp-card); font-family: inherit; }
+.cq-opt-input:focus { outline: none; border-color: var(--cp-accent); }
+.cq-opt-del { flex: none; width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; color: var(--cp-muted); }
+.cq-opt-add { align-self: flex-start; display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 99px; background: var(--cp-soft); color: var(--cp-sub); font-size: 12.5px; font-weight: 800; margin-top: 2px; }
+
+/* ================= 判断题 ================= */
+.cq-judge { display: flex; gap: 10px; }
+.cq-judge button { flex: 1; height: 48px; border-radius: 18px; border: 2px solid var(--cp-border); background: var(--cp-card); font-size: 14px; font-weight: 800; color: var(--cp-sub); display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+.cq-judge button.is-true.is-on { background: var(--cp-mint-bg); border-color: #3DBE9C; color: #1C7A62; }
+.cq-judge button.is-false.is-on { background: var(--cp-heart-soft); border-color: var(--cp-heart); color: var(--sd-heart-deep); }
+
+/* ================= 错误提示 / AI 提示 ================= */
+.cq-err { margin: -6px 0 14px; padding: 9px 14px; border-radius: 14px; background: var(--cp-heart-soft); color: var(--sd-heart-deep); font-size: 12.5px; font-weight: 800; text-align: center; }
+.cq-ai-tip { margin: 0 0 12px; font-size: 12.5px; font-weight: 700; color: var(--cp-sub); text-align: center; line-height: 1.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cq-add, .cq-op-btn, .cq-pick, .cq-opt-mark, .cq-judge button, .cq-seg button { transition: none !important; }
+}

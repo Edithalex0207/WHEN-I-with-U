@@ -35,7 +35,7 @@
  *   onClose    function  —— 关闭弹窗
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import './school.css';
 import './schoolHome.css';
@@ -62,6 +62,7 @@ import CompanionSchoolQuizModal from './CompanionSchoolQuizModal';
 import CompanionSchoolWrongBookModal from './CompanionSchoolWrongBookModal';
 import CompanionSchoolReportModal from './CompanionSchoolReportModal';
 import CompanionSchoolAlbumModal from './CompanionSchoolAlbumModal';
+import CompanionSchoolCustomQuizModal from './CompanionSchoolCustomQuizModal';
 
 /** 「今天的小课堂」的题目来源分段，顺序跟预览一致 */
 const SOURCE_OPTIONS = [
@@ -91,14 +92,13 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [showTeacherSay, setShowTeacherSay] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null); // null = 什么都上
   const [selectedMode, setSelectedMode] = useState(QUIZ_MODE.MIXED);
-  const [toast, setToast] = useState('');
   const [showEnroll, setShowEnroll] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [showWrongBook, setShowWrongBook] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showAlbum, setShowAlbum] = useState(false);
-  const toastTimer = useRef(null);
+  const [showCustomQuiz, setShowCustomQuiz] = useState(false);
 
   /* ---------------- 拉取 / 刷新数据 ---------------- */
   const refresh = async () => {
@@ -143,12 +143,6 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const handlePetClick = () => {
     if (!status) return;
     setPetLine((prev) => getPetLine(status, { now: Date.now(), excludeText: prev.text }));
-  };
-
-  const notifyComingSoon = (label) => {
-    clearTimeout(toastTimer.current);
-    setToast(`${label}下一轮就做啦，这轮先占个位置～`);
-    toastTimer.current = setTimeout(() => setToast(''), 2200);
   };
 
   /* ---------------- 还在加载 ---------------- */
@@ -366,7 +360,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
                     <span className="sh-ti"><NotebookGlyph size={20} /></span>
                     <span><b>错题本</b><small>{wrongCount} 道待复习</small></span>
                   </button>
-                  <button type="button" className="sh-tile sd-tone-lavender" onClick={() => notifyComingSoon('我出的题')}>
+                  <button type="button" className="sh-tile sd-tone-lavender" onClick={() => setShowCustomQuiz(true)}>
                     <span className="sh-ti"><EditGlyph size={20} /></span>
                     <span><b>我出的题</b><small>共 {customCount} 道</small></span>
                   </button>
@@ -381,8 +375,6 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
                 </div>
               </>
             )}
-
-            {toast && <p className="sd-notice" role="status">{toast}</p>}
           </div>
         </div>
       </div>
@@ -441,6 +433,17 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
           companion={companion}
           onClose={() => {
             setShowAlbum(false);
+            refresh();
+          }}
+        />
+      )}
+      {showCustomQuiz && (
+        <CompanionSchoolCustomQuizModal
+          companion={companion}
+          chatId={chatId}
+          character={character}
+          onClose={() => {
+            setShowCustomQuiz(false);
             refresh();
           }}
         />
