@@ -57,7 +57,13 @@ export const pickWeightedPrize = () => {
   return weighted[weighted.length - 1].item;
 };
 
-export const canPlayClaw = (companion) => (companion?.hearts || 0) >= PLAY_COST;
+// 免费抓娃娃的次数（陪流星仔玩有概率获得，见 plushPlayService.js），
+// 记在 companion.clawFreePlays 上，有次数时投币不扣心心。
+export const getFreePlays = (companion) => Math.max(0, Math.floor(companion?.clawFreePlays || 0));
+
+export const canPlayClaw = (companion) => (
+  getFreePlays(companion) > 0 || (companion?.hearts || 0) >= PLAY_COST
+);
 
 /*
  * 开始一次抓取：校验+扣心心。UI 拿到返回值之后才开始跑自己的时机小
@@ -69,10 +75,20 @@ export const startClawPlay = async (companionId) => {
   if (!canPlayClaw(companion)) throw new Error('心心不够啦');
 
   const now = Date.now();
-  await db.companions.update(companionId, {
-    hearts: round1(companion.hearts - PLAY_COST),
-    updatedAt: now,
-  });
+  const freePlays = getFreePlays(companion);
+
+  if (freePlays > 0) {
+    // 有免费次数就先用免费次数，不扣心心。
+    await db.companions.update(companionId, {
+      clawFreePlays: freePlays - 1,
+      updatedAt: now,
+    });
+  } else {
+    await db.companions.update(companionId, {
+      hearts: round1(companion.hearts - PLAY_COST),
+      updatedAt: now,
+    });
+  }
 
   return db.companions.get(companionId);
 };
