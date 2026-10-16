@@ -288,10 +288,40 @@
 .fo-hang.is-empty .fo-hang-paper { background: transparent; border: 2px dashed var(--cp-border); color: var(--cp-muted); font-size: 14px; }
 .fo-rack-note { margin: 4px 0 0; font-size: 11.5px; color: var(--cp-muted); text-align: center; line-height: 1.6; }
 
-/* 徽章占位（天数徽章功能下次再做，这里先留一个占位说明） */
-.fo-badge-placeholder { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 20px; text-align: center; color: var(--cp-muted); }
-.fo-badge-placeholder .fo-ic { font-size: 30px; color: var(--cp-butter-fg); }
-.fo-badge-placeholder p { margin: 0; font-size: 12.5px; font-weight: 700; line-height: 1.6; }
+/* 连续天数徽章：收藏格子 + 解锁庆祝弹窗
+   注意：徽章图是方形图（不是圆形头像），所有容器用圆角方形 border-radius，不能用 50%。 */
+.fo-badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 4px 2px 20px; }
+.fo-badge-card { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.fo-badge-pic {
+  position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 20px; overflow: hidden;
+  background: var(--cp-soft); border: 2px solid var(--cp-border); box-shadow: 0 8px 14px -10px var(--cp-shadow);
+}
+.fo-badge-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fo-badge-card.is-locked .fo-badge-pic img { filter: grayscale(1) brightness(0.65); }
+.fo-badge-lock {
+  position: absolute; inset: 0; display: grid; place-items: center; background: rgba(36, 65, 90, 0.28); color: #fff; font-size: 20px;
+}
+.fo-badge-label { font-size: 12.5px; font-weight: 800; color: var(--cp-text); }
+.fo-badge-sub { font-size: 11px; font-weight: 700; color: var(--cp-muted); }
+.fo-badge-sub.is-done { color: var(--cp-mint-fg); }
+
+.fo-badge-pop {
+  position: relative; z-index: 1; width: 100%; max-width: 300px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 26px 22px 24px; border-radius: 26px; background: var(--fo-paper); border: 2px solid var(--cp-border);
+  box-shadow: 0 30px 50px -24px rgba(36, 65, 90, 0.55); text-align: center;
+  animation: fo-unfurl 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.fo-badge-pop-pic {
+  width: 128px; aspect-ratio: 1 / 1; border-radius: 26px; overflow: hidden; margin-bottom: 6px;
+  background: var(--cp-soft); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--cp-border), 0 14px 22px -12px var(--cp-shadow);
+  animation: fo-pop 0.6s 0.1s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+.fo-badge-pop-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fo-badge-pop-kicker { margin: 0; font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; color: var(--cp-accent); }
+.fo-badge-pop h4 { margin: 2px 0 0; font-family: var(--cp-font-display); font-weight: 400; font-size: 21px; color: var(--cp-text); }
+.fo-badge-pop-text { margin: 4px 0 0; font-size: 12.5px; font-weight: 700; color: var(--cp-sub); line-height: 1.5; }
+.fo-badge-pop-hint { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--cp-muted); }
+.fo-badge-pop .fo-btn.main { width: 100%; margin-top: 16px; flex: none; }
 
 /* =========================================================
  * 5. 抽签结果（签文卡）

@@ -27,6 +27,8 @@ import {
   STYLE_NAMES, IDLE_TEXT, GO_LABEL, POKE_LINES, WEEKDAYS,
 } from './fortuneData';
 import { getFortuneState, drawFortune, savePreferredStyle } from './fortuneService';
+import { BADGE_MILESTONES, unlockedMilestones } from './badgeData';
+import { getSeenBadgeMilestones, markBadgeMilestonesSeen } from './badgeService';
 
 const STYLES = ['omikuji', 'tarot', 'astro'];
 const PARTICLE_COLORS = ['#3A97E8', '#FFD27A', '#8FD9C0', '#8CC9FF', '#FF86A0'];
@@ -233,6 +235,11 @@ export default function CompanionFortuneModal({
   const [streakBumpKey, setStreakBumpKey] = useState(0);
   const [dayNewKey, setDayNewKey] = useState(0);
 
+  // 连续天数徽章：排着队等庆祝的里程碑（已解锁但还没弹过庆祝动画的），
+  // 队首就是正在展示的那一个；一次点"收下"只弹出下一个，不会一口气全弹光。
+  const [badgeQueue, setBadgeQueue] = useState([]);
+  const badgePopRef = useRef(null);
+
   const [boxShaking, setBoxShaking] = useState(false);
   const [boxHasStick, setBoxHasStick] = useState(false);
   const [stickNo, setStickNo] = useState(null);
@@ -323,6 +330,43 @@ export default function CompanionFortuneModal({
       setTimeout(() => setParticles((cur) => cur.filter((x) => x.id !== p.id)), 2300);
     });
   }, []);
+
+  /* ---------------- 连续天数徽章 ---------------- */
+  /*
+   * 解不解锁完全看 streakCount 实时比较，不存在数据库里（badgeData.js 的
+   * unlockedMilestones 就是干这个的）；"看过庆祝动画没有"才是存在
+   * companion.seenBadgeMilestones 里的状态（badgeService.js）。这里只在
+   * 「已解锁 但 还没看过庆祝」的差集不为空、而且当前没有正在排队的庆祝时
+   * 才去填 badgeQueue——避免用户正看着第 1 个的庆祝动画，效果又把队列
+   * 重置掉。
+   */
+  useEffect(() => {
+    if (!companionId) return undefined;
+    let cancelled = false;
+    getSeenBadgeMilestones(companionId).then((seenDays) => {
+      if (cancelled) return;
+      const newly = unlockedMilestones(streakCount).filter((m) => !seenDays.includes(m.days));
+      if (newly.length === 0) return;
+      setBadgeQueue((prev) => (prev.length > 0 ? prev : newly));
+    });
+    return () => { cancelled = true; };
+  }, [companionId, streakCount]);
+
+  const celebratingBadge = badgeQueue[0] || null;
+
+  /* 队首换成新的里程碑（或者从没有变成有）时，在徽章卡上炸一下彩纸，
+     跟抽签结果卡盖印章时的粒子特效是同一套 burstAt('conf', n)。 */
+  useEffect(() => {
+    if (!celebratingBadge || !badgePopRef.current) return;
+    burstAt(badgePopRef.current, 'conf', 26);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [celebratingBadge?.days]);
+
+  const handleCollectBadge = useCallback(() => {
+    if (!celebratingBadge || !companionId) return;
+    markBadgeMilestonesSeen(companionId, [celebratingBadge.days]);
+    setBadgeQueue((q) => q.slice(1));
+  }, [celebratingBadge, companionId]);
 
   /* ---------------- 风格 / 抽屉切换 ---------------- */
 
@@ -709,9 +753,26 @@ export default function CompanionFortuneModal({
                   <p className="fo-rack-note">每天抽到的签会系在这里，往左划能看到更早的。</p>
                 </div>
               ) : (
-                <div className="fo-badge-placeholder">
-                  <svg className="fo-ic"><use href="#i-sparkle" /></svg>
-                  <p>连续天数的徽章还在路上，下次更新见～</p>
+                <div className="fo-badge-grid">
+                  {BADGE_MILESTONES.map((m) => {
+                    const unlocked = streakNow >= m.days;
+                    return (
+                      <div key={m.days} className={`fo-badge-card${unlocked ? ' is-unlocked' : ' is-locked'}`}>
+                        <div className="fo-badge-pic">
+                          <img src={m.imageUrl} alt={`${m.label}纪念卡`} />
+                          {!unlocked && (
+                            <span className="fo-badge-lock" aria-hidden="true">
+                              <svg className="fo-ic"><use href="#i-lock" /></svg>
+                            </span>
+                          )}
+                        </div>
+                        <span className="fo-badge-label">{m.label}</span>
+                        <span className={`fo-badge-sub${unlocked ? ' is-done' : ''}`}>
+                          {unlocked ? '已收集' : `还差 ${m.days - streakNow} 天`}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -813,6 +874,27 @@ export default function CompanionFortuneModal({
                   <span>收下签文</span>
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {celebratingBadge && (
+          <div className="fo-overlay" role="dialog" aria-modal="true" aria-label="解锁徽章">
+            <div className="fo-backdrop" />
+            <div className="fo-badge-pop">
+              <div className="fo-badge-pop-pic" ref={badgePopRef}>
+                <img src={celebratingBadge.imageUrl} alt={`${celebratingBadge.label}纪念卡`} />
+              </div>
+              <p className="fo-badge-pop-kicker">连续签到</p>
+              <h4>{celebratingBadge.label}纪念卡</h4>
+              <p className="fo-badge-pop-text">{companionName}已经陪了你 {celebratingBadge.days} 天啦</p>
+              {badgeQueue.length > 1 && (
+                <p className="fo-badge-pop-hint">还有 {badgeQueue.length - 1} 枚等着收下</p>
+              )}
+              <button type="button" className="fo-btn main" onClick={handleCollectBadge}>
+                <svg className="fo-ic"><use href="#i-check" /></svg>
+                <span>收下徽章</span>
+              </button>
             </div>
           </div>
         )}
