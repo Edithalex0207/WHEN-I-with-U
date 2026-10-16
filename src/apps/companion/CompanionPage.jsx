@@ -59,6 +59,9 @@ import CompanionDailyQaModal from './daily-qa/CompanionDailyQaModal';
 import CompanionDailyQaIcon from './daily-qa/CompanionDailyQaIcon';
 import CompanionClawMachine from './claw/CompanionClawMachine';
 import CompanionClawIcon from './claw/CompanionClawIcon';
+import CompanionSchoolModal from './school/CompanionSchoolModal';
+import CompanionSchoolIcon from './school/CompanionSchoolIcon';
+import { getSchoolStatus } from './school/companionSchoolService';
 import './companionPage.css';
 /*
  * 把用户上传的图片压到一个头像该有的尺寸、保留透明通道、输出 PNG。
@@ -237,7 +240,25 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showCatchGame, setShowCatchGame] = useState(false);
      const [showMoodCalendar, setShowMoodCalendar] = useState(false);
   const [showDailyQa, setShowDailyQa] = useState(false);
-  const [showClaw, setShowClaw] = useState(false);
+   const [showClaw, setShowClaw] = useState(false);
+  const [showSchool, setShowSchool] = useState(false);
+  const [schoolDotOn, setSchoolDotOn] = useState(false);
+
+  // 「上学」dock 小红点：还没入学 / 满 20 节可以升班时才亮，别的时候都不亮
+  // （包括还有课没上），升班到小学后不会再出现。
+  const refreshSchoolDot = async () => {
+    if (!companion) return;
+    try {
+      const st = await getSchoolStatus(companion.id);
+      setSchoolDotOn(!st.enrolled || st.promote.canPromote);
+    } catch (_) {
+      // 静默失败，不影响其它功能
+    }
+  };
+  useEffect(() => {
+    refreshSchoolDot();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companion?.id]);
   const [chatStreakCount, setChatStreakCount] = useState(0);
   const [isPoking, setIsPoking] = useState(false);
   const [floaters, setFloaters] = useState([]);
@@ -1223,7 +1244,18 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               </span>
               娃娃机
             </button>
-            
+            <button
+              type="button"
+              onClick={() => setShowSchool(true)}
+              className="cp-dock-btn"
+              aria-label="上学"
+            >
+              <span className="cp-dock-ico">
+                <CompanionSchoolIcon />
+                {schoolDotOn && <b className="sh-dot" />}
+              </span>
+              上学
+            </button>
           </div>
         </div>
 
@@ -1384,6 +1416,16 @@ const CompanionPage = ({ chatId, character, onBack }) => {
             setLogs(await getRecentLogs(updated.id));
           }}
           onClose={() => setShowClaw(false)}
+        />
+      )}
+
+      {showSchool && (
+        <CompanionSchoolModal
+          companion={companion}
+          onClose={() => {
+            setShowSchool(false);
+            refreshSchoolDot();
+          }}
         />
       )}
 

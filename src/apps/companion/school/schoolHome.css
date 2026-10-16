@@ -1,0 +1,177 @@
+/* =========================================================
+ * schoolHome.css —— 「上学」首页弹窗（学校首页 v2）的场景区 + 卡片区样式。
+ * 前缀约定：sh-（跟 school.css 的 sd- 分开，不整份覆盖 school.css）。
+ *
+ * 这个文件只负责 CompanionSchoolModal.jsx 用到的类，以及 dock 按钮上的
+ * 小红点（.sh-dot，给 CompanionPage.jsx 的「上学」按钮用）。
+ *
+ * 颜色变量：复用 companionPage.css 的 --cp-*、school.css 的 --sd-*（这些
+ * sh- 元素都渲染在 .sd-root 内部，能直接继承到）。色调（tone）继续用
+ * school.css 已有的 .sd-tone-*，这里只读它提供的 --sd-t-bg / --sd-t-fg，
+ * 没有 tone 类时用 var(..., 默认值) 兜底。
+ *
+ * 星星闪烁复用 school.css 里已经定义的 @keyframes sd-twinkle，这个文件
+ * 不重复定义关键帧（两个 css 文件在这个功能里总是一起加载）。
+ * =========================================================*/
+
+/* ================= 头部心心计数 ================= */
+.sh-hp {
+  display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border-radius: 99px;
+  background: var(--cp-heart-soft); color: var(--sd-heart-deep, #D95F72); font-size: 13px; font-weight: 800;
+  border: 2px solid #fff; box-shadow: 0 6px 12px -8px var(--cp-shadow);
+}
+
+/* ================= 场景区 ================= */
+.sh-yard {
+  position: relative; height: 284px; border-radius: 28px; overflow: hidden;
+  box-shadow: 0 14px 22px -14px var(--cp-shadow);
+  background: linear-gradient(#CBE6FF 0%, #E8F5FF 56%, #D4F1C4 56%, #B2E3AA 100%);
+  flex: none;
+}
+.sh-sun {
+  position: absolute; right: 62px; top: 16px; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--cp-orb); box-shadow: 0 0 0 7px var(--cp-orb-glow);
+}
+.sh-cloud { position: absolute; border-radius: 99px; background: var(--cp-cloud); }
+.sh-bld { position: absolute; right: 14px; bottom: 56px; z-index: 1; filter: drop-shadow(0 4px 6px rgba(36, 65, 90, 0.18)); }
+.sh-path {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 62px;
+  background: linear-gradient(#F5E7C8, #EBD6A8); border-top: 3px solid rgba(255, 255, 255, 0.7);
+}
+.sh-fence {
+  position: absolute; left: 0; right: 0; bottom: 58px; height: 16px; border-radius: 4px; opacity: 0.9;
+  background: repeating-linear-gradient(90deg, #fff 0 10px, transparent 10px 18px);
+}
+
+/* 班级挂旗（左上，只在入学后显示） */
+.sh-flagband {
+  position: absolute; z-index: 3; left: 12px; top: 12px; display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px 6px 8px; border-radius: 99px; background: #fff; box-shadow: 0 6px 12px -8px var(--cp-shadow);
+  font-family: var(--cp-font-display); font-size: 14px; color: var(--cp-text);
+}
+
+/* 班主任小徽章（右上，点一下冒口头禅） */
+.sh-tbadge {
+  position: absolute; z-index: 3; right: 12px; top: 10px; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; font-size: 10.5px; font-weight: 800; color: var(--cp-sub); text-align: center;
+}
+.sh-tbadge .sd-tav { box-shadow: 0 0 0 3px #fff, 0 6px 10px -6px var(--cp-shadow); }
+.sh-tbadge:active .sd-tav { transform: scale(0.92); }
+.sh-tsay {
+  position: absolute; top: 100%; right: 0; margin-top: 6px; width: 150px; padding: 7px 10px; text-align: left;
+  border-radius: 14px 4px 14px 14px; background: #fff; box-shadow: 0 8px 14px -10px var(--cp-shadow);
+  font-size: 11.5px; font-weight: 700; color: var(--cp-sub); line-height: 1.4; white-space: normal;
+  animation: sh-say-pop 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+/* 满 20 节时场景里闪烁的小星星 */
+.sh-spark { position: absolute; z-index: 2; color: #FFC93C; pointer-events: none; animation: sd-twinkle 1.6s ease-in-out infinite; }
+
+/* 小伙伴贴纸（左下）+ 说话气泡 */
+.sh-petspot {
+  position: absolute; left: 18px; bottom: 14px; z-index: 2; width: 108px; height: 108px; border-radius: 50%;
+  background: #FFF1E6; border: 5px solid #fff; box-shadow: 0 12px 16px -8px rgba(36, 65, 90, 0.4);
+  display: grid; place-items: center; overflow: hidden; transition: transform 0.2s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+.sh-petspot img { width: 100%; height: 100%; object-fit: cover; }
+.sh-petspot:active { transform: scale(0.94); }
+
+.sh-bubble {
+  position: absolute; left: 14px; right: 14px; top: 80px; z-index: 2; padding: 10px 14px; text-align: left;
+  border-radius: 20px 20px 20px 6px; background: #fff; box-shadow: 0 10px 16px -10px var(--cp-shadow);
+  font-size: 13.5px; font-weight: 800; color: var(--cp-text); line-height: 1.5;
+}
+.sh-bubble.is-top { top: 44px; }
+.sh-bubble::after {
+  content: ""; position: absolute; left: 46px; bottom: -11px; width: 20px; height: 12px; background: #fff;
+  clip-path: polygon(0 0, 100% 0, 25% 100%);
+}
+
+.sh-daytag {
+  position: absolute; z-index: 2; right: 14px; bottom: 12px; font-size: 11.5px; font-weight: 800; color: #7C6A3E;
+  background: rgba(255, 255, 255, 0.7); padding: 4px 10px; border-radius: 99px;
+}
+
+/* ================= 通用小色块（没有 tone 时兜底用 --cp-soft / --cp-sub） ================= */
+.sh-chip { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 800; background: var(--sd-t-bg, var(--cp-soft)); color: var(--sd-t-fg, var(--cp-sub)); }
+
+/* ================= 卡片通用外壳 ================= */
+.sh-card { background: var(--cp-card); border-radius: 26px; padding: 14px; box-shadow: 0 12px 20px -14px var(--cp-shadow); flex: none; }
+.sh-cap { font-family: var(--cp-font-display); font-size: 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: var(--cp-text); }
+.sh-cap small { font-family: var(--cp-font-body); font-size: 11.5px; font-weight: 800; color: var(--cp-muted); }
+
+/* ================= 没入学：居中卡 ================= */
+.sh-hero { text-align: center; }
+.sh-hero-title { font-family: var(--cp-font-display); font-size: 20px; color: var(--cp-text); }
+.sh-hero p { font-size: 13px; font-weight: 700; color: var(--cp-sub); line-height: 1.6; margin: 6px 0 0; }
+.sh-perks { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+
+/* ================= 今天的小课堂 ================= */
+.sh-pen { display: flex; gap: 6px; }
+.sh-pen i { width: 26px; height: 26px; border-radius: 9px; background: var(--cp-butter-bg); color: var(--cp-butter-fg); display: grid; place-items: center; }
+.sh-pen i.is-used { background: var(--cp-soft); color: var(--cp-muted); }
+
+.sh-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.sh-sc { padding: 6px 12px; border-radius: 99px; background: var(--cp-soft); color: var(--cp-sub); font-size: 12.5px; font-weight: 800; transition: transform 0.15s; }
+.sh-sc.is-on { background: var(--sd-t-bg, var(--cp-accent-soft)); color: var(--sd-t-fg, var(--cp-accent)); box-shadow: inset 0 0 0 2px var(--sd-t-fg, var(--cp-accent)); }
+.sh-sc:active { transform: scale(0.95); }
+
+.sh-seg { display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 99px; background: var(--cp-soft); margin-bottom: 12px; }
+.sh-seg button { text-align: center; padding: 6px 0; font-size: 12px; font-weight: 800; color: var(--cp-muted); border-radius: 99px; position: relative; }
+.sh-seg button.is-on { background: #fff; color: var(--cp-text); box-shadow: 0 3px 8px -4px var(--cp-shadow); }
+.sh-segbadge {
+  position: absolute; right: 2px; top: -4px; min-width: 16px; height: 16px; border-radius: 9px; background: var(--cp-heart);
+  color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; padding: 0 4px;
+}
+
+.sh-go {
+  width: 100%; height: 52px; border-radius: 99px; background: #3DBE9C; color: #fff; font-weight: 800; font-size: 16.5px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 7px 0 -2px #25967A, 0 14px 18px -8px rgba(37, 150, 122, 0.4);
+  transition: transform 0.2s cubic-bezier(0.3, 1.7, 0.5, 1), box-shadow 0.2s;
+}
+.sh-go small { font-size: 12px; font-weight: 800; opacity: 0.9; }
+.sh-go:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 3px 0 -2px #25967A, 0 8px 12px -8px rgba(37, 150, 122, 0.4); }
+.sh-go.is-off, .sh-go:disabled { background: #C9DCEC; color: #fff; box-shadow: 0 7px 0 -2px #B2C8DA; opacity: 1; }
+.sh-tip { margin-top: 12px; font-size: 12px; font-weight: 800; color: var(--cp-muted); text-align: center; }
+
+/* ================= 长大进度 ================= */
+.sh-bar { height: 14px; border-radius: 99px; background: var(--cp-border); overflow: hidden; }
+.sh-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #9CCBF2, var(--cp-accent)); transition: width 0.4s cubic-bezier(0.3, 1.4, 0.5, 1); }
+.sh-bar.is-full i { background: linear-gradient(90deg, #FFB3C6, var(--cp-heart)); }
+.sh-ends { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 800; color: var(--cp-sub); margin-top: 7px; }
+.sh-promo { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 20px; background: var(--cp-heart-soft); }
+.sh-promo svg { flex: none; color: var(--cp-heart); }
+.sh-promo p { flex: 1; margin: 0; font-size: 12.5px; font-weight: 800; color: var(--sd-heart-deep, #D95F72); line-height: 1.4; }
+.sh-pbtn {
+  flex: none; height: 38px; padding: 0 16px; border-radius: 99px; background: var(--cp-heart); color: #fff;
+  font-weight: 800; font-size: 13.5px; display: grid; place-items: center; box-shadow: 0 5px 0 -2px var(--sd-heart-deep, #D95F72);
+  transition: transform 0.2s;
+}
+.sh-pbtn:active { transform: translateY(3px); box-shadow: 0 2px 0 -2px var(--sd-heart-deep, #D95F72); }
+
+/* ================= 四个入口 ================= */
+.sh-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: none; }
+.sh-tile {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 11px; border-radius: 22px; text-align: left;
+  background: var(--cp-card); box-shadow: 0 10px 16px -12px var(--cp-shadow); transition: transform 0.15s;
+}
+.sh-tile:active { transform: scale(0.97); }
+.sh-ti { flex: none; width: 42px; height: 42px; border-radius: 15px; background: var(--sd-t-bg, var(--cp-soft)); color: var(--sd-t-fg, var(--cp-sub)); display: grid; place-items: center; }
+.sh-tile b { display: block; font-family: var(--cp-font-display); font-weight: 400; font-size: 15px; color: var(--cp-text); }
+.sh-tile small { font-size: 11px; font-weight: 800; color: var(--cp-muted); }
+.sh-tilebadge {
+  position: absolute; right: 9px; top: -6px; min-width: 20px; height: 20px; border-radius: 10px; background: var(--cp-heart);
+  color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; padding: 0 6px; border: 2px solid #fff;
+}
+
+/* ================= dock 按钮上的小红点 ================= */
+/* 用法：<span className="cp-dock-ico"><CompanionSchoolIcon /><b className="sh-dot" /></span>
+   只在「还没入学」或「满 20 节可以升班」时渲染这个 <b>，别的时候不渲染（不是用 CSS 隐藏）。*/
+.sh-dot {
+  position: absolute; right: -2px; top: -2px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--cp-heart); border: 2px solid var(--cp-card);
+}
+
+/* ================= 动画 ================= */
+@keyframes sh-say-pop { from { opacity: 0; transform: translateY(-4px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }

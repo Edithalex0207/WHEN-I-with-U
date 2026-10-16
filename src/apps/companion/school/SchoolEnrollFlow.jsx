@@ -1,27 +1,37 @@
 /*
- * SchoolEnrollFlow.jsx —— 「办理入学」三步仪式弹窗。
+ * SchoolEnrollFlow.jsx —— 「办理入学」三步仪式弹窗，现在也兼管「办理升班」
+ * （同一套纪念卡仪式，跳过选班级/选老师两步，直接到拍照）。
  *
- *   第 1 步  选班级    向日葵班 / 云朵班 / 小星星班
- *   第 2 步  选老师    3 位 NPC 老师，各带性格和口头禅
- *   第 3 步  拍入学照片  生成一张入学纪念卡（小伙伴头像 + 班级 + 老师 + 日期 + 边框）
- *                      "重拍"会换一个边框、换一个小倾斜角度并闪一下；
- *                      "收进学校相册"才真正办理入学。
+ *   mode='enroll'（默认）
+ *     第 1 步  选班级    向日葵班 / 云朵班 / 小星星班
+ *     第 2 步  选老师    3 位 NPC 老师，各带性格和口头禅
+ *     第 3 步  拍入学照片  生成一张入学纪念卡
+ *   mode='promote'
+ *     只有"拍照"这一步：班级、老师不变（从 schoolRecord 里拿），
+ *     生成一张升班纪念卡，调 promoteCompanion 而不是 enrollCompanion。
+ *
+ *   两种模式："重拍"都会换一个边框、换一个小倾斜角度并闪一下；
+ *   "收进学校相册"才真正落库（入学 / 升班）。
  *
  * 外壳沿用 .cp-overlay.center / .cp-backdrop（跟娃娃机弹窗一样的居中卡片）。
  *
- * 【入学是怎么落库的】
+ * 【落库方式】
  * 点"收进学校相册"时：先用 html-to-image 把纪念卡节点导出成压缩过的 jpeg
- * dataURL，再一次性调用 enrollCompanion(companionId, { classId, teacherId, photo })，
- * 学籍 + 相册 + 日志在同一个事务里写入。
- * 如果导出图片失败（比如头像图片读取受限），不会卡住入学：照样入学，只是没有
- * 相册图片，界面上会提示一句。
+ * dataURL，再一次性调用 enrollCompanion / promoteCompanion，学籍 + 相册 +
+ * 日志在同一个事务里写入。
+ * 如果导出图片失败（比如头像图片读取受限），不会卡住入学/升班：照样办理，
+ * 只是没有相册图片，界面上会提示一句。
  *
- * 入学成功后停留在纪念卡页：按钮变成"保存为图片"和"开始上学"。
+ * 成功后停留在纪念卡页：按钮变成"保存为图片"和"开始上学"。
  *
  * Props:
- *   companion   object   —— 当前小伙伴（用 id / name / avatarUrl）
- *   onEnrolled  function({ record, album }) —— 入学成功的瞬间调用，调用方据此刷新学校状态
- *   onClose     function —— 关闭弹窗
+ *   companion     object   —— 当前小伙伴（用 id / name / avatarUrl）
+ *   mode          'enroll' | 'promote'  —— 默认 'enroll'
+ *   schoolRecord  object   —— mode='promote' 时必填，取它的 classId / teacherId
+ *                             （升班不换班级和老师，只是学段变了）
+ *   onDone        function({ record, album }) —— 办理成功的瞬间调用，
+ *                             调用方据此刷新学校状态（入学、升班共用这一个回调名）
+ *   onClose       function —— 关闭弹窗
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -36,7 +46,7 @@ import {
   findSchoolClass,
   findSchoolTeacher,
 } from './companionSchoolData';
-import { enrollCompanion } from './companionSchoolService';
+import { enrollCompanion, promoteCompanion } from './companionSchoolService';
 import {
   BackGlyph,
   CheckGlyph,
@@ -53,8 +63,6 @@ const PHOTO_QUALITY = 0.86; // 导出 jpeg 的质量
 const PHOTO_PIXEL_RATIO = 1.6; // 导出清晰度，越大图越大（相册里存的是 dataURL）
 const MAX_TILT = 6; // 重拍时小伙伴贴纸最大倾斜角度
 
-const STEPS = ['class', 'teacher', 'photo'];
-
 const pad2 = (n) => String(n).padStart(2, '0');
 const formatDate = (timestamp) => {
   const d = new Date(timestamp);
@@ -68,31 +76,37 @@ const exportCardImage = (node) => toJpeg(node, {
   cacheBust: true,
 });
 
-const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
-  const [step, setStep] = useState('class');
-  const [classId, setClassId] = useState(null);
-  const [teacherId, setTeacherId] = useState(null);
+const SchoolEnrollFlow = ({ companion, mode = 'enroll', schoolRecord = null, onDone, onClose }) => {
+  const isPromote = mode === 'promote';
+  const wordNow = isPromote ? '升班' : '入学'; // 纪念卡上的"入学/升班"字样
+  const STEPS = isPromote ? ['photo'] : ['class', 'teacher', 'photo'];
+  const targetStage = isPromote ? SCHOOL_STAGE.PRIMARY : SCHOOL_STAGE.KINDERGARTEN;
+
+  const [step, setStep] = useState(isPromote ? 'photo' : 'class');
+  const [classId, setClassId] = useState(isPromote ? (schoolRecord?.classId ?? null) : null);
+  const [teacherId, setTeacherId] = useState(isPromote ? (schoolRecord?.teacherId ?? null) : null);
   const [frameIdx, setFrameIdx] = useState(0);
   const [tilt, setTilt] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState(null); // 入学成功后：{ record, album, image }
+  const [result, setResult] = useState(null); // 办理成功后：{ record, album, image }
   const [notice, setNotice] = useState('');
   const [photoDate] = useState(() => Date.now());
   const cardRef = useRef(null);
 
   const schoolClass = findSchoolClass(classId);
   const teacher = findSchoolTeacher(teacherId);
-  const enrolled = Boolean(result);
+  const done = Boolean(result);
 
   /* ---------------- 返回 / 关闭 ---------------- */
   const handleBack = useCallback(() => {
     if (saving) return;
-    if (enrolled) { onClose?.(); return; }
+    if (done) { onClose?.(); return; }
+    if (isPromote) { onClose?.(); return; } // 升班只有一步，返回就是关闭
     if (step === 'photo') { setStep('teacher'); setNotice(''); return; }
     if (step === 'teacher') { setStep('class'); return; }
     onClose?.();
-  }, [saving, enrolled, step, onClose]);
+  }, [saving, done, isPromote, step, onClose]);
 
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') handleBack(); };
@@ -102,15 +116,16 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
 
   /* ---------------- 重拍 ---------------- */
   const handleRetake = () => {
-    if (saving || enrolled) return;
+    if (saving || done) return;
     setFrameIdx((i) => (i + 1) % FRAMES.length);
     setTilt(Math.round((Math.random() * 2 - 1) * MAX_TILT));
     setFlashKey((k) => k + 1);
   };
 
-  /* ---------------- 办理入学 ---------------- */
-  const handleEnroll = async () => {
-    if (saving || enrolled || !schoolClass || !teacher || !cardRef.current) return;
+  /* ---------------- 办理入学 / 升班 ---------------- */
+  const handleConfirm = async () => {
+    if (saving || done || !cardRef.current) return;
+    if (!schoolClass || !teacher) return;
     setSaving(true);
     setNotice('');
 
@@ -118,22 +133,22 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
     try {
       image = await exportCardImage(cardRef.current);
     } catch (_) {
-      image = null; // 导出失败不拦着入学，下面会提示
+      image = null; // 导出失败不拦着办理，下面会提示
     }
 
     try {
-      const { record, album } = await enrollCompanion(companion.id, {
-        classId: schoolClass.id,
-        teacherId: teacher.id,
-        photo: image ? { image, title: `${companion.name}的入学纪念卡` } : null,
-      });
+      const photo = image ? { image, title: `${companion.name}的${wordNow}纪念卡` } : null;
+      const { record, album } = isPromote
+        ? await promoteCompanion(companion.id, { photo })
+        : await enrollCompanion(companion.id, { classId: schoolClass.id, teacherId: teacher.id, photo });
+
       setResult({ record, album, image });
       if (!image) {
-        setNotice('入学成功啦！只是纪念卡图片没能生成（可能是头像读取失败），这次没有存进相册。');
+        setNotice(`${wordNow}成功啦！只是纪念卡图片没能生成（可能是头像读取失败），这次没有存进相册。`);
       }
-      onEnrolled?.({ record, album });
+      onDone?.({ record, album });
     } catch (err) {
-      setNotice(err?.message || '入学没有成功，再试一次吧');
+      setNotice(err?.message || `${wordNow}没有成功，再试一次吧`);
     } finally {
       setSaving(false);
     }
@@ -158,28 +173,31 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
     }
     const link = document.createElement('a');
     link.href = image;
-    link.download = `${companion.name}-入学纪念卡.jpg`;
+    link.download = `${companion.name}-${wordNow}纪念卡.jpg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   /* ---------------- 顶栏文案 ---------------- */
-  const titleText = enrolled ? '入学成功！' : step === 'photo' ? '咔嚓！入学啦' : '办理入学';
+  const titleText = done
+    ? `${wordNow}成功！`
+    : step === 'photo' ? `咔嚓！${wordNow}啦` : `办理${wordNow}`;
   const stepIndex = STEPS.indexOf(step);
+  const showBackArrow = !isPromote && step !== 'class' && !done;
 
   return (
     <div className="cp-overlay center">
       <div className="cp-backdrop" onClick={handleBack} />
 
-      <div className="sd-root" role="dialog" aria-label="办理入学">
+      <div className="sd-root" role="dialog" aria-label={`办理${wordNow}`}>
         <div className="sd-head">
-          <button type="button" className="sd-round" aria-label={step === 'class' || enrolled ? '关闭' : '上一步'} onClick={handleBack} disabled={saving}>
-            {step === 'class' || enrolled ? <CloseGlyph /> : <BackGlyph />}
+          <button type="button" className="sd-round" aria-label={showBackArrow ? '上一步' : '关闭'} onClick={handleBack} disabled={saving}>
+            {showBackArrow ? <BackGlyph /> : <CloseGlyph />}
           </button>
           <div className="sd-title">
             <b>{titleText}</b>
-            {!enrolled && (
+            {!done && STEPS.length > 1 && (
               <div className="sd-dots" aria-hidden="true">
                 {STEPS.map((id, i) => (
                   <i key={id} className={i === stepIndex ? 'is-on' : i < stepIndex ? 'is-done' : ''} />
@@ -190,7 +208,7 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
           <span className="sd-round is-ghost" aria-hidden="true" />
         </div>
 
-        {/* ---------- 第 1 步：选班级 ---------- */}
+        {/* ---------- 第 1 步：选班级（只有 enroll 模式会走到） ---------- */}
         {step === 'class' && (
           <div className="sd-body">
             <p className="sd-hint">先给 {companion.name} 挑一个班级吧</p>
@@ -218,7 +236,7 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
           </div>
         )}
 
-        {/* ---------- 第 2 步：选老师 ---------- */}
+        {/* ---------- 第 2 步：选老师（只有 enroll 模式会走到） ---------- */}
         {step === 'teacher' && (
           <div className="sd-body">
             <p className="sd-hint">谁来当 {companion.name} 的班主任呢</p>
@@ -249,11 +267,11 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
           </div>
         )}
 
-        {/* ---------- 第 3 步：入学纪念卡 ---------- */}
+        {/* ---------- 拍纪念卡（入学第 3 步 / 升班唯一一步） ---------- */}
         {step === 'photo' && schoolClass && teacher && (
           <div className="sd-body is-center">
             <div className="sd-photo-wrap">
-              {enrolled && (
+              {done && (
                 <>
                   <span className="sd-sparkle s1"><StarGlyph size={20} /></span>
                   <span className="sd-sparkle s2"><StarGlyph size={16} /></span>
@@ -282,13 +300,13 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
                       </span>
                     </div>
                   </div>
-                  <div className="sd-stamp">入学<br />纪念</div>
-                  <div className="sd-photo-title">入学纪念卡</div>
+                  <div className="sd-stamp">{wordNow}<br />纪念</div>
+                  <div className="sd-photo-title">{wordNow}纪念卡</div>
                   <div className="sd-photo-name">{companion.name}</div>
                   <div className="sd-chips">
                     <span className={`sd-chip sd-tone-${schoolClass.tone}`}>{schoolClass.name}</span>
                     <span className={`sd-chip sd-tone-${teacher.tone}`}>{teacher.name}</span>
-                    <span className="sd-chip sd-tone-sky">{SCHOOL_STAGE_LABELS[SCHOOL_STAGE.KINDERGARTEN]}</span>
+                    <span className="sd-chip sd-tone-sky">{SCHOOL_STAGE_LABELS[targetStage]}</span>
                   </div>
                   <div className="sd-photo-date">{formatDate(photoDate)}</div>
                 </div>
@@ -307,18 +325,18 @@ const SchoolEnrollFlow = ({ companion, onEnrolled, onClose }) => {
           )}
           {step === 'teacher' && (
             <button type="button" className="sd-btn main" disabled={!teacherId} onClick={() => setStep('photo')}>
-              下一步：拍入学照片
+              下一步：拍{wordNow}照片
             </button>
           )}
-          {step === 'photo' && !enrolled && (
+          {step === 'photo' && !done && (
             <>
               <button type="button" className="sd-btn ghost" disabled={saving} onClick={handleRetake}>重拍</button>
-              <button type="button" className="sd-btn heart" disabled={saving} onClick={handleEnroll}>
-                {saving ? '正在办理入学…' : '收进学校相册'}
+              <button type="button" className="sd-btn heart" disabled={saving} onClick={handleConfirm}>
+                {saving ? `正在办理${wordNow}…` : '收进学校相册'}
               </button>
             </>
           )}
-          {step === 'photo' && enrolled && (
+          {step === 'photo' && done && (
             <>
               <button type="button" className="sd-btn ghost" disabled={saving} onClick={handleDownload}>保存为图片</button>
               <button type="button" className="sd-btn main" disabled={saving} onClick={onClose}>开始上学</button>
