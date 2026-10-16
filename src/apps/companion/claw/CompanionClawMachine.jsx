@@ -31,10 +31,13 @@ import {
   CLAW_RARITY_LABELS,
   findClawPrize,
 } from './companionClawData';
+import { PLUSH_PLAY_COOLDOWN_HOURS, findPlushPlay } from './plushPlayData';
+import { getPlushCooldowns, playWithPlush } from './plushPlayService';
 import {
   PLAY_COST,
   DUPLICATE_REFUND,
   canPlayClaw,
+  getFreePlays,
   startClawPlay,
   resolveClawWin,
   resolveClawLose,
@@ -66,6 +69,27 @@ const tri = (t) => {
 };
 
 const roundHearts = (value) => Math.round((value || 0) * 10) / 10;
+
+const STAT_LABELS = { mood: '心情', satiety: '饱食', cleanliness: '整洁', hearts: '心心' };
+const STAT_CHIP_CLASS = { mood: 'm', satiety: 's', cleanliness: 'c', hearts: 'h' };
+const STAT_ORDER = ['mood', 'satiety', 'cleanliness', 'hearts'];
+
+const formatRemain = (ms) => {
+  const totalMin = Math.max(1, Math.ceil(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h <= 0) return `${m} 分`;
+  return m === 0 ? `${h} 小时` : `${h} 小时 ${m} 分`;
+};
+
+const formatDate = (ts) => {
+  if (!ts) return '--';
+  const d = new Date(ts);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+};
+
+const prizeCode = (id) => String(id || '').toUpperCase();
 
 /* ---------------- 小图标 ---------------- */
 const HEART_PATH = 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
@@ -146,6 +170,11 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [collection, setCollection] = useState([]);
+  const [cardId, setCardId] = useState(null); // 图鉴里打开的挂牌小卡片
+  const [cooldownUntil, setCooldownUntil] = useState({}); // { itemId: 可再玩的时间戳 }
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  const [plushRes, setPlushRes] = useState(null); // { text, delta, freePlayGranted, rest }
+  const [plushBusy, setPlushBusy] = useState(false);
 
   const phaseRef = useRef('idle');
   const busyRef = useRef(false);
@@ -187,6 +216,54 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
 
   useEffect(() => { refreshCollection(); }, [refreshCollection]);
 
+  const refreshCooldowns = useCallback(async () => {
+    if (!companionId) return;
+    try {
+      const map = await getPlushCooldowns(companionId);
+      const base = Date.now();
+      const next = {};
+      Object.keys(map).forEach((key) => { next[key] = base + map[key]; });
+      setCooldownUntil(next);
+    } catch (_) { /* 冷却读取失败就当作没有冷却，真正结算时服务层会再判断 */ }
+  }, [companionId]);
+
+  useEffect(() => { refreshCooldowns(); }, [refreshCooldowns]);
+
+  // 小卡片打开时每秒刷新一次，让「还要 X 分」会自己走。
+  useEffect(() => {
+    if (!cardId) return undefined;
+    setNowTick(Date.now());
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [cardId]);
+
+  const openCard = useCallback((row) => {
+    if (!row?.owned) return;
+    setPlushRes(null);
+    setCardId(row.id);
+    refreshCooldowns();
+  }, [refreshCooldowns]);
+
+  const handlePlayPlush = useCallback(async () => {
+    if (!cardId || plushBusy || !companionId) return;
+    setPlushBusy(true);
+    try {
+      const res = await playWithPlush(companionId, cardId);
+      if (res.played) {
+        setCooldownUntil((prev) => ({ ...prev, [cardId]: Date.now() + PLUSH_PLAY_COOLDOWN_HOURS * 3600 * 1000 }));
+        setPlushRes({ text: res.feedbackText, delta: res.delta, freePlayGranted: res.freePlayGranted, rest: false });
+        if (res.companion) onCompanionChange?.(res.companion);
+      } else {
+        setCooldownUntil((prev) => ({ ...prev, [cardId]: Date.now() + res.remainingMs }));
+        setPlushRes({ text: res.feedbackText, delta: null, freePlayGranted: false, rest: true });
+      }
+    } catch (err) {
+      setPlushRes({ text: err?.message || '这次没玩成，再试一次吧', delta: null, freePlayGranted: false, rest: true });
+    } finally {
+      setPlushBusy(false);
+    }
+  }, [cardId, companionId, onCompanionChange, plushBusy]);
+
   const applyPos = useCallback((p) => {
     posRef.current = p;
     if (markerRef.current) markerRef.current.style.left = `${p * 100}%`;
@@ -198,9 +275,13 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
 
   const canClose = phase === 'idle' || phase === 'result';
   const handleClose = useCallback(() => {
+    if (cardId) {
+      setCardId(null); // 先收起挂牌小卡片，再关弹窗
+      return;
+    }
     if (!canClose) return;
     onClose?.();
-  }, [canClose, onClose]);
+  }, [canClose, cardId, onClose]);
 
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') handleClose(); };
@@ -321,6 +402,13 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
 
   const targetLeft = CLAW_X_MIN + (zoneStart + ZONE_WIDTH / 2) * (CLAW_X_MAX - CLAW_X_MIN);
   const ownedCount = collection.filter((row) => row.owned).length;
+  const freePlays = getFreePlays(companion);
+  const canPlay = canPlayClaw(companion);
+
+  const cardPrize = cardId ? collection.find((row) => row.id === cardId) || null : null;
+  const cardConfig = cardId ? findPlushPlay(cardId) : null;
+  const cardNo = cardId ? CLAW_PRIZES.findIndex((item) => item.id === cardId) + 1 : 0;
+  const cardRemain = cardId ? Math.max(0, (cooldownUntil[cardId] || 0) - nowTick) : 0;
 
   const mascotLine = {
     idle: `${companionName}：想抓哪只呀？`,
@@ -482,7 +570,7 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
               ) : (
                 <button
                   type="button"
-                  className={`cw-cta${hearts < PLAY_COST ? ' is-poor' : ''}`}
+                  className={`cw-cta${canPlay ? '' : ' is-poor'}`}
                   onClick={handleStart}
                   disabled={phase === 'dropping'}
                 >
@@ -491,7 +579,9 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
                   ) : (
                     <>
                       <span>投币抓一次</span>
-                      <em><HeartGlyph size={13} color="currentColor" />{PLAY_COST}</em>
+                      {freePlays > 0
+                        ? <em>免费 · 剩 {freePlays} 次</em>
+                        : <em><HeartGlyph size={13} color="currentColor" />{PLAY_COST}</em>}
                     </>
                   )}
                 </button>
@@ -514,9 +604,14 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
               </div>
 
               <div className="cw-grid">
-                {collection.map((row) => (
-                  <div
+                {collection.map((row) => {
+                  const Cell = row.owned ? 'button' : 'div';
+                  return (
+                  <Cell
                     key={row.id}
+                    type={row.owned ? 'button' : undefined}
+                    onClick={row.owned ? () => openCard(row) : undefined}
+                    aria-label={row.owned ? `${row.name}，打开挂牌` : undefined}
                     className={`cw-cell ${RARITY_CLASS[row.rarity] || ''}${row.owned ? ' is-owned' : ''}`}
                   >
                     <div className="cw-cell-stage">
@@ -525,14 +620,76 @@ const CompanionClawMachine = ({ companion, onCompanionChange, onClose }) => {
                     </div>
                     <b>{row.owned ? row.name : '？？？'}</b>
                     <span className="cw-tag">{CLAW_RARITY_LABELS[row.rarity]}</span>
-                  </div>
-                ))}
+                  </Cell>
+                  );
+                })}
               </div>
 
-              <p className="cw-note">还有没抓到的娃娃在等你，多来试试手气吧。</p>
+              <p className="cw-note">点一点抓到的娃娃，可以看它的挂牌，还能陪TA玩。</p>
             </div>
           )}
         </div>
+
+        {/* ============ 挂牌小卡片（Jellycat 身份牌风格）============ */}
+        {cardPrize && cardConfig && (
+          <div className="cw-result-layer">
+            <div className="cw-result-backdrop" onClick={() => setCardId(null)} />
+            <div className="cw-hang-wrap">
+              <div className={`cw-hang ${RARITY_CLASS[cardPrize.rarity] || ''}`} role="dialog" aria-label={`${cardPrize.name}的挂牌`}>
+                <svg className="cw-hang-string" viewBox="0 0 70 46" aria-hidden="true" focusable="false">
+                  <path d="M35 44 C35 24 8 28 8 14 C8 4 22 2 35 22 C48 2 62 4 62 14 C62 28 35 24 35 44" fill="none" stroke="#FF86A0" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+                <div className="cw-hang-card">
+                  <i className="cw-hang-hole" />
+                  <div className="cw-hang-win">
+                    <span className="cw-hang-no">No.{String(cardNo).padStart(3, '0')}</span>
+                    <ClawPlush prize={cardPrize} size={104} />
+                  </div>
+                  <p className="cw-hang-hi">HI, I AM</p>
+                  <h3 className="cw-hang-name">{cardPrize.name}</h3>
+                  <span className="cw-tag">{CLAW_RARITY_LABELS[cardPrize.rarity]}</span>
+
+                  <div className="cw-hang-perf" />
+                  <div className="cw-hang-row"><span>特长</span><b>{cardConfig.skill}</b></div>
+                  <div className="cw-hang-row"><span>领养日</span><b>{formatDate(cardPrize.acquiredAt)}</b></div>
+                  <div className="cw-hang-chips">
+                    {STAT_ORDER.filter((key) => cardConfig.effects?.[key]).map((key) => (
+                      <span key={key} className={`cw-chip ${STAT_CHIP_CLASS[key]}`}>
+                        {STAT_LABELS[key]} +{cardConfig.effects[key]}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="cw-hang-bar" aria-hidden="true" />
+                  <div className="cw-hang-code">{prizeCode(cardPrize.id)}</div>
+                  <div className="cw-hang-stamp" aria-hidden="true">已<br />领养</div>
+
+                  <button
+                    type="button"
+                    className={`cw-hang-play${cardRemain > 0 ? ' is-rest' : ''}`}
+                    onClick={handlePlayPlush}
+                    disabled={plushBusy || cardRemain > 0}
+                  >
+                    {cardRemain > 0 ? `还要 ${formatRemain(cardRemain)}` : '陪TA玩'}
+                  </button>
+                </div>
+              </div>
+
+              <div className={`cw-hang-say${plushRes ? ' has-text' : ''}`}>
+                <p>{plushRes ? plushRes.text : `点「陪TA玩」，让${companionName}抱抱${cardPrize.name}。`}</p>
+                {plushRes && !plushRes.rest && (
+                  <div className="cw-hang-chips small">
+                    {STAT_ORDER.filter((key) => plushRes.delta?.[key]).map((key) => (
+                      <span key={key} className={`cw-chip ${STAT_CHIP_CLASS[key]}`}>
+                        {STAT_LABELS[key]} +{plushRes.delta[key]}
+                      </span>
+                    ))}
+                    {plushRes.freePlayGranted && <span className="cw-chip free">免费抓娃娃 +1</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ============ 结果卡片 ============ */}
         {phase === 'result' && result && (

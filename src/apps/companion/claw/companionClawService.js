@@ -166,11 +166,12 @@ export const getClawCollection = async (companionId) => {
   const owned = await db.companionInventory
     .where({ companionId, category: CLAW_PRIZE_CATEGORY })
     .toArray();
-  const ownedIds = new Set(owned.map((row) => row.itemId));
+   const ownedIds = new Set(owned.map((row) => row.itemId));
+  const acquiredMap = new Map(owned.map((row) => [row.itemId, row.acquiredAt]));
 
   return CLAW_PRIZES
     .filter((item) => item.rarity !== CLAW_RARITY.HIDDEN || ownedIds.has(item.id))
-    .map((item) => ({ ...item, owned: ownedIds.has(item.id) }));
+        .map((item) => ({ ...item, owned: ownedIds.has(item.id), acquiredAt: acquiredMap.get(item.id) || 0 }));
 };
 
 export { findClawPrize };
