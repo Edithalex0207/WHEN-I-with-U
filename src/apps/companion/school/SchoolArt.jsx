@@ -1,0 +1,166 @@
+/*
+ * SchoolArt.jsx —— 「上学」各界面共用的小图形：占位小脸、老师头像、
+ * 班级插画，以及几个内联 SVG 小图标。
+ *
+ * 【url 留位】
+ * - TeacherAvatar：teacher.url 有值就显示这张图，留空就显示占位小脸（颜色
+ *   跟着老师的 tone 走）。
+ * - ClassArt：schoolClass.url 有值就显示这张图，留空就显示内置的
+ *   向日葵 / 云朵 / 小星星插画。
+ * 想换图只要去 companionSchoolData.js 里把对应条目的 url 填上，不用改这里。
+ *
+ * 所有 SVG 都是自包含的（不用 <symbol> / id 引用），同一个页面里渲染多少
+ * 份都不会互相串。图标统一用 currentColor，颜色由外层 CSS 决定。
+ */
+
+import React from 'react';
+
+/* ---------------- 小图标（currentColor） ---------------- */
+const Glyph = ({ size, children, viewBox = '0 0 24 24' }) => (
+  <svg width={size} height={size} viewBox={viewBox} aria-hidden="true" focusable="false">
+    {children}
+  </svg>
+);
+
+export const BackGlyph = ({ size = 18 }) => (
+  <Glyph size={size}>
+    <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+  </Glyph>
+);
+
+export const CloseGlyph = ({ size = 18 }) => (
+  <Glyph size={size}>
+    <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
+  </Glyph>
+);
+
+export const CheckGlyph = ({ size = 16 }) => (
+  <Glyph size={size}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+  </Glyph>
+);
+
+export const HeartGlyph = ({ size = 14 }) => (
+  <Glyph size={size}>
+    <path
+      d="M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 5 6.3 5c2 0 3.7 1.1 4.7 2.8h2C14 6.1 15.7 5 17.7 5 21 5 23.1 8.3 21.6 11.8 19.5 16.4 12 21 12 21z"
+      fill="currentColor"
+    />
+  </Glyph>
+);
+
+export const StarGlyph = ({ size = 18 }) => (
+  <Glyph size={size}>
+    <path
+      d="M12 2.8l2.7 5.7 6.2.8-4.6 4.3 1.2 6.2L12 16.7 6.5 19.8l1.2-6.2L3.1 9.3l6.2-.8z"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+  </Glyph>
+);
+
+/* ---------------- 占位小脸 ---------------- */
+/*
+ * 没有头像图时的兜底脸。skin / ear 可以换色，用来区分不同的老师。
+ */
+export const PetFace = ({ size = 54, skin = '#FFE9D6', ear = '#FFD6C2', className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" className={className} aria-hidden="true" focusable="false">
+    <circle cx="14" cy="18" r="9" fill={ear} />
+    <circle cx="50" cy="18" r="9" fill={ear} />
+    <circle cx="32" cy="36" r="24" fill={skin} />
+    <ellipse cx="19" cy="41" rx="5" ry="3.4" fill="#FFB3C6" opacity=".75" />
+    <ellipse cx="45" cy="41" rx="5" ry="3.4" fill="#FFB3C6" opacity=".75" />
+    <circle cx="24" cy="34" r="3.2" fill="#24415A" />
+    <circle cx="40" cy="34" r="3.2" fill="#24415A" />
+    <circle cx="25" cy="33" r="1" fill="#fff" />
+    <circle cx="41" cy="33" r="1" fill="#fff" />
+    <path d="M27 42q5 5 10 0" fill="none" stroke="#24415A" strokeWidth="2.4" strokeLinecap="round" />
+  </svg>
+);
+
+/* 老师占位小脸的肤色（跟 companionSchoolData.js 里老师的 tone 对应） */
+const TEACHER_FACE = {
+  heart: { skin: '#FFE3D0', ear: '#FFC9B0' },
+  butter: { skin: '#FFE9B8', ear: '#FFD68A' },
+  sky: { skin: '#E4EEF8', ear: '#C9DCEE' },
+};
+
+/**
+ * 老师头像（圆形）。teacher.url 有值显示图片，否则显示占位小脸。
+ * 底色来自 .sd-tone-* 提供的 --sd-t-bg。
+ */
+export const TeacherAvatar = ({ teacher, size = 64 }) => {
+  const face = TEACHER_FACE[teacher?.tone] || TEACHER_FACE.heart;
+  return (
+    <span
+      className={`sd-tav sd-tone-${teacher?.tone || 'heart'}`}
+      style={{ width: size, height: size }}
+    >
+      {teacher?.url ? (
+        <img src={teacher.url} alt={teacher.name} draggable={false} />
+      ) : (
+        <PetFace size={Math.round(size * 0.84)} skin={face.skin} ear={face.ear} />
+      )}
+    </span>
+  );
+};
+
+/* ---------------- 班级插画 ---------------- */
+const SunflowerArt = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <g fill="#FFC93C">
+      <circle cx="32" cy="10" r="9" />
+      <circle cx="32" cy="54" r="9" />
+      <circle cx="10" cy="32" r="9" />
+      <circle cx="54" cy="32" r="9" />
+      <circle cx="16.5" cy="16.5" r="9" />
+      <circle cx="47.5" cy="16.5" r="9" />
+      <circle cx="16.5" cy="47.5" r="9" />
+      <circle cx="47.5" cy="47.5" r="9" />
+    </g>
+    <circle cx="32" cy="32" r="14" fill="#B9793B" />
+    <circle cx="27" cy="30" r="2.2" fill="#fff" />
+    <circle cx="37" cy="30" r="2.2" fill="#fff" />
+    <path d="M28 36q4 3.5 8 0" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+const CloudArt = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <path d="M18 46a12 12 0 0 1-1-24 16 16 0 0 1 30 3 10.5 10.5 0 0 1 0 21z" fill="#fff" stroke="#9CCBF2" strokeWidth="3" strokeLinejoin="round" />
+    <circle cx="26" cy="36" r="2.2" fill="#24415A" />
+    <circle cx="38" cy="36" r="2.2" fill="#24415A" />
+    <path d="M29 41q3 3 6 0" stroke="#24415A" strokeWidth="2" fill="none" strokeLinecap="round" />
+    <ellipse cx="22" cy="40" rx="3" ry="2" fill="#FFB3C6" />
+    <ellipse cx="42" cy="40" rx="3" ry="2" fill="#FFB3C6" />
+  </svg>
+);
+
+const StarArt = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <path d="M32 6l7.5 16.5 18 2.2-13.2 12.3 3.5 17.8L32 45.5 16.2 54.8l3.5-17.8L6.5 24.7l18-2.2z" fill="#FFE27A" stroke="#F2B63C" strokeWidth="3" strokeLinejoin="round" />
+    <circle cx="26" cy="31" r="2.2" fill="#24415A" />
+    <circle cx="38" cy="31" r="2.2" fill="#24415A" />
+    <path d="M29 36q3 3 6 0" stroke="#24415A" strokeWidth="2" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+const CLASS_ART = {
+  sunflower: SunflowerArt,
+  cloud: CloudArt,
+  star: StarArt,
+};
+
+/**
+ * 班级插画。schoolClass.url 有值显示图片，否则按 id 显示内置插画
+ * （id 不认识时兜底用小星星）。
+ */
+export const ClassArt = ({ schoolClass, size = 58 }) => {
+  if (schoolClass?.url) {
+    return <img src={schoolClass.url} alt={schoolClass.name} width={size} height={size} draggable={false} style={{ objectFit: 'contain' }} />;
+  }
+  const Art = CLASS_ART[schoolClass?.id] || StarArt;
+  return <Art size={size} />;
+};

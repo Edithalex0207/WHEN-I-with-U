@@ -4978,4 +4978,70 @@ db.version(92).stores({
   `,
 });
 
+// v93：上学（companion.js「小伙伴」板块新一轮功能第四个切片，第一期）。
+// 7 张完全新表，全部用 companionId 关联，跟 companions / companionLogs /
+// companionDiaries / companionMoods / companionDailyQA 都不共用。
+//
+// companionSchool        学籍，一个小伙伴一行（&companionId）。没入学就没有这一行。
+//                        stage / classId / teacherId / enrolledAt / promotedAt，
+//                        另有 stageSets（本学段累计做完的组数，升班用）、
+//                        dayKey + daySets（今天做了几组）、lastSetAt（冷却用）。
+//                        这几个计数字段都不建索引，直接读整行。
+// companionSchoolAlbum   学校相册（入学 / 升班 / 特别活动纪念卡），type 区分。
+//                        image 存压缩后的 jpeg dataURL。
+// companionSchoolSets    做题记录，一组一行；answers 里是每题的作答明细。
+//                        第二期考试要从这里抽题，所以不设上限、不清理。
+// companionSchoolWrong   错题本；[companionId+qid] 一题一行，snapshot 存一份
+//                        题目快照，自己出的题被删了错题本也不会坏。
+// companionSchoolQuestions 自己出的题（手写或 AI 出题确认后入库）。
+// companionSchoolLife    在校生活记录（家校练习册 + 特别活动共用），kind 区分；
+//                        第三期的朋友往来放 meta.friendId。
+// companionSchoolReports 周评语 / 三方会谈，kind 区分；signedAt 为 null 表示
+//                        家长还没签字。
+//
+// 课程表不存库：按学段 + 星期几从 school/companionSchoolData.js 里取。
+db.version(93).stores({
+  companionSchool: `
+    ++id,
+    &companionId
+  `,
+  companionSchoolAlbum: `
+    ++id,
+    companionId,
+    type,
+    createdAt
+  `,
+  companionSchoolSets: `
+    ++id,
+    companionId,
+    finishedAt
+  `,
+  companionSchoolWrong: `
+    ++id,
+    companionId,
+    qid,
+    [companionId+qid]
+  `,
+  companionSchoolQuestions: `
+    ++id,
+    companionId,
+    subject,
+    createdAt
+  `,
+  companionSchoolLife: `
+    ++id,
+    companionId,
+    date,
+    kind,
+    [companionId+date]
+  `,
+  companionSchoolReports: `
+    ++id,
+    companionId,
+    kind,
+    weekKey,
+    [companionId+weekKey]
+  `,
+});
+
 export default db;
