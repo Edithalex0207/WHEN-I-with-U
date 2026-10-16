@@ -24,14 +24,15 @@ export const CLAW_RARITY_LABELS = {
 // companionClawService.js 的 getClawCollection 负责（没集到之前整条都不
 // 返回，不在这个数据文件里处理"要不要显示"）。
 export const CLAW_PRIZES = [
-  { id: 'claw-cat', name: '布丁猫', rarity: CLAW_RARITY.COMMON, url: '' },
-  { id: 'claw-bear', name: '蜂蜜小熊', rarity: CLAW_RARITY.COMMON, url: '' },
-  { id: 'claw-bunny', name: '棉花兔', rarity: CLAW_RARITY.COMMON, url: '' },
-  { id: 'claw-penguin', name: '糖霜企鹅', rarity: CLAW_RARITY.COMMON, url: '' },
-  { id: 'claw-fox', name: '奶油狐狸', rarity: CLAW_RARITY.RARE, url: '' },
-  { id: 'claw-unicorn', name: '星砂独角兽', rarity: CLAW_RARITY.RARE, url: '' },
-  { id: 'claw-owl', name: '夜读猫头鹰', rarity: CLAW_RARITY.RARE, url: '' },
-  { id: 'claw-star', name: '流星仔', rarity: CLAW_RARITY.HIDDEN, url: '' },
+  { id: 'claw-cat', name: '布丁猫', rarity: CLAW_RARITY.COMMON, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/FPnn/2613X2425/wanj_%287%29.jpg/webp' },
+  { id: 'claw-bear', name: '蜂蜜小熊', rarity: CLAW_RARITY.COMMON, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/NZMt/2666X2474/wanju.jpg/webp' },
+  { id: 'claw-bunny', name: '棉花兔', rarity: CLAW_RARITY.COMMON, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/W1ze/2724X2465/wanj_%281%29.jpg/webp' },
+  { id: 'claw-penguin', name: '糖霜企鹅', rarity: CLAW_RARITY.COMMON, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/PHiN/2731X2674/wanj_%286%29.jpg/webp' },
+  { id: 'claw-fox', name: '奶油狐狸', rarity: CLAW_RARITY.RARE, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/BpDw/2579X2796/wanj_%285%29.jpg/webp' },
+  { id: 'claw-unicorn', name: '星砂独角兽', rarity: CLAW_RARITY.RARE, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/gPkQ/2790X2769/wanj_%284%29.jpg/webp' },
+  { id: 'claw-owl', name: '夜读猫头鹰', rarity: CLAW_RARITY.RARE, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/2blw/2469X2409/wanj_%283%29.jpg/webp' },
+  { id: 'claw-star', name: '流星仔', rarity: CLAW_RARITY.HIDDEN, url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/th99/2796X2461/wanj_%282%29.jpg/webp' },
 ];
+
 
 export const findClawPrize = (id) => CLAW_PRIZES.find((item) => item.id === id) || null;
