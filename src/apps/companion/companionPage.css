@@ -707,30 +707,3 @@
 .cp-balance .row.total { margin-top: 5px; padding-top: 8px; border-top: 2px dashed var(--cp-border); font-size: 13px; color: var(--cp-text); }
 .cp-balance .row.total.short b { color: var(--cp-heart); }
 .cp-confirm-card .cp-error { margin: 0 0 10px; }
-/* ---- 日记（CompanionDiaryModal.jsx）----
- * 复用 .cp-tl/.cp-tl-item/.cp-tl-bubble 的时间线气泡样式（见上面 logs 用的
- * 那一套），这里只加一个专属配色变体 + 气泡下面的点赞/留言交互区。
- */
-.cp-tl-item.diary { --k-bg: var(--cp-accent-soft); --k-fg: var(--cp-accent); --k-soft: #F1F8FF; }
-.cp-diary-bubble p { margin-bottom: 6px; }
-.cp-diary-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
-.cp-diary-like {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 50%; background: var(--cp-card);
-  color: var(--cp-muted); transition: transform 0.2s cubic-bezier(0.3, 1.7, 0.5, 1), color 0.2s;
-}
-.cp-diary-like .cp-heart-ic { width: 14px; height: 14px; }
-.cp-diary-like:active { transform: scale(0.85); }
-.cp-diary-like.is-on { color: var(--cp-heart); }
-.cp-diary-comment-trigger {
-  font-size: 11px; font-weight: 800; color: var(--cp-sub); padding: 4px 10px;
-  border-radius: 12px; background: var(--cp-card);
-}
-.cp-diary-comment { margin: 6px 0 0; padding: 6px 10px; border-radius: 6px 14px 14px 14px; background: var(--cp-card); font-size: 12px; color: var(--cp-sub); }
-.cp-diary-comment-edit { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-.cp-diary-comment-edit input {
-  flex: 1; min-width: 0; padding: 7px 10px; border-radius: 14px; border: 1.5px solid var(--cp-border);
-  background: var(--cp-card); color: var(--cp-text); font-size: 12px;
-}
-.cp-diary-comment-edit button { flex: none; font-size: 11px; font-weight: 800; padding: 7px 10px; border-radius: 14px; background: var(--cp-accent); color: var(--cp-on-accent); }
-.cp-diary-comment-edit button.cp-diary-comment-cancel { background: var(--cp-soft); color: var(--cp-sub); }

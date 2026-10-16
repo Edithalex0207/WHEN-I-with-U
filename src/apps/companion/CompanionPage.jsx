@@ -57,6 +57,8 @@ import CompanionMoodCalendar from './mood/CompanionMoodCalendar';
 import { CompanionMoodEntryIcon } from './mood/companionMoodIcons';
 import CompanionDailyQaModal from './daily-qa/CompanionDailyQaModal';
 import CompanionDailyQaIcon from './daily-qa/CompanionDailyQaIcon';
+import CompanionClawMachine from './claw/CompanionClawMachine';
+import CompanionClawIcon from './claw/CompanionClawIcon';
 import './companionPage.css';
 /*
  * 把用户上传的图片压到一个头像该有的尺寸、保留透明通道、输出 PNG。
@@ -235,6 +237,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showCatchGame, setShowCatchGame] = useState(false);
      const [showMoodCalendar, setShowMoodCalendar] = useState(false);
   const [showDailyQa, setShowDailyQa] = useState(false);
+  const [showClaw, setShowClaw] = useState(false);
   const [chatStreakCount, setChatStreakCount] = useState(0);
   const [isPoking, setIsPoking] = useState(false);
   const [floaters, setFloaters] = useState([]);
@@ -1207,8 +1210,20 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               <span className="cp-dock-ico">
                 <CompanionDailyQaIcon />
               </span>
-              问答
+                           问答
             </button>
+            <button
+              type="button"
+              onClick={() => setShowClaw(true)}
+              className="cp-dock-btn"
+              aria-label="娃娃机"
+            >
+              <span className="cp-dock-ico">
+                <CompanionClawIcon />
+              </span>
+              娃娃机
+            </button>
+            
           </div>
         </div>
 
@@ -1358,6 +1373,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         <CompanionMoodCalendar
           companionId={companion.id}
           onClose={() => setShowMoodCalendar(false)}
+        />
+      )}
+
+           {showClaw && (
+        <CompanionClawMachine
+          companion={companion}
+          onCompanionChange={async (updated) => {
+            setCompanion(updated);
+            setLogs(await getRecentLogs(updated.id));
+          }}
+          onClose={() => setShowClaw(false)}
         />
       )}
 
