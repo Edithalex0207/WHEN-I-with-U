@@ -76,6 +76,7 @@ import {
   buildLearningModePromptBlock,
   extractBubbleTranslation,
 } from '../apps/messages/learningMode/learningModePrompt';
+import { buildReplyLanguagePromptBlock } from '../apps/messages/replyLanguage/chatReplyLanguagePresets';
 import {
   pickDailyLifeTopic,
   describeDailyLifeTopic,
@@ -1338,7 +1339,11 @@ export const buildChatSystemPrompt = async (chatId, chat, character) => {
 
   // 语言学习模式：关闭时，或者角色回应语言/翻译语言没选全时，
   // 返回空字符串，不影响默认行为。
-  const learningModePromptBlock = buildLearningModePromptBlock(chat);
+   const learningModePromptBlock = buildLearningModePromptBlock(chat);
+
+  // 回复语言设置：选"默认"或语言学习模式开着时返回空字符串，不影响
+  // 默认行为——两者都想控制回应语言时，学习模式自己的设置优先。
+  const replyLanguagePromptBlock = buildReplyLanguagePromptBlock(chat);
 
   // DIY小屋：灵感笔记标签始终开放；自主换装标签只有这个聊天开着
   // diyAutoDecorateEnabled 才会出现在提示词里。
@@ -1497,7 +1502,8 @@ export const buildChatSystemPrompt = async (chatId, chat, character) => {
     diyPromptBlock: diyPromptBlock.length,
     parcelPromptBlock: parcelPromptBlock.length,
     couponPromptBlock: couponPromptBlock.length,
-    learningModePromptBlock: learningModePromptBlock.length,
+       learningModePromptBlock: learningModePromptBlock.length,
+    replyLanguagePromptBlock: replyLanguagePromptBlock.length,
     activeCallNote: activeCallNote.length,
     recentOfflineNote: recentOfflineNote.length,
     monthlyBadgeNote: monthlyBadgeNote.length,
@@ -1557,6 +1563,7 @@ ${couponPromptBlock}
 1. 卡片指令必须严格遵循上面 [] 的规定，括号内用 "|" 分割参数。不要杜撰任何未注册的卡片语法。
 2. 如果你想发送多条连续气泡消息，请使用 "|||" 将不同气泡隔开（例如：你好呀 ||| 今天过得怎么样？）。如果不需要分气泡，则直接连续输出正文，禁止随意堆砌 "|||"。
 ${learningModePromptBlock}
+${replyLanguagePromptBlock}
 ${MEMOIR_NOTE_PROMPT}
 
 【稍后主动联系机制】
