@@ -1,4 +1,3 @@
-
 /*
  * CompanionSchoolModal.jsx —— 「上学」首页弹窗（学校首页 v2）。
  * 对应预览 school-home-preview2.html，布局照着预览来：
@@ -62,6 +61,7 @@ import SchoolEnrollFlow from './SchoolEnrollFlow';
 import CompanionSchoolQuizModal from './CompanionSchoolQuizModal';
 import CompanionSchoolWrongBookModal from './CompanionSchoolWrongBookModal';
 import CompanionSchoolReportModal from './CompanionSchoolReportModal';
+import CompanionSchoolAlbumModal from './CompanionSchoolAlbumModal';
 
 /** 「今天的小课堂」的题目来源分段，顺序跟预览一致 */
 const SOURCE_OPTIONS = [
@@ -97,6 +97,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [showWrongBook, setShowWrongBook] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showAlbum, setShowAlbum] = useState(false);
   const toastTimer = useRef(null);
 
   /* ---------------- 拉取 / 刷新数据 ---------------- */
@@ -373,7 +374,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
                     <span className="sh-ti"><BookGlyph size={20} /></span>
                     <span><b>家校练习册</b><small>课表 · 评语</small></span>
                   </button>
-                  <button type="button" className="sh-tile sd-tone-butter" onClick={() => notifyComingSoon('学校相册')}>
+                  <button type="button" className="sh-tile sd-tone-butter" onClick={() => setShowAlbum(true)}>
                     <span className="sh-ti"><PhotoGlyph size={20} /></span>
                     <span><b>学校相册</b><small>{albumCount} 张纪念卡</small></span>
                   </button>
@@ -433,6 +434,15 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
           chatId={chatId}
           character={character}
           onClose={() => setShowReport(false)}
+        />
+      )}
+      {showAlbum && (
+        <CompanionSchoolAlbumModal
+          companion={companion}
+          onClose={() => {
+            setShowAlbum(false);
+            refresh();
+          }}
         />
       )}
     </>

@@ -102,6 +102,30 @@ export const PhotoGlyph = ({ size = 20 }) => (
   </Glyph>
 );
 
+/*
+ * 下面两个是「学校相册」浏览界面用的图标（翻页箭头的"下一张"方向、删除
+ * 按钮）。"上一张"直接复用上面已有的 BackGlyph，不重复画一个镜像版本。
+ */
+export const ForwardGlyph = ({ size = 18 }) => (
+  <Glyph size={size}>
+    <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+  </Glyph>
+);
+
+export const TrashGlyph = ({ size = 16 }) => (
+  <Glyph size={size}>
+    <path
+      d="M4 7h16M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7M6.5 7l1 13.2a1.5 1.5 0 0 0 1.5 1.3h6a1.5 1.5 0 0 0 1.5-1.3L17.5 7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </Glyph>
+);
+
 /* ---------------- 占位小脸 ---------------- */
 /*
  * 没有头像图时的兜底脸。skin / ear 可以换色，用来区分不同的老师。

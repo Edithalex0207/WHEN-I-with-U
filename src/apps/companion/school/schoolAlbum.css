@@ -1,0 +1,93 @@
+/* =========================================================
+ * schoolAlbum.css —— 「学校相册」浏览弹窗。
+ * 前缀：sa-（school album，不跟 sd- / sh- / sr- / mt- 冲突）。
+ * 外壳、tone 配色、.sd-tape 胶带都复用 school.css 的 .sd-root 体系，
+ * 这里只补相册页独有的筛选栏 / 翻页舞台 / 相框 / 操作栏。
+ * ========================================================= */
+
+/* ================= 顶栏张数 ================= */
+.sa-count {
+  font-size: 12px; font-weight: 800; color: var(--cp-sub); background: var(--cp-card);
+  border: 2px solid var(--cp-border); padding: 5px 11px; border-radius: 99px; white-space: nowrap;
+}
+
+/* ================= 筛选 chips ================= */
+.sa-filter { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 2px 0 14px; }
+.sa-fchip {
+  padding: 7px 14px; border-radius: 99px; font-size: 12.5px; font-weight: 800;
+  background: var(--cp-card); border: 2px solid var(--cp-border); color: var(--cp-sub);
+  transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1), background 0.2s, color 0.2s, border-color 0.2s;
+}
+.sa-fchip.is-on { background: var(--sd-t-bg, var(--cp-accent-soft)); color: var(--sd-t-fg, var(--cp-accent)); border-color: transparent; transform: scale(1.04); }
+
+/* ================= 翻页舞台 ================= */
+.sa-stage { display: flex; align-items: center; gap: 2px; padding: 6px 0; }
+.sa-nav {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--cp-card); border: 2px solid var(--cp-border); color: var(--cp-sub);
+  box-shadow: 0 6px 12px -6px var(--cp-shadow); transition: transform 0.2s, opacity 0.2s;
+}
+.sa-nav:active:not(:disabled) { transform: scale(0.85); }
+.sa-nav:disabled { opacity: 0.35; }
+
+.sa-stack { position: relative; flex: 1; min-width: 0; display: grid; place-items: center; padding: 10px 0; }
+.sa-peek {
+  position: absolute; width: 196px; height: 236px; border-radius: 24px; background: #fff;
+  box-shadow: 0 10px 18px -14px var(--cp-shadow); pointer-events: none;
+}
+.sa-peek-2 { transform: rotate(7deg) translateY(6px); opacity: 0.5; }
+.sa-peek-1 { transform: rotate(-5deg) translateY(3px); opacity: 0.78; }
+
+.sa-card { position: relative; z-index: 2; width: 206px; transform: rotate(-1.6deg); }
+
+/* 相框只负责"白边 + 阴影 + 胶带"，卡片本身的场景/贴纸/印章/落款全部
+   已经在 current.image 这张截图里了，这里不重画。 */
+.sa-frame {
+  position: relative; padding: 10px 10px 0; border-radius: 22px; background: #fff;
+  box-shadow: 0 16px 26px -16px var(--cp-shadow); overflow: hidden;
+}
+.sa-img { display: block; width: 100%; height: auto; border-radius: 14px; background: var(--cp-soft); }
+
+/* ================= 图下方说明条 ================= */
+.sa-cap { display: flex; flex-direction: column; align-items: center; gap: 3px; margin-top: 10px; text-align: center; }
+.sa-cap-badge { padding: 3px 10px; border-radius: 99px; font-size: 10.5px; font-weight: 800; background: var(--sd-t-bg); color: var(--sd-t-fg); }
+.sa-cap-title { font-family: var(--cp-font-display); font-weight: 400; font-size: 15px; color: var(--cp-text); }
+.sa-cap-date { font-size: 11px; font-weight: 800; color: var(--cp-muted); letter-spacing: 0.4px; }
+
+/* ================= 页码点 ================= */
+.sa-dots { display: flex; gap: 6px; justify-content: center; margin: 6px 0 0; }
+.sa-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--cp-border); transition: all 0.25s; }
+.sa-dots i.is-on { width: 20px; border-radius: 99px; background: var(--cp-accent); }
+
+/* ================= 删除操作 ================= */
+.sa-actions { display: flex; justify-content: center; padding: 14px 0 4px; }
+.sa-del {
+  display: flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 99px;
+  background: var(--cp-card); border: 2px solid var(--cp-border); color: var(--cp-sub);
+  font-size: 13px; font-weight: 800; box-shadow: 0 5px 0 -2px var(--cp-border);
+  transition: transform 0.2s, box-shadow 0.2s, color 0.2s, border-color 0.2s;
+}
+.sa-del:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+.sa-del:disabled { opacity: 0.6; cursor: default; }
+.sa-del.is-confirm { color: var(--sd-heart-deep); border-color: var(--cp-heart); box-shadow: 0 5px 0 -2px var(--cp-heart); }
+
+/* ================= 提示条 ================= */
+.sa-toast {
+  position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 9;
+  margin: 0; padding: 9px 16px; border-radius: 16px; background: var(--cp-text); color: #fff;
+  font-size: 12.5px; font-weight: 800; white-space: nowrap; box-shadow: 0 10px 18px -10px var(--cp-shadow);
+}
+
+/* ================= 空相册 ================= */
+.sa-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 0 20px; }
+.sa-empty-pic {
+  width: 104px; height: 104px; border-radius: 28px; display: grid; place-items: center;
+  background: var(--cp-butter-bg); color: var(--cp-butter-fg); transform: rotate(-4deg);
+  box-shadow: 0 14px 22px -14px var(--cp-shadow);
+}
+.sa-empty h4 { margin: 4px 0 0; font-family: var(--cp-font-display); font-weight: 400; font-size: 19px; }
+.sa-empty p { margin: 0; font-size: 13px; font-weight: 700; color: var(--cp-sub); line-height: 1.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-fchip, .sa-nav, .sa-del { transition: none !important; }
+}
