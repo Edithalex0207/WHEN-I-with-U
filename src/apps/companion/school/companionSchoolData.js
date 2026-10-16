@@ -134,7 +134,7 @@ export const SCHOOL_TEACHERS = [
     persona:
       '说话轻声细语，很有耐心，先肯定孩子做得好的地方，再温和地提出一点小建议。' +
       '遇到孩子犯错不批评，会蹲下来问"发生什么了呀"。',
-    url: '',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/cAYq/1896X1902/laoshi_%281%29.jpg/webp',
   },
   {
     id: 'aju',
@@ -145,7 +145,7 @@ export const SCHOOL_TEACHERS = [
     persona:
       '精力充沛，爱用夸张的语气和小感叹词，喜欢把学习变成游戏，' +
       '很会鼓励孩子，评语里常带一点幽默和小比喻。',
-    url: '',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/FRJZ/1700X1828/laoshi_%283%29.jpg/webp',
   },
   {
     id: 'momo',
@@ -156,7 +156,7 @@ export const SCHOOL_TEACHERS = [
     persona:
       '做事一板一眼，观察细致，评语具体、点出真实的细节和进步，' +
       '建议明确可执行；语气平稳，偶尔流露一点不易察觉的温柔。',
-    url: '',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261016/0zmA/1842X1981/laoshi_%282%29.jpg/webp',
   },
 ];
 
