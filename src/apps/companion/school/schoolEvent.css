@@ -1,0 +1,85 @@
+/* =========================================================
+ * schoolEvent.css —— 「春游 / 秋游」特别活动专属样式。
+ * 前缀约定：ev-。颜色变量复用 companionPage.css 的 --cp-*、school.css
+ * 的 --sd-*；spring/autumn 两种季节色不走 sd-tone-*（那套是科目/班级的
+ * 五色系，季节感需要专门的暖色渐变，所以单独定义 .is-spring/.is-autumn）。
+ * ========================================================= */
+
+:root {
+  --ev-spring-a: #FFE9A8; --ev-spring-b: #FFD3E0; --ev-spring-ink: #6B4A17;
+  --ev-autumn-a: #FFD9A0; --ev-autumn-b: #FFB07A; --ev-autumn-ink: #7A4B1E;
+}
+
+/* ================= 首页横幅 ================= */
+.sh-eventbanner {
+  display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-radius: 22px;
+  width: 100%; margin-top: 10px; box-shadow: 0 10px 16px -12px var(--cp-shadow); transition: transform 0.15s;
+}
+.sh-eventbanner:active { transform: scale(0.98); }
+.sh-eventbanner.is-spring { background: linear-gradient(135deg, var(--ev-spring-a), var(--ev-spring-b) 70%); }
+.sh-eventbanner.is-autumn { background: linear-gradient(135deg, var(--ev-autumn-a), var(--ev-autumn-b) 70%); }
+.sh-eventbanner-ic { flex: none; width: 42px; height: 42px; border-radius: 15px; background: rgba(255,255,255,0.8); display: grid; place-items: center; }
+.sh-eventbanner.is-spring .sh-eventbanner-ic { color: var(--ev-spring-ink); }
+.sh-eventbanner.is-autumn .sh-eventbanner-ic { color: var(--ev-autumn-ink); }
+.sh-eventbanner b { display: block; font-family: var(--cp-font-display); font-weight: 400; font-size: 15px; }
+.sh-eventbanner small { font-size: 11px; font-weight: 800; }
+.sh-eventbanner.is-spring b, .sh-eventbanner.is-spring small { color: var(--ev-spring-ink); }
+.sh-eventbanner.is-autumn b, .sh-eventbanner.is-autumn small { color: var(--ev-autumn-ink); }
+.sh-eventbanner-arrow { margin-left: auto; opacity: 0.6; }
+
+/* ================= 家长通知 · 签字 ================= */
+.ev-letter { background: #FFFDF6; border-radius: 20px; padding: 16px 16px 18px; box-shadow: 0 10px 20px -12px var(--cp-shadow); border: 1px solid #F0E6C8; }
+.ev-letter-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.ev-letter-head b { font-family: var(--cp-font-display); font-weight: 400; font-size: 15px; color: #8A6A2E; }
+.ev-letter-head span { font-size: 11px; color: var(--cp-muted); font-weight: 800; }
+.ev-letter p { font-size: 13.5px; line-height: 1.85; color: var(--cp-text); font-weight: 600; margin: 0; }
+.ev-sign-row { display: flex; align-items: center; justify-content: space-between; border-top: 2px dashed #E4D8AE; margin-top: 14px; padding-top: 12px; }
+.ev-sign-row span { font-size: 12px; font-weight: 800; color: var(--cp-sub); }
+.ev-stamp-ghost { width: 42px; height: 42px; border-radius: 50%; border: 2px dashed #E4D8AE; display: grid; place-items: center; font-size: 10px; color: #C9B98A; font-weight: 800; }
+
+/* ================= 准备零食（商场购物的感觉） ================= */
+.ev-shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 4px; }
+.ev-shop-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 10px; border-radius: 20px;
+  background: var(--cp-card); border: 2.5px solid var(--cp-border); position: relative; text-align: center;
+}
+.ev-shop-item .sc-face { width: 52px; height: 52px; }
+.ev-shop-item b { font-size: 12.5px; font-weight: 800; color: var(--cp-text); }
+.ev-shop-item small { font-size: 10.5px; font-weight: 700; color: var(--cp-muted); line-height: 1.4; }
+.ev-shop-item.is-on { border-color: var(--cp-accent); background: var(--cp-accent-soft); }
+.ev-shop-item.is-disabled { opacity: 0.45; }
+.ev-shop-tick {
+  position: absolute; top: 6px; right: 8px; width: 20px; height: 20px; border-radius: 50%; background: var(--cp-accent);
+  color: #fff; font-size: 12px; display: grid; place-items: center;
+}
+
+/* 背包/购物车条：固定在零食步骤底部，零食步骤自己的 sd-body 最后一块 */
+.ev-cart {
+  display: flex; align-items: center; gap: 10px; background: var(--cp-soft); border-radius: 18px; padding: 10px 12px; margin-top: 2px;
+}
+.ev-cart-thumbs { display: flex; gap: -6px; }
+.ev-cart-thumbs .sc-face { width: 30px; height: 30px; margin-left: -8px; border: 2px solid var(--cp-card); }
+.ev-cart-thumbs .sc-face:first-child { margin-left: 0; }
+.ev-cart-text { font-size: 12px; font-weight: 800; color: var(--cp-sub); }
+.ev-cart-text b { color: var(--cp-accent); }
+
+/* ================= 活动当天 · 事件选择 ================= */
+.ev-scene-card { border-radius: 22px; overflow: hidden; box-shadow: 0 10px 20px -12px var(--cp-shadow); background: var(--cp-card); }
+.ev-scene-pic { height: 118px; position: relative; }
+.ev-scene-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ev-scene-pic.is-spring { background: linear-gradient(160deg, var(--ev-spring-a), var(--ev-spring-b)); }
+.ev-scene-pic.is-autumn { background: linear-gradient(160deg, var(--ev-autumn-a), var(--ev-autumn-b)); }
+.ev-scene-text { padding: 14px 16px; }
+.ev-scene-text p { margin: 0; font-size: 14px; line-height: 1.75; font-weight: 700; color: var(--cp-text); }
+.ev-choices { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.ev-choice {
+  text-align: left; padding: 13px 16px; border-radius: 20px; background: var(--cp-card); border: 2.5px solid var(--cp-border);
+  font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 10px; transition: transform 0.15s;
+}
+.ev-choice:active { transform: scale(0.98); }
+.ev-choice .ev-mark { flex: none; width: 26px; height: 26px; border-radius: 9px; background: var(--cp-soft); color: var(--cp-sub); display: grid; place-items: center; font-size: 12px; }
+
+/* ================= 占位结束页（这一轮还没做合影/结语，先停在这里） ================= */
+.ev-end-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 0 24px; }
+.ev-end-placeholder h4 { margin: 0; font-family: var(--cp-font-display); font-weight: 400; font-size: 18px; color: var(--cp-text); }
+.ev-end-placeholder p { margin: 0; font-size: 12.5px; color: var(--cp-muted); font-weight: 700; line-height: 1.7; }

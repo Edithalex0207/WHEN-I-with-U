@@ -11,8 +11,10 @@
  *   （纯色底 + 一个按稀有度而不同大小的小星星，没有像老师/班级那样画
  *   具体的插画——21 张卡池，占位阶段故意画得简单，免得真图做出来之后
  *   还要为了"占位图好看"返工）。
- * 想换图只要去 companionSchoolData.js / companionSchoolCardCatalog.js 里把
- * 对应条目的 url 填上，不用改这里。
+ * - FoodArt：春游/秋游「准备零食」里每样零食的卡面，food.url 有值就显示
+ *   这张图，留空显示占位卡面（纯色底 + 名字的第一个字，不用 emoji）。
+ * 想换图只要去 companionSchoolData.js / companionSchoolCardCatalog.js /
+ * companionSchoolEventData.js 里把对应条目的 url 填上，不用改这里。
  *
  * 所有 SVG 都是自包含的（不用 <symbol> / id 引用），同一个页面里渲染多少
  * 份都不会互相串。图标统一用 currentColor，颜色由外层 CSS 决定。
@@ -266,6 +268,34 @@ export const CardArt = ({ card, size = 96 }) => {
       style={{ width: size, height: size }}
     >
       <StarGlyph size={starSize} />
+    </span>
+  );
+};
+
+/* ---------------- 零食占位卡面 ---------------- */
+/**
+ * 零食卡面（春游/秋游「准备零食」用）。food.url 有值显示图片，否则显示
+ * 占位卡面：纯色底 + 名字的第一个字，不用 emoji。tone 固定用 butter
+ * （零食池不分季节，没有 tone 字段可取）。
+ */
+export const FoodArt = ({ food, size = 64 }) => {
+  if (food?.url) {
+    return (
+      <img
+        src={food.url}
+        alt={food.name}
+        width={size}
+        height={size}
+        draggable={false}
+        style={{ objectFit: 'cover', borderRadius: Math.round(size * 0.22) }}
+      />
+    );
+  }
+  return (
+    <span className="sc-face sd-tone-butter" style={{ width: size, height: size }}>
+      <b style={{ fontFamily: 'var(--cp-font-display)', fontWeight: 400, fontSize: Math.round(size * 0.36) }}>
+        {food?.name?.slice(0, 1) || '？'}
+      </b>
     </span>
   );
 };

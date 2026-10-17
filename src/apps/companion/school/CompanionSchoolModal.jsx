@@ -39,11 +39,13 @@ import React, { useEffect, useState } from 'react';
 
 import './school.css';
 import './schoolHome.css';
+import './schoolEvent.css';
 
 import { SCHOOL_STAGE_LABELS, SCHOOL_SUBJECTS, findSchoolClass, findSchoolTeacher } from './companionSchoolData';
 import { getSchoolStatus, getAlbum } from './companionSchoolService';
 import { getWrongBook, getCustomQuestions, QUIZ_MODE } from './companionSchoolQuizService';
 import { getCardCollection } from './companionSchoolCardService';
+import { getOpenEventForCompanion } from './companionSchoolEventService';
 import { getPetLine, resolvePetStatus } from './companionSchoolPetLines';
 import {
   CloseGlyph,
@@ -53,6 +55,7 @@ import {
   NotebookGlyph,
   EditGlyph,
   PhotoGlyph,
+  ForwardGlyph,
   PetFace,
   TeacherAvatar,
   ClassArt,
@@ -65,6 +68,7 @@ import CompanionSchoolReportModal from './CompanionSchoolReportModal';
 import CompanionSchoolAlbumModal from './CompanionSchoolAlbumModal';
 import CompanionSchoolCustomQuizModal from './CompanionSchoolCustomQuizModal';
 import CompanionSchoolCardsModal from './CompanionSchoolCardsModal';
+import CompanionSchoolEventFlow from './CompanionSchoolEventFlow';
 
 /** 「今天的小课堂」的题目来源分段，顺序跟预览一致 */
 const SOURCE_OPTIONS = [
@@ -88,6 +92,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [customCount, setCustomCount] = useState(0);
   const [albumCount, setAlbumCount] = useState(0);
   const [cardSummary, setCardSummary] = useState({ ownedKinds: 0, totalKinds: 0 });
+  const [openEvent, setOpenEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [now, setNow] = useState(Date.now());
@@ -103,6 +108,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [showAlbum, setShowAlbum] = useState(false);
   const [showCustomQuiz, setShowCustomQuiz] = useState(false);
   const [showCards, setShowCards] = useState(false);
+  const [showEvent, setShowEvent] = useState(false);
 
   /* ---------------- 拉取 / 刷新数据 ---------------- */
   const refresh = async () => {
@@ -118,6 +124,11 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
     setCustomCount(custom.length);
     setAlbumCount(album.length);
     setCardSummary({ ownedKinds: cards.ownedKinds, totalKinds: cards.totalKinds });
+    if (st.enrolled) {
+      setOpenEvent(await getOpenEventForCompanion(companion.id));
+    } else {
+      setOpenEvent(null);
+    }
     setLoading(false);
   };
 
@@ -388,6 +399,22 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
                     <small>已收集 {cardSummary.ownedKinds} / {cardSummary.totalKinds} 种 · 做题随机掉落</small>
                   </span>
                 </button>
+
+                {/* 春游/秋游横幅：只在开放季节、今年还没做过时出现 */}
+                {openEvent && (
+                  <button
+                    type="button"
+                    className={`sh-eventbanner is-${openEvent.tone}`}
+                    onClick={() => setShowEvent(true)}
+                  >
+                    <span className="sh-eventbanner-ic"><StarGlyph size={20} /></span>
+                    <span>
+                      <b>{openEvent.name}开放中</b>
+                      <small>点进来看看今天要做什么</small>
+                    </span>
+                    <span className="sh-eventbanner-arrow"><ForwardGlyph size={16} /></span>
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -468,6 +495,17 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
           companion={companion}
           onClose={() => {
             setShowCards(false);
+            refresh();
+          }}
+        />
+      )}
+      {showEvent && openEvent && (
+        <CompanionSchoolEventFlow
+          companion={companion}
+          event={openEvent}
+          schoolRecord={status.record}
+          onClose={() => {
+            setShowEvent(false);
             refresh();
           }}
         />
