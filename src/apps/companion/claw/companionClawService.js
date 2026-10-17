@@ -25,6 +25,7 @@
 
 import db from '../../../db';
 import { CLAW_PRIZES, CLAW_RARITY, findClawPrize } from './companionClawData';
+import { recordTaskEvent } from '../tasks/companionTaskService';
 
 export const PLAY_COST = 5;
 export const DUPLICATE_REFUND = 2;
@@ -89,6 +90,10 @@ export const startClawPlay = async (companionId) => {
       updatedAt: now,
     });
   }
+
+  // 每日任务：去娃娃机玩一次——投币（或用免费次数）就算玩了一次，
+  // 不管后面抓不抓得中。
+  await recordTaskEvent(companionId, 'claw_play');
 
   return db.companions.get(companionId);
 };

@@ -21,6 +21,7 @@
 
 import db from '../../../db';
 import { generateQuestionPair, generateCharAnswer, pickFallbackQuestionPair } from './companionDailyQaAiService';
+import { recordTaskEvent } from '../tasks/companionTaskService';
 
 const HISTORY_RETENTION_DAYS = 5;
 
@@ -178,5 +179,10 @@ export const submitUserAnswer = async (companionId, dateStr, answerText) => {
     userAnswer: trimmed,
     userAnsweredAt: Date.now(),
   });
+
+  // 每日任务：完成一次每日问答——只有真正第一次答完才算，上面已经
+  // 拦掉了"已经锁定"的重复提交。
+  await recordTaskEvent(companionId, 'daily_qa_done');
+
   return db.companionDailyQA.get(existing.id);
 };

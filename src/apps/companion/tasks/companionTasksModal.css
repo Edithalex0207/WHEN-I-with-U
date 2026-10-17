@@ -1,0 +1,346 @@
+/*
+ * 每日任务面板的"小记事本"样式。
+ *
+ * 这个组件总是渲染在 CompanionPage.jsx 的 .cp-root 容器内部，所以这里
+ * 直接复用 companionPage.css 里已经定义好的 --cp-* 变量（螺旋装订色、
+ * 字体等），不重新声明一份——跟 CompanionHeartsInfoModal 等其它弹窗
+ * 是同一个做法。只有记事本纸面本身的几个专属颜色（纸色/横线/胶带/
+ * 便利贴）在这里单独定义，不污染 .cp-root 的全局变量。
+ */
+
+.ctn-overlay { --bounce: cubic-bezier(.34, 1.7, .5, 1); }
+
+.ctn-stage { display: flex; align-items: center; justify-content: center; padding: 20px; width: 100%; }
+
+.ctn-notebook {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  transform: rotate(-1.2deg);
+  animation: ctn-nb-in 0.5s var(--bounce) both;
+}
+
+@keyframes ctn-nb-in {
+  from { opacity: 0; transform: translateY(32px) rotate(3deg) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) rotate(-1.2deg) scale(1); }
+}
+
+.ctn-back {
+  position: absolute;
+  inset: 8px -6px -8px 6px;
+  background: var(--cp-accent-soft);
+  border-radius: 22px;
+  border: 2px solid var(--cp-border);
+  transform: rotate(2.2deg);
+}
+
+.ctn-page {
+  position: relative;
+  background: #FFFEFA;
+  border-radius: 22px;
+  border: 2px solid var(--cp-border);
+  padding: 34px 16px 18px 16px;
+  box-shadow: 0 14px 26px -16px var(--cp-shadow);
+  overflow: hidden;
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+}
+
+.ctn-page::before {
+  content: "";
+  position: absolute;
+  left: 38px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #FFC2D1;
+  opacity: 0.7;
+}
+
+.ctn-rings {
+  position: absolute;
+  top: -9px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-evenly;
+  padding: 0 18px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.ctn-ring {
+  width: 14px;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #BFD9F0, #fff 45%, #A9CBE8);
+  border: 2px solid #9FC3E4;
+  position: relative;
+  display: block;
+}
+
+.ctn-ring::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--cp-bg);
+  border: 1.5px solid #9FC3E4;
+}
+
+.ctn-tape {
+  position: absolute;
+  top: -6px;
+  right: 22px;
+  width: 62px;
+  height: 20px;
+  background: repeating-linear-gradient(135deg, #FFE4EC 0 6px, #FFD2E0 6px 12px);
+  opacity: 0.92;
+  transform: rotate(6deg);
+  border-radius: 3px;
+  z-index: 4;
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+}
+
+.ctn-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--cp-border);
+  color: var(--cp-muted);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctn-title-row { display: flex; align-items: center; gap: 8px; margin: 0 0 4px 30px; }
+
+.ctn-title {
+  font-family: var(--cp-font-display);
+  font-size: 22px;
+  color: var(--cp-text);
+  line-height: 1.1;
+  position: relative;
+}
+
+.ctn-title::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: 1px;
+  height: 8px;
+  background: var(--cp-butter-bg);
+  border-radius: 6px;
+  z-index: -1;
+}
+
+.ctn-date {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--cp-muted);
+  background: var(--cp-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.ctn-sub { margin: 0 0 12px 30px; font-size: 11.5px; color: var(--cp-sub); }
+
+.ctn-progress-row { display: flex; align-items: center; gap: 6px; margin: 0 0 8px 30px; flex-wrap: wrap; }
+
+.ctn-pip {
+  width: 22px;
+  height: 22px;
+  color: #E3EBF3;
+  transition: color 0.2s, transform 0.5s var(--bounce);
+  display: inline-flex;
+}
+
+.ctn-pip svg { width: 100%; height: 100%; }
+
+.ctn-pip.is-on { color: var(--cp-heart); transform: scale(1.12) rotate(-8deg); }
+
+.ctn-progress-text { margin-left: auto; font-size: 11px; font-weight: 800; color: var(--cp-sub); }
+
+.ctn-lines { margin-left: 30px; }
+
+.ctn-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 4px 6px 2px;
+  background-image: linear-gradient(#D6E8F7, #D6E8F7);
+  background-size: 100% 1.5px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+}
+
+.ctn-box {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  border: 2.5px solid #A9CBE8;
+  background: #fff;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.45s var(--bounce);
+  transform: rotate(-4deg);
+}
+
+.ctn-box svg {
+  width: 16px;
+  height: 16px;
+  color: #fff;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset 0.3s ease 0.08s;
+}
+
+.ctn-row.is-done .ctn-box {
+  background: var(--cp-mint-fg);
+  border-color: var(--cp-mint-fg);
+  transform: rotate(0) scale(1.1);
+}
+
+.ctn-row.is-done .ctn-box svg { stroke-dashoffset: 0; }
+
+.ctn-text { flex: 1; min-width: 0; }
+
+.ctn-label {
+  font-family: var(--cp-font-display);
+  font-size: 15.5px;
+  color: var(--cp-text);
+  line-height: 1.25;
+  position: relative;
+  display: inline;
+}
+
+.ctn-count { font-family: var(--cp-font-body); font-size: 11px; font-weight: 800; color: var(--cp-muted); }
+
+.ctn-label::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 55%;
+  height: 2.5px;
+  width: 0;
+  background: var(--cp-heart);
+  border-radius: 2px;
+  transition: width 0.35s ease 0.1s;
+}
+
+.ctn-row.is-done .ctn-label { color: var(--cp-muted); }
+
+.ctn-row.is-done .ctn-label::after { width: 100%; }
+
+.ctn-note { font-size: 10.5px; color: var(--cp-muted); margin-top: 1px; font-weight: 700; }
+
+.ctn-reward {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--cp-heart);
+  background: var(--cp-heart-soft);
+  padding: 3px 9px 3px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  transform: rotate(3deg);
+  transition: transform 0.4s var(--bounce), background 0.2s, color 0.2s;
+}
+
+.ctn-reward-ic { width: 12px; height: 12px; }
+
+.ctn-row.is-done .ctn-reward { background: var(--cp-mint-bg); color: var(--cp-mint-fg); transform: rotate(0) scale(0.92); }
+
+.ctn-reward.is-big { background: var(--cp-butter-bg); color: var(--cp-butter-fg); }
+
+.ctn-row.is-done .ctn-reward.is-big { background: var(--cp-mint-bg); color: var(--cp-mint-fg); }
+
+.ctn-sticky {
+  position: relative;
+  margin: 16px 0 0 30px;
+  padding: 10px 12px 10px 14px;
+  background: var(--cp-butter-bg);
+  color: #8A6A1E;
+  border-radius: 6px 6px 18px 6px;
+  transform: rotate(1.6deg);
+  box-shadow: 0 8px 12px -8px rgba(170, 130, 40, 0.45);
+  font-family: var(--cp-font-display);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.5s var(--bounce), background 0.25s, color 0.25s;
+}
+
+.ctn-sticky::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 11px;
+  height: 11px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--cp-accent);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+}
+
+.ctn-sticky svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+.ctn-sticky b { color: var(--cp-heart); }
+
+.ctn-sticky.is-claimed { background: var(--cp-mint-bg); color: var(--cp-mint-fg); transform: rotate(-1.4deg) scale(1.03); }
+
+.ctn-sticky.is-claimed b { color: var(--cp-mint-fg); }
+
+.ctn-stamp {
+  position: absolute;
+  right: 18px;
+  top: 74px;
+  z-index: 5;
+  pointer-events: none;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 3.5px dashed var(--cp-heart);
+  color: var(--cp-heart);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--cp-font-display);
+  font-size: 15px;
+  line-height: 1.15;
+  background: rgba(255, 255, 255, 0.5);
+  animation: ctn-stamp-in 0.5s var(--bounce) forwards;
+}
+
+.ctn-stamp svg { width: 20px; height: 20px; margin-bottom: 1px; }
+
+@keyframes ctn-stamp-in {
+  0% { opacity: 0; transform: rotate(-30deg) scale(2.6); }
+  70% { opacity: 1; transform: rotate(-14deg) scale(0.92); }
+  100% { opacity: 0.92; transform: rotate(-14deg) scale(1); }
+}
+
+.ctn-foot { margin: 12px 0 0 30px; font-size: 11px; color: var(--cp-muted); text-align: center; font-weight: 700; }

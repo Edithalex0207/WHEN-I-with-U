@@ -12,6 +12,7 @@ import { generateAutonomousCareNote } from './companionAiService';
 import { findShopItem, FOOD_TIERS } from './companionShopData';
 import { checkCompanionEvents, getActiveEvents } from './companionEventService';
 import { addToBackpack } from './backpack/companionBackpackService';
+import { recordTaskEvent } from './tasks/companionTaskService';
 
 // ---- 数值状态衰减（参照 habitatService.js 的 applyTimeDecay）----
 const DECAY_PER_HOUR = { satiety: 4, mood: 2, cleanliness: 1 };
@@ -113,7 +114,12 @@ export const pokeCompanion = async (companionId) => {
   await db.companions.put(updated);
 
   const line = pickRandom(POKE_REPLIES);
-  return { companion: updated, line };
+
+  // 每日任务：戳一戳累计次数（见 companionTaskData.js 的 'poke-times'）。
+  await recordTaskEvent(companionId, 'poke', 1);
+  const latestCompanion = await db.companions.get(companionId);
+
+  return { companion: latestCompanion || updated, line };
 };
 
 // ---- 聊天回应换 ❤️（同一聊天窗、按天计算）----
@@ -403,7 +409,12 @@ export const performFreeAction = async (companionId, actionType) => {
     timestamp: now,
   });
 
-  return { companion: updated, feedbackText };
+  // 每日任务：actionType 正好就是 'feed'/'clean'/'play'，跟任务池的
+  // eventKey 完全一致，可以直接传进去。
+  await recordTaskEvent(companionId, actionType);
+  const latestCompanion = await db.companions.get(companionId);
+
+  return { companion: latestCompanion || updated, feedbackText };
 };
 
 // ---- 聊天回应换 ❤️ + 顺带触发角色自主互动（b） ----
@@ -454,6 +465,9 @@ export const recordChatResponseForCompanion = async (chatId) => {
       chatHeartProgress: newProgress,
       updatedAt: Date.now(),
     });
+
+    // 每日任务："跟TA聊满 N 句"——跟聊天回应共用同一个触发点。
+    await recordTaskEvent(companion.id, 'chat_message', 1);
 
     // b：聊天回应触发角色顺便去看一眼小伙伴（轻量、独立日志，不进聊天记录）。
     if (
@@ -579,6 +593,7 @@ export const buyShopItem = async (companionId, itemId) => {
       content: `在商店买了「${item.name}」，放进了背包。`,
       timestamp: now,
     });
+    await recordTaskEvent(companionId, 'shop_buy'); // 每日任务：去商店买一件东西
     return await db.companions.get(companionId);
   }
 
@@ -603,6 +618,7 @@ export const buyShopItem = async (companionId, itemId) => {
       content: `在商店买了「${item.name}」，放进了背包。`,
       timestamp: now,
     });
+    await recordTaskEvent(companionId, 'shop_buy'); // 每日任务：去商店买一件东西
     return await db.companions.get(companionId);
   }
 
@@ -632,6 +648,7 @@ export const buyShopItem = async (companionId, itemId) => {
       content: `解锁了新场景「${item.label}」。`,
       timestamp: now,
     });
+    await recordTaskEvent(companionId, 'shop_buy'); // 每日任务：去商店买一件东西
     return await db.companions.get(companionId);
   }
 
@@ -668,6 +685,7 @@ export const buyShopItem = async (companionId, itemId) => {
     timestamp: now,
   });
 
+  await recordTaskEvent(companionId, 'shop_buy'); // 每日任务：去商店买一件东西
   return await db.companions.get(companionId);
 };
 

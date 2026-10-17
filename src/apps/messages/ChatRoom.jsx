@@ -154,6 +154,7 @@ import PendingPlaceBanner from './components/cards/PendingPlaceBanner';
 
 import CompanionHeartIcon from '../companion/CompanionHeartIcon';
 import { recordChatResponseForCompanion } from '../companion/companionService';
+import { recordTaskEventForChat } from '../companion/tasks/companionTaskService';
 import { recordStreakCheckin } from './streak/streakService';
 
 import { recordUserGiftMemoir } from '../memoir/memoirService';
@@ -676,6 +677,9 @@ const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
 
    const stickerMsgId = await db.messages.add(newMsg);
    newMsg.id = stickerMsgId;
+
+   // 每日任务：给TA发表情包（这个聊天窗没养小伙伴就静默跳过）。
+   void recordTaskEventForChat(chat.id, 'sticker_sent');
 
 void recordAlmanacEvent({
   chatId: chat.id,

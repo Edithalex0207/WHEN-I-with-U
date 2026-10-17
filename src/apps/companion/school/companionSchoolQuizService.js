@@ -1,4 +1,3 @@
-
 /*
  * companionSchoolQuizService.js —— 「上学」的做题层：自己出的题、抽题、
  * 一组做完后的结算（奖励 + 做题记录 + 错题本）。
@@ -35,6 +34,7 @@
  */
 
 import db from '../../../db';
+import { recordTaskEvent } from '../tasks/companionTaskService';
 import {
   SCHOOL_LIMITS,
   SET_REWARD,
@@ -402,6 +402,10 @@ export const finishQuizSet = async (companionId, played, { mode = QUIZ_MODE.MIXE
         daySets,
         lastSetAt: now,
       });
+
+      // 每日任务：去上两节课——做完一组题就算上了一节课，
+      // 累计到任务要求的节数由 recordTaskEvent 自己算。
+      await recordTaskEvent(companionId, 'school_lesson');
 
       // 3. 做题记录
       setRow = {

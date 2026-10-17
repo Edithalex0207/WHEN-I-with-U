@@ -24,6 +24,7 @@
 
 import { db } from '../../../db/index';
 import { DAILY_REWARD_LIMIT, tierFor } from './catchData';
+import { recordTaskEvent } from '../tasks/companionTaskService';
 
 const clamp100 = (value) => Math.max(0, Math.min(100, Math.round(value)));
 
@@ -125,6 +126,11 @@ export async function submitCatchResult(companionId, score) {
       effect,
       createdAt: Date.now(),
     });
+
+    // 每日任务：玩一次接东西小游戏——不管有没有拿到今天的奖励名额，
+    // 玩完一局就算完成。
+    const taskResult = await recordTaskEvent(companionId, 'catch_play');
+    if (taskResult) companion = taskResult.companion;
 
     return {
       tier,

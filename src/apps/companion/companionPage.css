@@ -319,6 +319,17 @@
 .cp-dock-btn.play .cp-dock-ico { background: var(--cp-mint-bg); color: var(--cp-mint-fg); }
 .cp-dock-btn.shop .cp-dock-ico { background: var(--cp-heart-soft); color: var(--cp-heart); }
 .cp-dock-btn:disabled { opacity: 0.65; }
+
+/* 任务 dock 按钮：今天还有没做完的任务时，图标隔几秒轻轻晃一下提醒。 */
+.cp-dock-ico.has-pending-tasks { animation: cp-task-wiggle 2.8s ease-in-out infinite; transform-origin: 50% 80%; }
+@keyframes cp-task-wiggle {
+  0%, 82%, 100% { transform: rotate(0); }
+  86% { transform: rotate(-9deg); }
+  90% { transform: rotate(8deg); }
+  94% { transform: rotate(-5deg); }
+  97% { transform: rotate(3deg); }
+}
+
 .cp-badge {
   position: absolute; right: -7px; top: -6px; min-width: 22px; padding: 1px 6px; border-radius: 99px; font-size: 10.5px; font-weight: 800;
   background: var(--cp-heart); color: var(--cp-heart-fg); border: 2px solid var(--cp-card); text-align: center;

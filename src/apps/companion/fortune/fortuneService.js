@@ -17,6 +17,7 @@
 
 import { db } from '../../../db/index';
 import { buildResult, pickEntry } from './fortuneData';
+import { recordTaskEvent } from '../tasks/companionTaskService';
 
 /* ------------------------------------------------------------------ */
 /* 工具函数                                                               */
@@ -72,8 +73,14 @@ export async function drawFortune(companionId, style) {
   if (!companionId) throw new Error('缺少 companionId');
 
   const today = todayDateStr();
+  // 每日任务（戳一戳TA.../抽一次今日签）只认"今天第一次真正抽签"，
+  // 不认"今天已经抽过、再打开弹窗看一眼"——用这个标记区分，
+  // 在事务外面再上报，避免 db.transaction 的表范围（只声明了
+  // db.fortuneDraws）里混进 companionTaskService 要读写的
+  // db.companions/db.companionLogs。
+  let isFreshDraw = false;
 
-  return db.transaction('rw', db.fortuneDraws, async () => {
+  const result = await db.transaction('rw', db.fortuneDraws, async () => {
     // 幂等：今天已抽过就直接返回
     const existing = await db.fortuneDraws
       .where('companionId').equals(companionId)
@@ -82,13 +89,13 @@ export async function drawFortune(companionId, style) {
     if (existing) return existing;
 
     const entry = pickEntry(style);
-    const result = buildResult(style, entry);
+    const fortuneResult = buildResult(style, entry);
 
     const id = await db.fortuneDraws.add({
       companionId,
       dateStr: today,
       style,
-      result,
+      result: fortuneResult,
     });
 
     // 懒清理：只保留最近 30 天
@@ -103,8 +110,15 @@ export async function drawFortune(companionId, style) {
       .toArray();
     await Promise.all(old.map((r) => db.fortuneDraws.delete(r.id)));
 
+    isFreshDraw = true;
     return db.fortuneDraws.get(id);
   });
+
+  if (isFreshDraw) {
+    await recordTaskEvent(companionId, 'fortune_drawn'); // 每日任务：抽一次今日签
+  }
+
+  return result;
 }
 
 /**

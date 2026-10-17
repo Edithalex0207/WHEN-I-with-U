@@ -10,6 +10,7 @@
 
 import db from '../../../db';
 import { findShopItem, FOOD_TIERS } from '../companionShopData';
+import { recordTaskEvent } from '../tasks/companionTaskService';
 
 const clamp100 = (value) => Math.max(0, Math.min(100, Math.round(value)));
 
@@ -127,5 +128,9 @@ export const useBackpackItem = async (companionId, itemId) => {
     timestamp: now,
   });
 
-  return { companion: updated, feedbackText, item };
+  // 每日任务：用一次背包里的道具。
+  await recordTaskEvent(companionId, 'backpack_use');
+  const latestCompanion = await db.companions.get(companionId);
+
+  return { companion: latestCompanion || updated, feedbackText, item };
 };

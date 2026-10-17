@@ -62,6 +62,9 @@ import CompanionClawIcon from './claw/CompanionClawIcon';
 import CompanionSchoolModal from './school/CompanionSchoolModal';
 import CompanionSchoolIcon from './school/CompanionSchoolIcon';
 import { getSchoolStatus } from './school/companionSchoolService';
+import CompanionTasksModal from './tasks/CompanionTasksModal';
+import CompanionTasksIcon from './tasks/CompanionTasksIcon';
+import { getDailyTaskView } from './tasks/companionTaskService';
 import './companionPage.css';
 /*
  * 把用户上传的图片压到一个头像该有的尺寸、保留透明通道、输出 PNG。
@@ -244,6 +247,28 @@ const CompanionPage = ({ chatId, character, onBack }) => {
    const [showClaw, setShowClaw] = useState(false);
   const [showSchool, setShowSchool] = useState(false);
   const [schoolDotOn, setSchoolDotOn] = useState(false);
+  const [showTasks, setShowTasks] = useState(false);
+  const [taskView, setTaskView] = useState(null);
+
+  // 每日任务：companion 对象每次更新（喂食/戳一戳/上学/……任何互动）
+  // 都重新拉一次最新的任务进度——这些互动大多会改到 companion.dailyTasks
+  // 或 hearts，companion 本身是每次都新建的对象，依赖它整体正好能在
+  // "任务可能有进展"的时候刷新，不需要每个互动点各自手动触发一次。
+  useEffect(() => {
+    if (!companion) {
+      setTaskView(null);
+      return;
+    }
+    let cancelled = false;
+    getDailyTaskView(companion.id).then((view) => {
+      if (!cancelled) setTaskView(view);
+    }).catch(() => {
+      // 静默失败，不影响其它功能
+    });
+    return () => { cancelled = true; };
+  }, [companion]);
+
+  const pendingTaskCount = taskView ? Math.max(0, taskView.totalCount - taskView.completedCount) : 0;
 
   // 「上学」dock 小红点：还没入学 / 满 20 节可以升班时才亮，别的时候都不亮
   // （包括还有课没上），升班到小学后不会再出现。
@@ -1174,6 +1199,18 @@ const CompanionPage = ({ chatId, character, onBack }) => {
           <div className="cp-dock-extra">
             <button
               type="button"
+              onClick={() => setShowTasks(true)}
+              className="cp-dock-btn"
+              aria-label="每日任务"
+            >
+              <span className={`cp-dock-ico ${pendingTaskCount > 0 ? 'has-pending-tasks' : ''}`}>
+                <CompanionTasksIcon />
+                {pendingTaskCount > 0 && <b className="cp-badge">{pendingTaskCount}</b>}
+              </span>
+              任务
+            </button>
+            <button
+              type="button"
               onClick={() => setShowBackpack(true)}
               className="cp-dock-btn"
               aria-label="背包"
@@ -1368,6 +1405,10 @@ const CompanionPage = ({ chatId, character, onBack }) => {
 
       {showHeartsInfo && (
         <CompanionHeartsInfoModal onClose={() => setShowHeartsInfo(false)} />
+      )}
+
+      {showTasks && (
+        <CompanionTasksModal view={taskView} onClose={() => setShowTasks(false)} />
       )}
 
       {showFortune && (
