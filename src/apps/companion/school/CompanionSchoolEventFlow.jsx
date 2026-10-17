@@ -1,29 +1,31 @@
 /*
  * CompanionSchoolEventFlow.jsx —— 「春游 / 秋游」特别活动弹窗。
  *
- * 【这一轮（切片③的①+②）做到什么程度】
- * 通知签字 -> 准备零食 -> 活动当天三轮事件选择，这三段都是真的——能点、
- * 能走完。走完三轮之后进到一个占位的"结束页"：合影 + 结语 + 落库（相册/
- * 在校生活）+ 发奖励是下一个子切片的事，这一轮故意不做，免得在真正的
- * 结算逻辑定下来之前先画一个假的结算画面，回头还要为了接真数据返工。
- * 占位页只有一个"先回到小伙伴"按钮，点了就关闭，什么都不会落库——
- * 这意味着这一轮里，这个活动可以反复开着玩，不会因为"今年做过了"而被
- * 挡住（hasDoneEventThisYear 现在永远读到 false，因为还没有代码会写
- * 那条记录）。下个子切片接上结算之后，这个"可以反复玩"的状态会自然
- * 消失，不用回来改这个文件。
+ * 【这一轮（子切片③）做到什么程度】
+ * 通知签字 -> 准备零食 -> 三轮事件选择 -> 合影+结语+落库+发奖励，五段全部
+ * 是真的了。到达"end"步骤时自动生成一张合影（html-to-image 截一个 DOM
+ * 节点，模式照抄 SchoolEnrollFlow.jsx 的 exportCardImage 写法），再调
+ * companionSchoolEventService.finishEvent 把结果一次性落库：今年完成的
+ * 记录、心心奖励、合影纪念卡（生成失败就不存图，照样完成，跟入学/升班
+ * 一样"图片失败不卡流程"）。
  *
- * 中途点右上角关闭：因为这一轮什么都不写库，所以直接关掉就行，不用弹
- * "确定要放弃吗"——没有任何进度会因为关闭而丢失得"可惜"。
+ * 合影里的"全班合照"是 SEASON_EVENTS[eventId].groupPhotoUrl 占位框
+ * （留空 = 虚线占位框），不是另外单独做了一套合影素材。
+ *
+ * 中途点右上角关闭：在"end"步骤落库完成之前关闭，相当于放弃这次结算
+ * （不会写入任何记录，下次进来还能重新选）；落库完成之后关闭就是正常
+ * 退出。两种情况都不用弹"确定要放弃吗"。
  *
  * Props:
- *   companion     object   —— 当前小伙伴（用 id / name）
+ *   companion     object   —— 当前小伙伴（用 id / name / avatarUrl / hearts）
  *   event         object   —— companionSchoolEventService.getOpenEventForCompanion
  *                             返回的那个活动定义（SEASON_EVENTS 里的一条）
  *   schoolRecord  object   —— 当前学籍（取 classId，通知信头要用班级名）
- *   onClose       function —— 关闭弹窗
+ *   onClose       function —— 关闭弹窗（落库成功后调用方应该据此刷新学校状态）
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { toJpeg } from 'html-to-image';
 
 import './school.css';
 import './schoolEvent.css';
@@ -35,9 +37,26 @@ import {
   SNACK_PICK_MAX,
   getEventRounds,
 } from './companionSchoolEventData';
-import { CloseGlyph, BackGlyph, FoodArt } from './SchoolArt';
+import { finishEvent } from './companionSchoolEventService';
+import { CloseGlyph, BackGlyph, HeartGlyph, FoodArt, PetFace } from './SchoolArt';
 
 const fillName = (text, name) => text.split('{name}').join(name);
+
+const PHOTO_QUALITY = 0.86;
+const PHOTO_PIXEL_RATIO = 1.6;
+
+const pad2 = (n) => String(n).padStart(2, '0');
+const formatDate = (timestamp) => {
+  const d = new Date(timestamp);
+  return `${d.getFullYear()} . ${pad2(d.getMonth() + 1)} . ${pad2(d.getDate())}`;
+};
+
+const exportCollageImage = (node) => toJpeg(node, {
+  quality: PHOTO_QUALITY,
+  pixelRatio: PHOTO_PIXEL_RATIO,
+  backgroundColor: '#ffffff',
+  cacheBust: true,
+});
 
 const STEPS = ['notice', 'snacks', 'event', 'end'];
 
@@ -47,6 +66,11 @@ const CompanionSchoolEventFlow = ({ companion, event, schoolRecord, onClose }) =
   const [pickedIdx, setPickedIdx] = useState(null); // 当前这一轮点了第几个选项，还没按"继续"
   const [snacks, setSnacks] = useState(new Set());
   const [choices, setChoices] = useState([]); // [{roundIndex, tag}]，三轮选完会有 3 条
+  const [settling, setSettling] = useState(false); // 正在生成合影/落库
+  const [settled, setSettled] = useState(null); // finishEvent 的结果
+  const [settleError, setSettleError] = useState('');
+  const [photoDate] = useState(() => Date.now());
+  const collageRef = useRef(null);
 
   const schoolClass = findSchoolClass(schoolRecord?.classId);
   const rounds = getEventRounds(event.id);
@@ -81,8 +105,46 @@ const CompanionSchoolEventFlow = ({ companion, event, schoolRecord, onClose }) =
     }
   };
 
+  /* ---------------- 结算：生成合影 + 落库 ---------------- */
+  const handleSettle = useCallback(async () => {
+    setSettling(true);
+    setSettleError('');
+
+    let image = null;
+    if (collageRef.current) {
+      try {
+        image = await exportCollageImage(collageRef.current);
+      } catch (_) {
+        image = null; // 导出失败不拦着结算，只是没有合影存进相册
+      }
+    }
+
+    try {
+      const photo = image ? { image, title: `${companion.name}的${event.name}纪念卡` } : null;
+      const result = await finishEvent(companion.id, {
+        eventId: event.id,
+        choices,
+        snackIds: [...snacks],
+        photo,
+        now: Date.now(),
+      });
+      setSettled({ ...result, image });
+    } catch (err) {
+      setSettleError(err?.message || '结算没有成功，再试一次吧');
+    } finally {
+      setSettling(false);
+    }
+  }, [companion, event, choices, snacks]);
+
+  useEffect(() => {
+    if (step === 'end' && !settled && !settling && !settleError) {
+      handleSettle();
+    }
+  }, [step, settled, settling, settleError, handleSettle]);
+
   /* ---------------- 返回 / 关闭 ---------------- */
   const handleBack = () => {
+    if (settling) return; // 正在生成合影/落库时不让关，避免半路打断
     if (step === 'notice') { onClose?.(); return; }
     if (step === 'snacks') { setStep('notice'); return; }
     onClose?.(); // event / end 这两步没有"上一步"，右上角就是直接关闭
@@ -178,6 +240,19 @@ const CompanionSchoolEventFlow = ({ companion, event, schoolRecord, onClose }) =
           </>
         )}
 
+        {/* ---------- 异常兜底：这一轮没有配到事件数据 ---------- */}
+        {step === 'event' && !round && (
+          <>
+            <div className="ev-end-placeholder">
+              <h4>咦，这次活动好像出错了</h4>
+              <p>先关掉重新试试吧，{companion.name}的选择还没有被记下来。</p>
+            </div>
+            <div className="sd-foot">
+              <button type="button" className="sd-btn main" onClick={onClose}>先关掉</button>
+            </div>
+          </>
+        )}
+
         {/* ---------- 第 3 步：活动当天，三轮事件选择 ---------- */}
         {step === 'event' && round && (
           <>
@@ -212,15 +287,55 @@ const CompanionSchoolEventFlow = ({ companion, event, schoolRecord, onClose }) =
           </>
         )}
 
-        {/* ---------- 占位结束页：合影/结语留给下个子切片 ---------- */}
+        {/* ---------- 第 4 步：合影 + 结语 + 奖励 ---------- */}
         {step === 'end' && (
           <>
-            <div className="ev-end-placeholder">
-              <h4>{event.name}结束啦</h4>
-              <p>合影和结语下个版本就能看到啦，这一次先记下了{companion.name}做的每一个选择。</p>
+            <div className="sd-body is-center">
+              <div className="ev-collage" ref={collageRef}>
+                <div className="ev-collage-pics">
+                  <div className={`ev-collage-pet is-${event.tone}`}>
+                    {companion.avatarUrl ? (
+                      <img src={companion.avatarUrl} alt={companion.name} draggable={false} />
+                    ) : (
+                      <PetFace size={64} />
+                    )}
+                  </div>
+                  <div className="ev-collage-group">
+                    {event.groupPhotoUrl ? (
+                      <img src={event.groupPhotoUrl} alt="全班合照" />
+                    ) : (
+                      <span>全班合照</span>
+                    )}
+                  </div>
+                </div>
+                <div className="ev-collage-title">{event.name}纪念</div>
+                <div className="ev-collage-name">{companion.name}</div>
+                <div className="ev-collage-date">{formatDate(photoDate)}</div>
+              </div>
+
+              {settling && <p className="sd-hint">正在整理{event.name}的合影和故事…</p>}
+
+              {settleError && (
+                <>
+                  <p className="sd-notice" role="status">{settleError}</p>
+                </>
+              )}
+
+              {settled && (
+                <div className="ev-ending">
+                  <p>{settled.endingText}</p>
+                  <span className="ev-reward-chip"><HeartGlyph size={13} />+{settled.heartsGained} 心心</span>
+                  {!settled.image && <p className="sd-hint">合影图片没能生成，这次没有存进相册，故事和奖励都正常拿到了</p>}
+                </div>
+              )}
             </div>
             <div className="sd-foot">
-              <button type="button" className="sd-btn main" onClick={onClose}>先回到小伙伴</button>
+              {settleError && (
+                <button type="button" className="sd-btn main" onClick={handleSettle}>再试一次</button>
+              )}
+              {settled && (
+                <button type="button" className="sd-btn main" onClick={onClose}>回到小伙伴</button>
+              )}
             </div>
           </>
         )}

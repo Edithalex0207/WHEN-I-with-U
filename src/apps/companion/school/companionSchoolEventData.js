@@ -32,6 +32,7 @@ export const SEASON_EVENTS = {
     tone: 'spring', // 对应 schoolEvent.css 的 .ev-banner.is-spring / .ev-scene-card.is-spring
     noticeText: '本周五我们将组织全班小朋友前往公园开展"春游"活动，一起去看看春天的样子。'
       + '请确认{name}是否可以参加，并为TA准备一点零食和一壶水。',
+    groupPhotoUrl: '', // 结算合影里的"全班合照"占位框，留空 = 虚线占位框，填了图就显示真实合照
   },
   autumn_outing: {
     id: 'autumn_outing',
@@ -40,6 +41,7 @@ export const SEASON_EVENTS = {
     tone: 'autumn',
     noticeText: '本周五我们将组织全班小朋友前往公园开展"秋游"活动，一起去捡捡落叶、晒晒太阳。'
       + '请确认{name}是否可以参加，并为TA准备一点零食和一壶水。',
+    groupPhotoUrl: '',
   },
 };
 
@@ -131,3 +133,24 @@ export const EVENT_ROUNDS = {
 };
 
 export const getEventRounds = (eventId) => EVENT_ROUNDS[eventId] || [];
+
+/* ---------------- 结算：合影 + 结语 + 奖励 ---------------- */
+/*
+ * 三轮选完以后，哪一边（gentle / wild）出现次数多就走哪一条结语——
+ * 3 轮两个选项，不会出现 1.5:1.5 的平局，所以只需要两条文案，不用
+ * 处理"打平"的情况。
+ */
+export const EVENT_HEART_REWARD = 4;
+
+export const EVENT_ENDINGS = {
+  spring_outing: {
+    gentle: '这次春游，{name}一直乖乖跟着队伍，看花不摘花、零食也记得分给同学，老师悄悄给了一朵小红花。',
+    wild: '这次春游，{name}东跑西跑，追蝴蝶追到差点没跟上队伍，回来的路上还在跟同学比谁今天最开心。',
+  },
+  autumn_outing: {
+    gentle: '这次秋游，{name}走得稳稳当当，零食主动分给了同桌，还捡了一片最好看的叶子准备带回家做标本。',
+    wild: '这次秋游，{name}把落叶踩得沙沙响，蹲在池塘边看鱼看了好久，差点是最后一个跑回集合点的。',
+  },
+};
+
+export const findEventEnding = (eventId, endingKey) => EVENT_ENDINGS[eventId]?.[endingKey] || '';

@@ -24,8 +24,10 @@
  *   评语卡那半块它自己里面还是占位，不是这里忘了接）。
  * - 我出的题、学校相册：界面还没做，先弹一句"下一轮就做啦"占位，
  *   不是忘了接。
- * - 秋游横条（预览里"秋游开放中"那一条）：特别活动功能还没做，这一轮完全
- *   不画这块，等那一轮接上真实的开放判断再加。
+ * - 春游/秋游横条：按季节 + 今年有没有做过来判断要不要显示（见
+ *   companionSchoolEventService.getOpenEventForCompanion），点开打开
+ *   CompanionSchoolEventFlow（通知签字 -> 零食 -> 三轮事件选择 -> 合影
+ *   结算），结算完成后关闭时刷新这个首页。
  *
  * Props:
  *   companion  object    —— 当前小伙伴（用 id / name / avatarUrl / hearts）
