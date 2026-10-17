@@ -8,7 +8,10 @@
  *   companionSchoolData.js 的静态课程表里取），高亮"今天"是周几、"现在"
  *   是第几节（周末没有"今天"高亮，这是预期内的，不是 bug）；"今天在
  *   学校"卡片懒加载——今天做过题就调 AI 根据真实的做题统计写一句叙事，
- *   还没做过题就显示"还没有去上课"的提示，不会编一句假的出来。
+ *   还没做过题就显示"还没有去上课"的提示，不会编一句假的出来。有叙事
+ *   的话再顺带把今天命中的「校园小事」（companionSchoolActivityService.js
+ *   在做题结算页顺手 roll 出来的那些，kind = ACTIVITY）也列在下面，
+ *   没命中就不显示这块。
  * - 评语卡 tab（第 3 轮）：切到这个 tab 时懒加载——这周还没生成过评语就
  *   调 AI 写一条，顺带按概率生成一条待处理的三方会谈；已经生成过就直接
  *   读，不重复调用。卡片下面能签字（只记时间戳，没有别的校验）。如果
@@ -32,6 +35,7 @@ import db from '../../../db';
 import {
   SCHOOL_WEEKDAY_LABELS,
   SCHOOL_SLOTS,
+  LIFE_KIND,
   getDayLessons,
   findSchoolClass,
   findSchoolTeacher,
@@ -39,6 +43,7 @@ import {
 import { getSchoolStatus } from './companionSchoolService';
 import {
   ensureTodayLifeNarrative,
+  getTodayLife,
   ensureWeeklyReport,
   signWeeklyReport,
 } from './companionSchoolReportService';
@@ -70,6 +75,7 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
   const [activeTab, setActiveTab] = useState('schedule');
   const [status, setStatus] = useState(null);
   const [todayLife, setTodayLife] = useState(null);
+  const [todayActivities, setTodayActivities] = useState([]); // 今天的「校园小事」，可能有 0~3 条
   const [lifeLoading, setLifeLoading] = useState(true);
 
   const [report, setReport] = useState(null);
@@ -86,7 +92,12 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companion.id]);
 
-  /* "今天在学校"：懒加载，只在这个弹窗打开时跑一次 */
+  /*
+   * "今天在学校"：懒加载，只在这个弹窗打开时跑一次。
+   * ensureTodayLifeNarrative 保证今天做过题就一定有一条 LESSON 记录；
+   * 有了它之后再查一次今天的全部记录，把顺带命中的 ACTIVITY（校园小事）
+   * 也捞出来一起显示——没有命中就是空数组，不额外显示什么。
+   */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -96,7 +107,10 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
         const row = await ensureTodayLifeNarrative(companion.id, {
           chatId, chat, character, companion,
         });
-        if (!cancelled) setTodayLife(row);
+        if (cancelled) return;
+        setTodayLife(row);
+        const activities = row ? (await getTodayLife(companion.id)).filter((r) => r.kind === LIFE_KIND.ACTIVITY) : [];
+        if (!cancelled) setTodayActivities(activities);
       } finally {
         if (!cancelled) setLifeLoading(false);
       }
@@ -220,7 +234,14 @@ const CompanionSchoolReportModal = ({ companion, chatId, character, onClose }) =
                   <div className="sr-today">
                     <h5><BookGlyph size={18} />今天在学校</h5>
                     {lifeLoading && <p className="sr-today-loading">正在看看今天上了什么课…</p>}
-                    {!lifeLoading && todayLife && <p className="sr-li"><i><BookGlyph size={13} /></i>{todayLife.text}</p>}
+                    {!lifeLoading && todayLife && (
+                      <>
+                        <p className="sr-li"><i><BookGlyph size={13} /></i>{todayLife.text}</p>
+                        {todayActivities.map((a) => (
+                          <p key={a.id} className="sr-li"><i><StarGlyph size={13} /></i>{a.text}</p>
+                        ))}
+                      </>
+                    )}
                     {!lifeLoading && !todayLife && (
                       <p className="sr-today-empty">今天还没有去上课，去小课堂做几道题吧。</p>
                     )}

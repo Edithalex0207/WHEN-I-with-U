@@ -16,6 +16,12 @@
  * 题目来源出错（比如题库是空的、次数突然用完）时显示一句提示 + 关闭按钮，
  * 不堆复杂的重试逻辑。
  *
+ * 【校园小事】结算成功后顺带调一次 rollCampusActivity（见
+ * companionSchoolActivityService.js）：有概率弹一件小事，命中就在结算页
+ * 多显示一张"校园小事"卡片（+ 一点点心情）。这个 roll 是异步的、独立于
+ * finishQuizSet，失败/没中都不影响已经显示的做题结果，所以这里对它的结果
+ * 不做任何 try 之外的处理。
+ *
  * Props:
  *   companion      object    —— 当前小伙伴
  *   mode           string    —— QUIZ_MODE 的取值（mixed / preset / custom / wrong）
@@ -32,6 +38,7 @@ import './quiz.css';
 
 import { SET_REWARD, findSubject } from './companionSchoolData';
 import { startQuizSet, finishQuizSet } from './companionSchoolQuizService';
+import { rollCampusActivity } from './companionSchoolActivityService';
 import { CloseGlyph, CheckGlyph, StarGlyph, PetFace } from './SchoolArt';
 
 const CHEER_RIGHT = ['答对啦！你好厉害', '哇，答对了！', '太棒啦，这题对了！', '好厉害，一下就对了！'];
@@ -49,6 +56,7 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
   const [cheer, setCheer] = useState('');
   const [played, setPlayed] = useState([]); // [{ question, picked }]
   const [result, setResult] = useState(null); // finishQuizSet 的返回值
+  const [activity, setActivity] = useState(null); // rollCampusActivity 的返回值，没中是 null
   const [resultLine] = useState(() => pickRandom(RESULT_LINES));
   const [errorMsg, setErrorMsg] = useState('');
   const [finishing, setFinishing] = useState(false);
@@ -97,6 +105,12 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
       const res = await finishQuizSet(companion.id, played, { mode });
       setResult(res);
       onFinished?.(res);
+      // 顺带 roll 一次"校园小事"，没中/出错都不影响已经结算好的做题结果。
+      rollCampusActivity(companion.id, {
+        classId: res.status?.record?.classId,
+        teacherId: res.status?.record?.teacherId,
+        companionName: companion.name,
+      }).then(setActivity).catch(() => setActivity(null));
     } catch (err) {
       setErrorMsg(err?.message || '结算没有成功，再试一次吧');
     } finally {
@@ -186,6 +200,19 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
                     {q.stem}
                   </p>
                 ))}
+              </div>
+            )}
+
+            {activity && (
+              <div className="qz-activity sd-tone-lavender">
+                <span className="qz-activity-ico"><StarGlyph size={16} /></span>
+                <div>
+                  <h6>校园小事</h6>
+                  <p>
+                    {activity.text}
+                    {activity.moodDelta > 0 && <b> +{activity.moodDelta} 心情</b>}
+                  </p>
+                </div>
               </div>
             )}
 

@@ -45,6 +45,13 @@ export const SET_REWARD = {
   MOOD_PER_CORRECT: 1, // 每答对一题再加的心情
 };
 
+/**
+ * 每做完一组题，有多大概率额外弹一件「校园小事」（文案素材见
+ * companionSchoolActivities.js，roll 的逻辑在 companionSchoolActivityService.js）。
+ * 不想加门槛和冷却——反正一天最多 3 组，撑死也就多 3 次 roll。
+ */
+export const ACTIVITY_CHANCE = 0.35;
+
 /* ---------------- 科目 ---------------- */
 /*
  * id 同时是预设题 id 的中间段（'k-cn-007' 里的 cn）。
