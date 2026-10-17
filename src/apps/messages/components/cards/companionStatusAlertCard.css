@@ -1,0 +1,278 @@
+/*
+ * #4 状态不佳卡片的美化版样式。
+ *
+ * 用户明确要求这张卡片不跟 theme.css 走，直接用小伙伴系统自己的固定配色
+ * （跟 src/apps/companion/companionPage.css 的 .cp-root 那套 --cp-* 变量
+ * 完全同源，数值是从那边抄过来的，不 import 那个文件，避免两张
+ * 样式表产生耦合——这张卡片可能在小伙伴页面没打开的时候就要渲染）。
+ *
+ * 字体用的 ZCOOL KuaiLe，跟小伙伴页面同一个 @import，浏览器对同一个
+ * URL 的 @import 会自动去重，不会重复加载。
+ */
+@import url("https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Nunito:wght@500;700;800&display=swap");
+
+.csac-card {
+  --csac-bg: #F5FAFF;
+  --csac-card: #FFFFFF;
+  --csac-soft: #EDF5FD;
+  --csac-border: #DCEBF8;
+  --csac-text: #24415A;
+  --csac-sub: #5E819C;
+  --csac-muted: #9DB8CD;
+  --csac-accent: #3D9BEA;
+  --csac-on-accent: #FFFFFF;
+  --csac-accent-soft: #E1F0FE;
+  --csac-shadow: rgba(60, 120, 180, 0.22);
+  --csac-heart: #FF86A0;
+  --csac-heart-soft: #FFEAEF;
+  --csac-butter-bg: #FFF4C9;
+  --csac-butter-fg: #D19A0A;
+  --csac-sky-bg: #DCEEFF;
+  --csac-sky-fg: #2F86CC;
+  --csac-clean-ic: #5CB8E8;
+
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.6rem;
+  padding: 16px;
+  background: linear-gradient(160deg, var(--csac-card) 0%, var(--csac-soft) 100%);
+  border: 1.5px solid var(--csac-border);
+  box-shadow: 0 10px 24px -14px var(--csac-shadow);
+  font-family: "Nunito", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--csac-text);
+  max-height: 420px;
+  transition: max-height 0.32s ease, opacity 0.28s ease, padding 0.32s ease, margin 0.32s ease, border-width 0.32s ease;
+}
+
+.csac-card.is-collapsing {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.csac-blob-a {
+  position: absolute;
+  right: -20px;
+  top: -24px;
+  width: 86px;
+  height: 86px;
+  border-radius: 999px;
+  background: var(--csac-accent-soft);
+  pointer-events: none;
+}
+
+.csac-blob-b {
+  position: absolute;
+  left: -16px;
+  bottom: -20px;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  background: var(--csac-heart-soft);
+  pointer-events: none;
+}
+
+.csac-paw {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--csac-accent);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.csac-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.csac-avatar-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.csac-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 2px dashed var(--csac-accent);
+  opacity: 0.45;
+  animation: csac-spin 22s linear infinite;
+}
+
+@keyframes csac-spin {
+  to { transform: rotate(360deg); }
+}
+
+.csac-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--csac-accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1.5px var(--csac-border);
+}
+
+.csac-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.csac-avatar svg {
+  width: 20px;
+  height: 20px;
+  color: var(--csac-accent);
+}
+
+.csac-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.csac-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--csac-text);
+  font-family: "ZCOOL KuaiLe", "Nunito", sans-serif;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.csac-time {
+  font-size: 10.5px;
+  color: var(--csac-muted);
+}
+
+.csac-body {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 0 0 10px;
+  color: var(--csac-text);
+}
+
+.csac-chip-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.csac-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+}
+
+.csac-chip svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.csac-chip.satiety { background: var(--csac-butter-bg); color: var(--csac-butter-fg); }
+.csac-chip.mood { background: var(--csac-heart-soft); color: var(--csac-heart); }
+.csac-chip.cleanliness { background: var(--csac-sky-bg); color: var(--csac-sky-fg); }
+
+.csac-btn-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.csac-btn-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--csac-accent);
+  color: var(--csac-on-accent);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.csac-btn-main:active {
+  transform: scale(0.96);
+}
+
+.csac-btn-main svg {
+  width: 12px;
+  height: 12px;
+}
+
+.csac-btn-sub {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--csac-soft);
+  color: var(--csac-sub);
+  cursor: pointer;
+}
+
+/*
+ * 点"知道了"之后：按钮行原地换成这一句话（卡片本身不变矮，还是在卡片
+ * 范围内显示），维持一小会儿，再让外层 .csac-card 收起来。不用悬浮
+ * 气泡/toast——用户明确要求提示要"显示在卡片上"，不是另外弹一个通知。
+ */
+.csac-ack-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--csac-heart);
+  animation: csac-ack-in 0.22s ease both;
+}
+
+.csac-ack-row svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+@keyframes csac-ack-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

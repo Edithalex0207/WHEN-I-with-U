@@ -524,8 +524,9 @@ const MessageRow = ({
           ) : msg.type === 'companion_status_alert' ? (
             // 复用 onOpenCompanionOffer：它本来做的事就是"打开小伙伴页面"，
             // 跟这张卡片点击要跳转的地方完全一样，没必要再接一条新的 prop。
-            <CompanionStatusAlertCard
+                        <CompanionStatusAlertCard
               message={msg}
+              chatId={msg.chatId}
               onOpen={() => onOpenCompanionOffer?.()}
             />
                    ) : msg.type === 'bubble_css_card' ? (
