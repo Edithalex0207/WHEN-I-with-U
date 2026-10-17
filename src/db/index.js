@@ -5044,4 +5044,17 @@ db.version(93).stores({
   `,
 });
 
+// v94：上学第二个切片——随机收藏卡。卡池本身是静态数据（见
+// school/companionSchoolCardCatalog.js），不进数据库；这张表只存"抽到过
+// 哪些卡、各抽到了几张"。[companionId+cardId] 一张卡一行，count 直接累加，
+// 不单独建 count 的索引（只会按整行读，不会拿 count 去查询）。
+db.version(94).stores({
+  companionSchoolCards: `
+    ++id,
+    companionId,
+    cardId,
+    [companionId+cardId]
+  `,
+});
+
 export default db;

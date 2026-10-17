@@ -52,6 +52,15 @@ export const SET_REWARD = {
  */
 export const ACTIVITY_CHANCE = 0.35;
 
+/**
+ * 每做完一组题，有多大概率额外掉一张「收藏卡」（卡池见
+ * companionSchoolCardCatalog.js，roll 的逻辑在 companionSchoolCardService.js）。
+ * 跟 ACTIVITY_CHANCE 是两次独立的 roll，互不影响——一组题最多可能同时
+ * 收到一件小事 + 一张卡，也可能什么都没有。比小事稍微难一点，卡片才
+ * 显得有收藏价值。
+ */
+export const CARD_DROP_CHANCE = 0.3;
+
 /* ---------------- 科目 ---------------- */
 /*
  * id 同时是预设题 id 的中间段（'k-cn-007' 里的 cn）。

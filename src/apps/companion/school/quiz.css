@@ -95,6 +95,15 @@
 .qz-activity p { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--cp-text); line-height: 1.55; }
 .qz-activity p b { color: var(--sd-heart-deep, #D95F72); font-weight: 800; white-space: nowrap; }
 
+/* 结算页抽到收藏卡：小卡面 + 文字，色底复用 sd-tone-* */
+.qz-card-drop {
+  width: 100%; margin-top: 10px; background: var(--sd-t-bg); border-radius: 22px; padding: 10px 14px;
+  text-align: left; box-shadow: 0 8px 14px -10px var(--cp-shadow); display: flex; gap: 12px; align-items: center;
+}
+.qz-card-drop h6 { margin: 0 0 3px; font-size: 11.5px; color: var(--sd-t-fg); font-weight: 800; }
+.qz-card-drop p { margin: 0; font-size: 14px; font-weight: 800; color: var(--cp-text); }
+.qz-card-drop p small { font-size: 11.5px; font-weight: 800; color: var(--cp-muted); margin-left: 4px; }
+
 .qz-cool { font-size: 12px; color: var(--cp-muted); font-weight: 800; margin-top: 10px; }
 
 /* ================= 错题本 ================= */

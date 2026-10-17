@@ -35,11 +35,14 @@ import React, { useEffect, useState } from 'react';
 
 import './school.css';
 import './quiz.css';
+import './schoolCards.css';
 
 import { SET_REWARD, findSubject } from './companionSchoolData';
 import { startQuizSet, finishQuizSet } from './companionSchoolQuizService';
 import { rollCampusActivity } from './companionSchoolActivityService';
-import { CloseGlyph, CheckGlyph, StarGlyph, PetFace } from './SchoolArt';
+import { rollCollectibleCard } from './companionSchoolCardService';
+import { CARD_RARITY_LABELS } from './companionSchoolCardCatalog';
+import { CloseGlyph, CheckGlyph, StarGlyph, PetFace, CardArt } from './SchoolArt';
 
 const CHEER_RIGHT = ['答对啦！你好厉害', '哇，答对了！', '太棒啦，这题对了！', '好厉害，一下就对了！'];
 const CHEER_WRONG = ['没关系，下次一定会对的', '差一点点，再接再厉', '别灰心，下一题加油', '没事没事，再想想下一题'];
@@ -57,6 +60,7 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
   const [played, setPlayed] = useState([]); // [{ question, picked }]
   const [result, setResult] = useState(null); // finishQuizSet 的返回值
   const [activity, setActivity] = useState(null); // rollCampusActivity 的返回值，没中是 null
+  const [cardDrop, setCardDrop] = useState(null); // rollCollectibleCard 的返回值，没中是 null
   const [resultLine] = useState(() => pickRandom(RESULT_LINES));
   const [errorMsg, setErrorMsg] = useState('');
   const [finishing, setFinishing] = useState(false);
@@ -105,12 +109,14 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
       const res = await finishQuizSet(companion.id, played, { mode });
       setResult(res);
       onFinished?.(res);
-      // 顺带 roll 一次"校园小事"，没中/出错都不影响已经结算好的做题结果。
+      // 顺带 roll 一次"校园小事"和一次"收藏卡"，两次独立，互不影响；
+      // 没中/出错都不影响已经结算好的做题结果，所以结果不满意也不重试。
       rollCampusActivity(companion.id, {
         classId: res.status?.record?.classId,
         teacherId: res.status?.record?.teacherId,
         companionName: companion.name,
       }).then(setActivity).catch(() => setActivity(null));
+      rollCollectibleCard(companion.id).then(setCardDrop).catch(() => setCardDrop(null));
     } catch (err) {
       setErrorMsg(err?.message || '结算没有成功，再试一次吧');
     } finally {
@@ -212,6 +218,16 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
                     {activity.text}
                     {activity.moodDelta > 0 && <b> +{activity.moodDelta} 心情</b>}
                   </p>
+                </div>
+              </div>
+            )}
+
+            {cardDrop && (
+              <div className={`qz-card-drop sd-tone-${cardDrop.card.rarity === 'hidden' ? 'lavender' : cardDrop.card.rarity === 'rare' ? 'heart' : 'sky'}`}>
+                <CardArt card={cardDrop.card} size={52} />
+                <div>
+                  <h6>{cardDrop.isNew ? '获得新卡片' : '又抽到一张'} · {CARD_RARITY_LABELS[cardDrop.card.rarity]}</h6>
+                  <p>{cardDrop.card.title}{!cardDrop.isNew && <small> ×{cardDrop.count}</small>}</p>
                 </div>
               </div>
             )}

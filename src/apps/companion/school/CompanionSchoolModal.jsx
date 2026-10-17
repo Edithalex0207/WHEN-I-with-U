@@ -43,6 +43,7 @@ import './schoolHome.css';
 import { SCHOOL_STAGE_LABELS, SCHOOL_SUBJECTS, findSchoolClass, findSchoolTeacher } from './companionSchoolData';
 import { getSchoolStatus, getAlbum } from './companionSchoolService';
 import { getWrongBook, getCustomQuestions, QUIZ_MODE } from './companionSchoolQuizService';
+import { getCardCollection } from './companionSchoolCardService';
 import { getPetLine, resolvePetStatus } from './companionSchoolPetLines';
 import {
   CloseGlyph,
@@ -63,6 +64,7 @@ import CompanionSchoolWrongBookModal from './CompanionSchoolWrongBookModal';
 import CompanionSchoolReportModal from './CompanionSchoolReportModal';
 import CompanionSchoolAlbumModal from './CompanionSchoolAlbumModal';
 import CompanionSchoolCustomQuizModal from './CompanionSchoolCustomQuizModal';
+import CompanionSchoolCardsModal from './CompanionSchoolCardsModal';
 
 /** 「今天的小课堂」的题目来源分段，顺序跟预览一致 */
 const SOURCE_OPTIONS = [
@@ -85,6 +87,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [wrongCount, setWrongCount] = useState(0);
   const [customCount, setCustomCount] = useState(0);
   const [albumCount, setAlbumCount] = useState(0);
+  const [cardSummary, setCardSummary] = useState({ ownedKinds: 0, totalKinds: 0 });
   const [loading, setLoading] = useState(true);
 
   const [now, setNow] = useState(Date.now());
@@ -99,19 +102,22 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [showReport, setShowReport] = useState(false);
   const [showAlbum, setShowAlbum] = useState(false);
   const [showCustomQuiz, setShowCustomQuiz] = useState(false);
+  const [showCards, setShowCards] = useState(false);
 
   /* ---------------- 拉取 / 刷新数据 ---------------- */
   const refresh = async () => {
-    const [st, wrong, custom, album] = await Promise.all([
+    const [st, wrong, custom, album, cards] = await Promise.all([
       getSchoolStatus(companion.id),
       getWrongBook(companion.id),
       getCustomQuestions(companion.id),
       getAlbum(companion.id),
+      getCardCollection(companion.id),
     ]);
     setStatus(st);
     setWrongCount(wrong.length);
     setCustomCount(custom.length);
     setAlbumCount(album.length);
+    setCardSummary({ ownedKinds: cards.ownedKinds, totalKinds: cards.totalKinds });
     setLoading(false);
   };
 
@@ -373,6 +379,15 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
                     <span><b>学校相册</b><small>{albumCount} 张纪念卡</small></span>
                   </button>
                 </div>
+
+                {/* 收藏卡：单独一条横幅，跟相册（手动纪念卡）分开，做题随机掉落 */}
+                <button type="button" className="sh-cardbanner" onClick={() => setShowCards(true)}>
+                  <span className="sh-cardbanner-ic"><StarGlyph size={20} /></span>
+                  <span>
+                    <b>收藏卡</b>
+                    <small>已收集 {cardSummary.ownedKinds} / {cardSummary.totalKinds} 种 · 做题随机掉落</small>
+                  </span>
+                </button>
               </>
             )}
           </div>
@@ -444,6 +459,15 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
           character={character}
           onClose={() => {
             setShowCustomQuiz(false);
+            refresh();
+          }}
+        />
+      )}
+      {showCards && (
+        <CompanionSchoolCardsModal
+          companion={companion}
+          onClose={() => {
+            setShowCards(false);
             refresh();
           }}
         />

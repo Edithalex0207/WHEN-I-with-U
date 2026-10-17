@@ -7,7 +7,12 @@
  *   跟着老师的 tone 走）。
  * - ClassArt：schoolClass.url 有值就显示这张图，留空就显示内置的
  *   向日葵 / 云朵 / 小星星插画。
- * 想换图只要去 companionSchoolData.js 里把对应条目的 url 填上，不用改这里。
+ * - CardArt：收藏卡的卡面，card.url 有值就显示这张图，留空显示占位卡面
+ *   （纯色底 + 一个按稀有度而不同大小的小星星，没有像老师/班级那样画
+ *   具体的插画——21 张卡池，占位阶段故意画得简单，免得真图做出来之后
+ *   还要为了"占位图好看"返工）。
+ * 想换图只要去 companionSchoolData.js / companionSchoolCardCatalog.js 里把
+ * 对应条目的 url 填上，不用改这里。
  *
  * 所有 SVG 都是自包含的（不用 <symbol> / id 引用），同一个页面里渲染多少
  * 份都不会互相串。图标统一用 currentColor，颜色由外层 CSS 决定。
@@ -228,4 +233,39 @@ export const ClassArt = ({ schoolClass, size = 58 }) => {
   }
   const Art = CLASS_ART[schoolClass?.id] || StarArt;
   return <Art size={size} />;
+};
+
+/* ---------------- 收藏卡占位卡面 ---------------- */
+/**
+ * 收藏卡卡面。card.url 有值显示图片，否则显示占位卡面：底色用
+ * card.tone（走 .sd-tone-* 的 --sd-t-bg/--sd-t-fg），中间一颗小星星，
+ * 稀有/隐藏档星星更大一点；隐藏档额外带 is-hidden class，一圈微光由
+ * schoolCards.css 的 .sc-face.is-hidden 负责，这里不管颜色细节。
+ */
+export const CardArt = ({ card, size = 96 }) => {
+  if (card?.url) {
+    return (
+      <img
+        src={card.url}
+        alt={card.title}
+        width={size}
+        height={size}
+        draggable={false}
+        style={{ objectFit: 'cover', borderRadius: Math.round(size * 0.18) }}
+      />
+    );
+  }
+  const starSize = card?.rarity === 'hidden'
+    ? Math.round(size * 0.34)
+    : card?.rarity === 'rare'
+      ? Math.round(size * 0.28)
+      : Math.round(size * 0.22);
+  return (
+    <span
+      className={`sc-face sd-tone-${card?.tone || 'sky'}${card?.rarity === 'hidden' ? ' is-hidden' : ''}`}
+      style={{ width: size, height: size }}
+    >
+      <StarGlyph size={starSize} />
+    </span>
+  );
 };

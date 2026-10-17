@@ -165,6 +165,20 @@
   color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; padding: 0 6px; border: 2px solid #fff;
 }
 
+/* ================= 收藏卡横幅（四个入口下面单独一条，跟相册分开） ================= */
+.sh-cardbanner {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 22px; text-align: left;
+  margin-top: 10px; width: 100%; background: var(--sd-lav-bg, #EBE3FF); box-shadow: 0 10px 16px -12px var(--cp-shadow);
+  transition: transform 0.15s;
+}
+.sh-cardbanner:active { transform: scale(0.98); }
+.sh-cardbanner-ic {
+  flex: none; width: 38px; height: 38px; border-radius: 13px; background: #fff; color: var(--sd-lav-fg, #7B5FCF);
+  display: grid; place-items: center;
+}
+.sh-cardbanner b { display: block; font-family: var(--cp-font-display); font-weight: 400; font-size: 15px; color: var(--cp-text); }
+.sh-cardbanner small { font-size: 11px; font-weight: 800; color: var(--cp-sub); }
+
 /* ================= dock 按钮上的小红点 ================= */
 /* 用法：<span className="cp-dock-ico"><CompanionSchoolIcon /><b className="sh-dot" /></span>
    只在「还没入学」或「满 20 节可以升班」时渲染这个 <b>，别的时候不渲染（不是用 CSS 隐藏）。*/
