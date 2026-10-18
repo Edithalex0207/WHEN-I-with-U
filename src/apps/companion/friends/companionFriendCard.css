@@ -1,0 +1,124 @@
+/*
+ * 好友广场名片卡 + 留言弹窗样式（视觉预览 v2/v3 确认过的样子，原样
+ * 迁过来，颜色走 --cp-* 变量）。共享头像壳子 .cf-avatar 也在这里。
+ */
+
+/* ---- 共享头像壳子：有真图用 <img>，没有就是占位 SVG 小动物 ---- */
+.cf-avatar {
+  position: relative; flex: none; display: grid; place-items: center; border-radius: 50%;
+  border: 3px solid var(--cp-card); box-shadow: 0 0 0 1.5px var(--cp-border), 0 6px 10px -6px var(--cp-shadow);
+  overflow: hidden; width: 56px; height: 56px;
+}
+.cf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cf-avatar.sz-40 { width: 40px; height: 40px; }
+.cf-avatar.sz-44 { width: 44px; height: 44px; }
+
+/* ---- 广场：横向滑动名片卡 ---- */
+.deck {
+  display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 26px calc(50% - 125px) 16px; margin: 0 -14px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.deck::-webkit-scrollbar { display: none; }
+
+.pcard {
+  position: relative; flex: none; width: 250px; scroll-snap-align: center; padding: 0 16px 16px; text-align: center;
+  background: var(--cp-card); border: 1.5px solid var(--cp-border); border-radius: 26px; box-shadow: 0 16px 26px -16px var(--cp-shadow);
+  animation: cf-pop 0.45s cubic-bezier(.2, 1.5, .4, 1) both; animation-delay: calc(var(--i) * 70ms); color: var(--cp-text);
+}
+.pcard:nth-child(odd) { transform: rotate(-1deg); }
+.pcard:nth-child(even) { transform: rotate(1deg); }
+.pcard .hole {
+  position: absolute; top: 9px; left: 50%; width: 38px; height: 9px; transform: translateX(-50%);
+  border-radius: 999px; background: var(--cp-bg); box-shadow: 0 2px 3px rgba(60, 120, 180, .18) inset; z-index: 2;
+}
+.pcard .top { position: relative; margin: 0 -16px 0; padding: 30px 0 0; height: 118px; }
+.pcard .topbg { position: absolute; inset: 0; border-radius: 24px 24px 0 0; background: var(--bg, var(--cp-soft)); overflow: hidden; }
+.pcard .topbg::before, .pcard .topbg::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .55); }
+.pcard .topbg::before { width: 70px; height: 70px; right: -18px; top: -20px; }
+.pcard .topbg::after { width: 40px; height: 40px; left: -10px; bottom: 6px; }
+.pcard .big {
+  position: relative; z-index: 1; width: 92px; height: 92px; margin: 0 auto; border-radius: 50%; background: var(--cp-card);
+  border: 4px solid var(--cp-card); box-shadow: 0 8px 14px -8px rgba(36, 65, 90, .35); display: grid; place-items: center; transform: translateY(26px);
+}
+.pcard .big .cf-avatar { width: 100%; height: 100%; border: none; box-shadow: none; }
+.pcard .no { position: absolute; z-index: 2; top: 14px; right: 14px; font-size: 9.5px; font-weight: 800; letter-spacing: .5px; color: rgba(36, 65, 90, .45); }
+.pcard .nm { margin: 36px 0 6px; font-family: var(--cp-font-display); font-size: 19px; white-space: nowrap; }
+.pcard .traits { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
+
+.tag { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.tag.k1 { background: var(--cp-butter-bg); color: var(--cp-butter-fg); }
+.tag.k2 { background: var(--cp-sky-bg); color: var(--cp-sky-fg); }
+
+.decl { position: relative; margin: 0 0 14px; padding: 12px 14px 12px 16px; text-align: left; border-radius: 14px 14px 14px 4px; background: var(--cp-soft); }
+.decl small { display: block; margin-bottom: 4px; font-size: 9.5px; font-weight: 800; letter-spacing: .5px; color: var(--cp-accent); }
+.decl p { margin: 0; font-size: 12.5px; line-height: 1.8; color: var(--cp-text); }
+.decl::before { content: "\201C"; position: absolute; right: 10px; top: -2px; font-family: Georgia, serif; font-size: 34px; color: var(--cp-accent); opacity: .22; }
+
+.send {
+  width: 100%; border: none; border-radius: 999px; padding: 11px 0; background: var(--cp-heart); color: var(--cp-heart-fg);
+  font-size: 13px; font-weight: 800; box-shadow: 0 5px 0 #E86C88; transition: transform .08s, box-shadow .08s;
+}
+.send:active { transform: translateY(4px); box-shadow: 0 1px 0 #E86C88; }
+
+/* ---- 等待回复 ---- */
+.wait { display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 12px; border-radius: 16px; background: var(--cp-butter-bg); }
+.ring {
+  --p: 0; flex: none; width: 42px; height: 42px; border-radius: 50%;
+  background: conic-gradient(var(--cp-butter-fg) calc(var(--p) * 1%), rgba(209, 154, 10, .18) 0); display: grid; place-items: center;
+}
+.ring i { width: 32px; height: 32px; border-radius: 50%; background: var(--cp-butter-bg); display: grid; place-items: center; }
+.ring svg { width: 15px; height: 15px; color: var(--cp-butter-fg); }
+.wait b { display: block; font-size: 12px; color: var(--cp-butter-fg); white-space: nowrap; }
+.wait span { font-size: 10.5px; color: #A98410; white-space: nowrap; }
+
+.stampd {
+  position: absolute; z-index: 3; right: 12px; top: 96px; padding: 2px 10px; border: 2px solid var(--cp-butter-fg);
+  border-radius: 8px; color: var(--cp-butter-fg); font-family: var(--cp-font-display); font-size: 13px; transform: rotate(10deg);
+  opacity: .9; background: rgba(255, 255, 255, .85); white-space: nowrap;
+}
+.stampd.ok { border-color: var(--cp-mint-fg); color: var(--cp-mint-fg); }
+.stampd.declined { border-color: var(--cp-muted); color: var(--cp-sub); }
+
+/* ---- 同意：薄荷绿回复气泡 ---- */
+.reply { text-align: left; padding: 11px 13px; border-radius: 16px; background: var(--cp-mint-bg); animation: cf-pop 0.4s both; }
+.reply small { display: block; font-size: 9.5px; font-weight: 800; color: var(--cp-mint-fg); margin-bottom: 3px; }
+.reply p { margin: 0 0 9px; font-size: 12.5px; line-height: 1.75; color: #1C6B57; }
+.reply button { width: 100%; border: none; border-radius: 999px; padding: 9px 0; background: var(--cp-mint-fg); color: #fff; font-size: 12.5px; font-weight: 800; }
+
+/* ---- 婉拒：中性灰蓝回复气泡 + 重新申请/冷却 ---- */
+.decline-box { text-align: left; padding: 11px 13px; border-radius: 16px; background: var(--cp-soft); }
+.decline-box small { display: block; font-size: 9.5px; font-weight: 800; color: var(--cp-muted); margin-bottom: 3px; }
+.decline-box p { margin: 0 0 10px; font-size: 12.5px; line-height: 1.75; color: var(--cp-sub); }
+.cd-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cd-retry { flex: 1; border: none; border-radius: 999px; padding: 9px 0; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.cd-retry.off { background: var(--cp-border); color: var(--cp-muted); cursor: default; }
+.cd-retry.on { background: var(--cp-heart); color: var(--cp-heart-fg); box-shadow: 0 4px 0 #E86C88; }
+.cd-timer { font-size: 10.5px; font-weight: 800; color: var(--cp-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+@keyframes cf-pop { from { opacity: 0; transform: translateY(10px) scale(.95); } to { opacity: 1; } }
+
+/* ---- 留言弹窗 ---- */
+.cfn-modal {
+  position: relative; width: min(320px, calc(100vw - 44px)); background: var(--cp-card); border-radius: 22px;
+  border: 1.5px solid var(--cp-border); box-shadow: 0 20px 40px -16px var(--cp-shadow); padding: 20px 18px 18px;
+  animation: cfn-in .32s cubic-bezier(.3, 1.4, .5, 1) both; color: var(--cp-text);
+}
+@keyframes cfn-in { from { opacity: 0; transform: translateY(14px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.cfn-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.cfn-title { margin: 0; font-family: var(--cp-font-display); font-size: 15px; white-space: nowrap; }
+.cfn-sub { margin: 1px 0 0; font-size: 10.5px; color: var(--cp-muted); white-space: nowrap; }
+.cfn-modal textarea {
+  width: 100%; margin-top: 12px; height: 68px; resize: none; border: 1.5px solid var(--cp-border); border-radius: 14px;
+  padding: 10px 12px; font-family: var(--cp-font-body); font-size: 13px; color: var(--cp-text); background: var(--cp-soft); outline: none;
+}
+.cfn-modal textarea:focus { border-color: var(--cp-accent); }
+.cfn-modal textarea::placeholder { color: var(--cp-muted); }
+.cfn-counter { text-align: right; font-size: 10px; color: var(--cp-muted); margin: 4px 2px 14px; }
+.cfn-counter.near { color: var(--cp-butter-fg); }
+.cfn-btns { display: flex; gap: 10px; }
+.cfn-btn { flex: 1; border: none; border-radius: 999px; padding: 10px 0; font-size: 12.5px; font-weight: 800; }
+.cfn-btn.cancel { background: var(--cp-soft); color: var(--cp-sub); }
+.cfn-btn.ok { background: var(--cp-heart); color: var(--cp-heart-fg); box-shadow: 0 4px 0 #E86C88; }
+.cfn-btn:disabled { opacity: 0.6; }
+.cfn-btn.ok:active, .cfn-btn.cancel:active { transform: translateY(2px); }
+.cfn-hint { margin: 10px 2px 0; font-size: 10px; color: var(--cp-muted); line-height: 1.6; text-align: center; }

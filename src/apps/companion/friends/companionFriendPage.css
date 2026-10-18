@@ -1,0 +1,124 @@
+/*
+ * 好友页整体外壳：弹窗容器、广场/我的朋友标签、空状态、提示条。
+ *
+ * 渲染在 CompanionPage.jsx 的 .cp-root 里，复用 companionPage.css 里已有
+ * 的 .cp-overlay.center / .cp-backdrop，这里只写好友页自己专属的样式，
+ * 不改 companionPage.css 本身。颜色全部走 --cp-* 变量，跟商店/任务/
+ * 托管同源。
+ */
+
+.cfp-stage {
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(640px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  background: var(--cp-bg);
+  border-radius: 22px;
+  border: 1.5px solid var(--cp-border);
+  box-shadow: 0 20px 40px -16px var(--cp-shadow);
+  padding: 14px 14px 18px;
+  overflow: hidden;
+  animation: cfp-in 0.32s cubic-bezier(.3, 1.4, .5, 1) both;
+}
+
+@keyframes cfp-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cfp-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--cp-card);
+  color: var(--cp-sub);
+  font-size: 18px;
+  line-height: 1;
+  box-shadow: 0 4px 10px -4px var(--cp-shadow);
+}
+
+.cfp-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--cp-soft);
+  border-radius: 999px;
+  padding: 3px;
+  margin: 2px 30px 14px 0;
+  flex: none;
+}
+.cfp-ind {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background: var(--cp-card);
+  border-radius: 999px;
+  box-shadow: 0 3px 8px -4px var(--cp-shadow);
+  transition: transform 0.28s cubic-bezier(.3, 1.4, .5, 1);
+}
+.cfp-ind.r { transform: translateX(100%); }
+.cfp-tabs button {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: none;
+  padding: 8px 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--cp-muted);
+  white-space: nowrap;
+}
+.cfp-tabs button.on { color: var(--cp-accent); }
+.cfp-tab-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--cp-heart);
+  vertical-align: middle;
+}
+
+.cfp-pane { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+
+.plaza-head { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 4px; gap: 8px; }
+.plaza-head h4 { margin: 0; font-family: var(--cp-font-display); font-size: 15px; white-space: nowrap; color: var(--cp-text); }
+.plaza-head p { margin: 2px 0 0; font-size: 10.5px; color: var(--cp-muted); white-space: nowrap; }
+.refresh {
+  display: inline-flex; align-items: center; gap: 5px; border: none; background: var(--cp-accent); color: var(--cp-on-accent);
+  font-size: 12px; font-weight: 800; padding: 8px 14px; border-radius: 999px; white-space: nowrap;
+  box-shadow: 0 5px 0 #2F86CC; transition: transform .08s, box-shadow .08s; flex: none;
+}
+.refresh:active { transform: translateY(4px); box-shadow: 0 1px 0 #2F86CC; }
+.refresh:disabled { opacity: 0.6; }
+.refresh svg { width: 13px; height: 13px; }
+.refresh.spin svg { animation: cfp-spin 0.6s linear; }
+@keyframes cfp-spin { to { transform: rotate(360deg); } }
+
+.empty { text-align: center; font-size: 12px; color: var(--cp-muted); padding: 30px 8px; line-height: 1.8; }
+
+.cfp-mine-list { display: grid; gap: 10px; padding: 2px; }
+.cfp-mine-row {
+  display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center;
+  background: var(--cp-card); border: 1.5px solid var(--cp-border); border-radius: 16px; padding: 10px 12px;
+}
+.cfp-mine-info { min-width: 0; }
+.cfp-mine-info .nm { margin: 0; font-family: var(--cp-font-display); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--cp-text); }
+.cfp-mine-info .bio { margin: 2px 0 0; font-size: 10.5px; color: var(--cp-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cfp-mine-pts { font-size: 11px; font-weight: 800; color: var(--cp-heart); white-space: nowrap; }
+.cfp-mine-note { margin: 6px 2px 0; text-align: center; font-size: 10.5px; color: var(--cp-muted); line-height: 1.7; }
+
+.cfp-toast {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); max-width: calc(100% - 40px);
+  background: rgba(36, 65, 90, 0.88); color: #fff; font-size: 11.5px; font-weight: 700; padding: 8px 14px;
+  border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 8px 18px -10px rgba(0,0,0,.4);
+  animation: cp-fade 0.2s ease-out;
+}

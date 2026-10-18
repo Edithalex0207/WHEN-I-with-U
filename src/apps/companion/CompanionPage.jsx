@@ -69,6 +69,9 @@ import CompanionCustodyNote from './custody/CompanionCustodyNote';
 import CompanionCustodyLetter from './custody/CompanionCustodyLetter';
 import CompanionCustodyIcon from './custody/CompanionCustodyIcon';
 import { setCustodyEnabled, takePendingCustodyLetter } from './custody/companionCustodyService';
+import CompanionFriendPage from './friends/CompanionFriendPage';
+import CompanionFriendIcon from './friends/CompanionFriendIcon';
+import { getFriendDockBadgeCount, getCompanionSnapshot } from './friends/companionFriendService';
 import './companionPage.css';
 /*
  * 把用户上传的图片压到一个头像该有的尺寸、保留透明通道、输出 PNG。
@@ -259,6 +262,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showCustody, setShowCustody] = useState(false);
   const [custodyBusy, setCustodyBusy] = useState(false);
   const [custodyLetter, setCustodyLetter] = useState(null);
+  // 好友广场 + 我的朋友
+  const [showFriends, setShowFriends] = useState(false);
 
   // 每日任务：companion 对象每次更新（喂食/戳一戳/上学/……任何互动）
   // 都重新拉一次最新的任务进度——这些互动大多会改到 companion.dailyTasks
@@ -364,6 +369,14 @@ const CompanionPage = ({ chatId, character, onBack }) => {
     }
 
     setIsLoading(false);
+  };
+
+  // 好友页用：只刷新 companion 对象本身（friendPlaza/friends），
+  // 不用像 reload() 那样顺带查日志/背包/事件。
+  const refreshCompanionForFriends = async () => {
+    if (!companion) return;
+    const fresh = await getCompanionSnapshot(companion.id);
+    if (fresh) setCompanion(fresh);
   };
 
   // 小纸条上的开关：打开时会立刻跑一轮托管，跑完如果有信就直接弹出来。
@@ -1261,6 +1274,20 @@ const CompanionPage = ({ chatId, character, onBack }) => {
             </button>
             <button
               type="button"
+              onClick={() => setShowFriends(true)}
+              className="cp-dock-btn"
+              aria-label="好友"
+            >
+              <span className="cp-dock-ico">
+                <CompanionFriendIcon />
+                {getFriendDockBadgeCount(companion) > 0 && (
+                  <b className="cp-badge">{getFriendDockBadgeCount(companion)}</b>
+                )}
+              </span>
+              好友
+            </button>
+            <button
+              type="button"
               onClick={() => setShowBackpack(true)}
               className="cp-dock-btn"
               aria-label="背包"
@@ -1483,6 +1510,14 @@ const CompanionPage = ({ chatId, character, onBack }) => {
           letter={custodyLetter}
           characterName={character?.name}
           onClose={() => setCustodyLetter(null)}
+        />
+      )}
+
+      {showFriends && (
+        <CompanionFriendPage
+          companion={companion}
+          onRefresh={refreshCompanionForFriends}
+          onClose={() => setShowFriends(false)}
         />
       )}
 

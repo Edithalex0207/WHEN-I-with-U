@@ -6,6 +6,7 @@ import { AWAY_RETURN_TYPE } from './away/awayState';
 import { executeAwayReturn } from './away/awayService';
 import { checkCompanionsForNeglect } from '../companion/companionService';
 import { runCustodyTick } from '../companion/custody/companionCustodyService';
+import { runFriendTick } from '../companion/friends/companionFriendService';
 import { hasAnyLiveCall } from '../../services/callService';
 
 
@@ -1248,6 +1249,8 @@ export const checkAndSendDueScheduledMessages =
       void checkCompanionsForNeglect();
       // 托管给角色：开着托管的小伙伴，顺路在这里替用户把日常照顾做掉。
       void runCustodyTick();
+      // 好友广场：到点了的好友申请，顺路在这里生成同意/婉拒的回复。
+      void runFriendTick();
     } catch (companionCheckError) {
       console.error('[Companion] 巡检调用失败:', companionCheckError);
     }
