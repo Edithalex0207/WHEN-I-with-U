@@ -1,0 +1,64 @@
+/*
+ * "蹭饭"信件专属的一小块样式：双头像 + 中间爱心的头图，以及它在
+ * "最近的动态"时间线里的贴纸/气泡样子。信纸本身的壳子（.ccl-letter/
+ * .ccl-tape/.ccl-title/.ccl-chips/.ccl-btn...）全部来自
+ * ../custody/companionCustodyLetter.css，这里不重复定义。
+ */
+
+.cfm-letter { padding-top: 22px; }
+
+.cfm-duo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 12px;
+}
+
+.cfm-av {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  border: 3px solid var(--cp-card);
+  box-shadow: 0 0 0 1.5px var(--cp-border), 0 6px 10px -6px var(--cp-shadow);
+}
+.cfm-av.companion { background: var(--cp-soft); display: grid; place-items: center; }
+.cfm-av.companion img { width: 100%; height: 100%; object-fit: cover; }
+.cfm-av.friend .cf-avatar { width: 100%; height: 100%; border: none; box-shadow: none; }
+
+.cfm-heart {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: var(--cp-heart);
+  animation: cfm-beat 1.1s ease-in-out infinite;
+}
+.cfm-heart svg { width: 18px; height: 18px; }
+@keyframes cfm-beat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+/* ---- 在"最近的动态"里回看：黄油暖色贴纸 + 气泡 + 小标签（跟 custody 的粉色区分开） ---- */
+.cp-tl-item.friend_meal { --k-bg: var(--cp-butter-bg); --k-fg: var(--cp-butter-fg); --k-soft: #FFF9E3; }
+.cp-tl-item.friend_meal .cp-sticker {
+  background: linear-gradient(160deg, #FFD88A, var(--cp-butter-fg));
+  color: #fff;
+}
+.cp-tl-item.friend_meal .cp-tl-bubble {
+  background: linear-gradient(170deg, #FFFFFF 0%, var(--cp-butter-bg) 140%);
+}
+.cp-tl-tag.friend_meal {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--cp-butter-fg);
+  font-size: 9.5px;
+  font-weight: 800;
+}

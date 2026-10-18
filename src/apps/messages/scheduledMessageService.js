@@ -7,6 +7,7 @@ import { executeAwayReturn } from './away/awayService';
 import { checkCompanionsForNeglect } from '../companion/companionService';
 import { runCustodyTick } from '../companion/custody/companionCustodyService';
 import { runFriendTick } from '../companion/friends/companionFriendService';
+import { runFriendMealTick } from '../companion/friends/companionFriendMealService';
 import { hasAnyLiveCall } from '../../services/callService';
 
 
@@ -1247,6 +1248,12 @@ export const checkAndSendDueScheduledMessages =
      */
     try {
       void checkCompanionsForNeglect();
+      // 蹭饭：排在 runCustodyTick 前面调用，让蹭饭顶高的 satiety 有更大
+      // 概率在同一轮巡检里被托管的自动购买判断看到、从而跳过喂食这一项
+      // （这两个都是 void 掉的 fire-and-forget，严格同步顺序不保证；
+      // 就算这一轮没赶上，satiety 已经涨了，下一轮 2 分钟后的巡检一样
+      // 会跳过，不是必须原子完成的事）。
+      void runFriendMealTick();
       // 托管给角色：开着托管的小伙伴，顺路在这里替用户把日常照顾做掉。
       void runCustodyTick();
       // 好友广场：到点了的好友申请，顺路在这里生成同意/婉拒的回复。

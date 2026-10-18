@@ -17,6 +17,7 @@ import {
   Upload,
   UtensilsCrossed,
   X,
+    HeartHandshake,
 } from 'lucide-react';
 
 import {
@@ -70,6 +71,8 @@ import CompanionCustodyLetter from './custody/CompanionCustodyLetter';
 import CompanionCustodyIcon from './custody/CompanionCustodyIcon';
 import { setCustodyEnabled, takePendingCustodyLetter } from './custody/companionCustodyService';
 import CompanionFriendPage from './friends/CompanionFriendPage';
+import CompanionFriendMealLetter from './friends/CompanionFriendMealLetter';
+import { takePendingFriendMealLetter } from './friends/companionFriendMealService';
 import CompanionFriendIcon from './friends/CompanionFriendIcon';
 import { getFriendDockBadgeCount, getCompanionSnapshot } from './friends/companionFriendService';
 import './companionPage.css';
@@ -184,6 +187,7 @@ const LOG_KINDS = {
   visit: { label: '来看过', icon: Heart },
   custody: { label: '贴心照顾', icon: Heart },
   other: { label: '动态', icon: Sparkles },
+    friend_meal: { label: '蹭饭', icon: HeartHandshake },
 };
 
 const matchLogKind = (text) => {
@@ -202,6 +206,7 @@ const matchLogKind = (text) => {
 const getLogKind = (log) => {
   if (log.logType === 'co_care') return 'visit';
   if (log.logType === 'custody_care') return 'custody';
+    if (log.logType === 'friend_meal') return 'friend_meal';
   return matchLogKind(log.logType) || matchLogKind(log.content) || 'other';
 };
 
@@ -264,6 +269,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [custodyLetter, setCustodyLetter] = useState(null);
   // 好友广场 + 我的朋友
   const [showFriends, setShowFriends] = useState(false);
+    const [mealLetter, setMealLetter] = useState(null);
 
   // 每日任务：companion 对象每次更新（喂食/戳一戳/上学/……任何互动）
   // 都重新拉一次最新的任务进度——这些互动大多会改到 companion.dailyTasks
@@ -341,7 +347,6 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const sheetRef = useRef(null);
   const peekRef = useRef(null);
   const dragRef = useRef(null);
-
   const reload = async () => {
     const { companion: found, newEvents } = await openCompanionSession(chatId);
     setCompanion(found);
@@ -366,10 +371,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         const pendingLetter = await takePendingCustodyLetter(found.id);
         if (pendingLetter) setCustodyLetter(pendingLetter);
       } catch (_) { /* 静默失败，不影响页面加载 */ }
+
+      // 蹭饭期间攒下的"蹭饭"信，跟贴心照顾信一样用户回来时弹一次。
+      try {
+        const pendingMealLetter = await takePendingFriendMealLetter(found.id);
+        if (pendingMealLetter) setMealLetter(pendingMealLetter);
+      } catch (_) { /* 静默失败，不影响页面加载 */ }
     }
 
     setIsLoading(false);
   };
+
 
   // 好友页用：只刷新 companion 对象本身（friendPlaza/friends），
   // 不用像 reload() 那样顺带查日志/背包/事件。
@@ -1420,12 +1432,15 @@ const CompanionPage = ({ chatId, character, onBack }) => {
                               ? `${character?.name || 'TA'} 自己来看过`
                               : kind === 'custody'
                                 ? `${character?.name || 'TA'} 帮忙照顾好了`
-                                : label}
+                                : kind === 'friend_meal'
+                                  ? '朋友来蹭饭了'
+                                  : label}
                           </b>
                           {time && <time>{time}</time>}
                         </div>
                         <p>{log.content}</p>
                         {kind === 'custody' && <span className="cp-tl-tag custody">贴心照顾 · 托管</span>}
+                                                {kind === 'friend_meal' && <span className="cp-tl-tag friend_meal">蹭饭 · 自动触发</span>}
                       </div>
                     </li>
                   );
@@ -1514,6 +1529,15 @@ const CompanionPage = ({ chatId, character, onBack }) => {
           letter={custodyLetter}
           characterName={character?.name}
           onClose={() => setCustodyLetter(null)}
+        />
+      )}
+
+            {!custodyLetter && mealLetter && (
+        <CompanionFriendMealLetter
+          letter={mealLetter}
+          companionName={companion.name}
+          companionAvatarUrl={companion.avatarUrl}
+          onClose={() => setMealLetter(null)}
         />
       )}
 
