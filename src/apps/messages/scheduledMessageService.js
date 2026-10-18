@@ -5,6 +5,7 @@ import { syncScheduledTaskToCloud } from '../../services/cloudPushService';
 import { AWAY_RETURN_TYPE } from './away/awayState';
 import { executeAwayReturn } from './away/awayService';
 import { checkCompanionsForNeglect } from '../companion/companionService';
+import { runCustodyTick } from '../companion/custody/companionCustodyService';
 import { hasAnyLiveCall } from '../../services/callService';
 
 
@@ -1245,6 +1246,8 @@ export const checkAndSendDueScheduledMessages =
      */
     try {
       void checkCompanionsForNeglect();
+      // 托管给角色：开着托管的小伙伴，顺路在这里替用户把日常照顾做掉。
+      void runCustodyTick();
     } catch (companionCheckError) {
       console.error('[Companion] 巡检调用失败:', companionCheckError);
     }

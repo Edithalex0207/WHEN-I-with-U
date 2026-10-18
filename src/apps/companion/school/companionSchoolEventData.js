@@ -32,7 +32,7 @@ export const SEASON_EVENTS = {
     tone: 'spring', // 对应 schoolEvent.css 的 .ev-banner.is-spring / .ev-scene-card.is-spring
     noticeText: '本周五我们将组织全班小朋友前往公园开展"春游"活动，一起去看看春天的样子。'
       + '请确认{name}是否可以参加，并为TA准备一点零食和一壶水。',
-    groupPhotoUrl: '', // 结算合影里的"全班合照"占位框，留空 = 虚线占位框，填了图就显示真实合照
+    groupPhotoUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/eu7f/1024X1024/gi2-e1792229365.png/webp', // 春游全班合照
   },
   autumn_outing: {
     id: 'autumn_outing',
@@ -41,7 +41,7 @@ export const SEASON_EVENTS = {
     tone: 'autumn',
     noticeText: '本周五我们将组织全班小朋友前往公园开展"秋游"活动，一起去捡捡落叶、晒晒太阳。'
       + '请确认{name}是否可以参加，并为TA准备一点零食和一壶水。',
-    groupPhotoUrl: '',
+    groupPhotoUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/p1yU/1280X1280/dddf927a238a4bd2a73062c320654c59.png/webp', // 秋游全班合照
   },
 };
 
@@ -57,14 +57,54 @@ export const SNACK_PICK_MIN = 1;
 export const SNACK_PICK_MAX = 3;
 
 export const SNACK_POOL = [
-  { id: 'strawberry-candy', name: '草莓软糖', desc: '酸酸甜甜，怎么吃都不腻', url: '' },
-  { id: 'cookie', name: '小饼干', desc: '一口一个，根本停不下来', url: '' },
-  { id: 'chocolate', name: '巧克力豆', desc: '小小一颗，甜到心里', url: '' },
-  { id: 'raisin', name: '葡萄干', desc: '甜甜的，还带点嚼劲', url: '' },
-  { id: 'seaweed', name: '海苔片', desc: '咸咸脆脆，停不下来的那种', url: '' },
-  { id: 'lollipop', name: '棒棒糖', desc: '甜得很慢，能舔很久', url: '' },
-  { id: 'milk-box', name: '牛奶盒', desc: '插上吸管，咕嘟咕嘟', url: '' },
-  { id: 'apple', name: '小苹果', desc: '脆脆的，咬一口汁水四溅', url: '' },
+  {
+    id: 'strawberry-candy',
+    name: '草莓软糖',
+    desc: '酸酸甜甜，怎么吃都不腻',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/A3JL/1225X1115/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D6727291870786771879%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
+  {
+    id: 'cookie',
+    name: '小饼干',
+    desc: '一口一个，根本停不下来',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/Utfb/1291X1426/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D7589155996901620503%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
+  {
+    id: 'chocolate',
+    name: '巧克力豆',
+    desc: '小小一颗，甜到心里',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/3G1G/1349X1743/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D1056727306293950987%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
+  {
+    id: 'raisin',
+    name: '葡萄干',
+    desc: '甜甜的，还带点嚼劲',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/Iypz/1674X1741/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D7146224855925094698%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
+  {
+    id: 'seaweed',
+    name: '海苔片',
+    desc: '咸咸脆脆，停不下来的那种',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/Y75V/1350X1234/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D5209777935916091606%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
+  {
+    id: 'lollipop',
+    name: '棒棒糖',
+    desc: '甜得很慢，能舔很久',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/JFQX/872X1355/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D657888298677368259%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
+  {
+    id: 'milk-box',
+    name: '牛奶盒',
+    desc: '插上吸管，咕嘟咕嘟',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/vjWy/1216X1325/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D3865928720038065024%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
+  {
+    id: 'apple',
+    name: '小苹果',
+    desc: '脆脆的，咬一口汁水四溅',
+    url: 'https://img.pagehost.cn/autoupload/amqnh/20261018/wize/1216X1723/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D6454977092060386349%26skey%3D%40crypt_5a237c93_47e8a50dc367fb733fd08a1713f91ebf%26mmweb_appid%3Dwx_webfilehelper.jpg/webp',
+  },
 ];
 
 export const findSnack = (id) => SNACK_POOL.find((s) => s.id === id) || null;
@@ -81,7 +121,7 @@ export const EVENT_ROUNDS = {
   spring_outing: [
     {
       scene: '刚到公园，草坪上开满了不知名的小黄花，{name}蹲下来看了好久。',
-      sceneUrl: '',
+      sceneUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/wmlf/1024X1024/gi2-e1792296008.png/webp',
       choices: [
         { label: '摘一朵带回去', tag: 'wild' },
         { label: '看看就好，不摘它', tag: 'gentle' },
@@ -89,7 +129,7 @@ export const EVENT_ROUNDS = {
     },
     {
       scene: '午饭时间，{name}的零食看起来特别香，旁边的同学忍不住多看了两眼。',
-      sceneUrl: '',
+      sceneUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/S9ZW/1024X1024/gi2-e1792296635.png/webp',
       choices: [
         { label: '分一点给同学', tag: 'gentle' },
         { label: '自己悄悄吃完', tag: 'wild' },
@@ -97,7 +137,7 @@ export const EVENT_ROUNDS = {
     },
     {
       scene: '集合的哨声响了，可是草地那边有只蝴蝶飞得特别好看。',
-      sceneUrl: '',
+      sceneUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/5zBv/1024X1024/gi2-e1792296245.png/webp',
       choices: [
         { label: '准时跑回去集合', tag: 'gentle' },
         { label: '再多追一会儿蝴蝶', tag: 'wild' },
@@ -107,7 +147,7 @@ export const EVENT_ROUNDS = {
   autumn_outing: [
     {
       scene: '刚下车，地上已经积了一层厚厚的落叶，踩上去沙沙作响。',
-      sceneUrl: '',
+      sceneUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/FL0Z/1024X1024/gi2-e1792296254.png/webp',
       choices: [
         { label: '使劲踩一踩，听听声音', tag: 'wild' },
         { label: '小心绕过去，怕弄脏鞋子', tag: 'gentle' },
@@ -115,7 +155,7 @@ export const EVENT_ROUNDS = {
     },
     {
       scene: '午饭时间，{name}的零食看起来特别好吃，同桌已经盯着看了好一会儿了。',
-      sceneUrl: '',
+      sceneUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/S9ZW/1024X1024/gi2-e1792296635.png/webp',
       choices: [
         { label: '分一半零食给同桌', tag: 'gentle' },
         { label: '悄悄自己吃完', tag: 'wild' },
@@ -123,7 +163,7 @@ export const EVENT_ROUNDS = {
     },
     {
       scene: '集合时间快到了，池塘里有几条鱼游得正欢。',
-      sceneUrl: '',
+      sceneUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261018/o18T/1024X1024/gi2-e1792297582.png/webp',
       choices: [
         { label: '准时回去集合', tag: 'gentle' },
         { label: '多看一会儿鱼', tag: 'wild' },

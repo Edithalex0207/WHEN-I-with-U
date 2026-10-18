@@ -1,0 +1,145 @@
+/*
+ * "贴心照顾"信件弹窗 + 它在"最近的动态"时间线里的样子（预览 v3 确认过）。
+ *
+ * 全部复用 .cp-root 里的 --cp-* 变量；时间线那段只覆盖 companionPage.css
+ * 里已有的 .cp-tl-item 变量/贴纸/气泡，不改原样式表。
+ */
+
+.ccl-overlay { --ccl-bounce: cubic-bezier(.34, 1.7, .5, 1); }
+
+.ccl-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px 0;
+}
+
+.ccl-letter {
+  position: relative;
+  width: min(300px, calc(100vw - 44px));
+  padding: 26px 18px 16px;
+  text-align: center;
+  background: linear-gradient(170deg, #FFFFFF 0%, var(--cp-soft) 100%);
+  border: 1.5px solid var(--cp-border);
+  border-radius: 20px;
+  box-shadow: 0 18px 36px -14px var(--cp-shadow);
+  color: var(--cp-text);
+  animation: ccl-in 0.4s var(--ccl-bounce) both;
+}
+
+@keyframes ccl-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.93); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ccl-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 76px;
+  height: 22px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: var(--cp-accent-soft);
+  border: 1px dashed var(--cp-accent);
+  border-radius: 3px;
+}
+
+.ccl-seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #FFB3C4, var(--cp-heart));
+  box-shadow: 0 6px 14px -4px rgba(255, 134, 160, 0.55), 0 0 0 3px #fff;
+  color: #fff;
+}
+.ccl-seal svg { width: 20px; height: 20px; }
+
+.ccl-title {
+  margin: 0 0 8px;
+  font-family: var(--cp-font-display);
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ccl-body {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--cp-sub);
+}
+
+.ccl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ccl-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ccl-chip.feed { background: var(--cp-butter-bg); color: var(--cp-butter-fg); }
+.ccl-chip.clean { background: var(--cp-sky-bg); color: var(--cp-sky-fg); }
+.ccl-chip.play { background: var(--cp-heart-soft); color: var(--cp-heart); }
+
+.ccl-row {
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.ccl-row.buy { background: var(--cp-accent-soft); color: var(--cp-sky-fg); }
+.ccl-row.short { background: var(--cp-butter-bg); color: var(--cp-butter-fg); }
+
+.ccl-btn {
+  width: 100%;
+  margin-top: 2px;
+  padding: 9px 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--cp-accent);
+  color: var(--cp-on-accent);
+  font-family: var(--cp-font-body);
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.ccl-btn:active { transform: scale(0.96); }
+
+.ccl-sign { margin: 9px 0 0; font-size: 10px; color: var(--cp-muted); }
+
+/* ---- 在"最近的动态"里回看：粉色渐变贴纸 + 渐变气泡 + 小标签 ---- */
+.cp-tl-item.custody { --k-bg: #FBD9E0; --k-fg: var(--cp-heart); --k-soft: #FFF2F5; }
+.cp-tl-item.custody .cp-sticker {
+  background: linear-gradient(160deg, #FFB3C4, var(--cp-heart));
+  color: #fff;
+}
+.cp-tl-item.custody .cp-tl-bubble {
+  background: linear-gradient(170deg, #FFFFFF 0%, var(--cp-heart-soft) 140%);
+}
+.cp-tl-tag.custody {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--cp-heart);
+  font-size: 9.5px;
+  font-weight: 800;
+}

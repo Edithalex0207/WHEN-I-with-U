@@ -330,7 +330,7 @@ export const setCompanionScene = async (companionId, sceneId) => {
 
 // ---- 状态衰减 ----
 
-const applyTimeDecay = async (companion) => {
+export const applyTimeDecay = async (companion) => {
   const now = Date.now();
   const lastDecayed = companion.lastDecayedAt || companion.createdAt || now;
   const hoursElapsed = hoursSince(lastDecayed, now);

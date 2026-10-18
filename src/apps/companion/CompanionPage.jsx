@@ -65,6 +65,10 @@ import { getSchoolStatus } from './school/companionSchoolService';
 import CompanionTasksModal from './tasks/CompanionTasksModal';
 import CompanionTasksIcon from './tasks/CompanionTasksIcon';
 import { getDailyTaskView } from './tasks/companionTaskService';
+import CompanionCustodyNote from './custody/CompanionCustodyNote';
+import CompanionCustodyLetter from './custody/CompanionCustodyLetter';
+import CompanionCustodyIcon from './custody/CompanionCustodyIcon';
+import { setCustodyEnabled, takePendingCustodyLetter } from './custody/companionCustodyService';
 import './companionPage.css';
 /*
  * 把用户上传的图片压到一个头像该有的尺寸、保留透明通道、输出 PNG。
@@ -175,6 +179,7 @@ const LOG_KINDS = {
   buy: { label: '购物', icon: ShoppingBag },
   rename: { label: '改名', icon: Pencil },
   visit: { label: '来看过', icon: Heart },
+  custody: { label: '贴心照顾', icon: Heart },
   other: { label: '动态', icon: Sparkles },
 };
 
@@ -193,6 +198,7 @@ const matchLogKind = (text) => {
 // 先看 logType，认不出来再从内容里找关键词
 const getLogKind = (log) => {
   if (log.logType === 'co_care') return 'visit';
+  if (log.logType === 'custody_care') return 'custody';
   return matchLogKind(log.logType) || matchLogKind(log.content) || 'other';
 };
 
@@ -249,6 +255,10 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [schoolDotOn, setSchoolDotOn] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
   const [taskView, setTaskView] = useState(null);
+  // 托管给角色：小纸条面板 / 处理中 / 还没弹过的"贴心照顾"信
+  const [showCustody, setShowCustody] = useState(false);
+  const [custodyBusy, setCustodyBusy] = useState(false);
+  const [custodyLetter, setCustodyLetter] = useState(null);
 
   // 每日任务：companion 对象每次更新（喂食/戳一戳/上学/……任何互动）
   // 都重新拉一次最新的任务进度——这些互动大多会改到 companion.dailyTasks
@@ -345,9 +355,37 @@ const CompanionPage = ({ chatId, character, onBack }) => {
       if (newEvents.length > 0) {
         setEventPopup(newEvents[0]);
       }
+
+      // 托管期间攒下的"贴心照顾"信：用户回来时弹一次，取走即清空。
+      try {
+        const pendingLetter = await takePendingCustodyLetter(found.id);
+        if (pendingLetter) setCustodyLetter(pendingLetter);
+      } catch (_) { /* 静默失败，不影响页面加载 */ }
     }
 
     setIsLoading(false);
+  };
+
+  // 小纸条上的开关：打开时会立刻跑一轮托管，跑完如果有信就直接弹出来。
+  const handleToggleCustody = async () => {
+    if (!companion || custodyBusy) return;
+    setCustodyBusy(true);
+    try {
+      const updated = await setCustodyEnabled(companion.id, !companion.custodyEnabled);
+      if (updated) setCompanion(updated);
+      setLogs(await getRecentLogs(companion.id));
+      if (updated?.custodyEnabled) {
+        const letter = await takePendingCustodyLetter(companion.id);
+        if (letter) {
+          setShowCustody(false);
+          setCustodyLetter(letter);
+        }
+      }
+    } catch (error) {
+      showFeedback(error.message || '这次没拜托成功，请再试一次。');
+    } finally {
+      setCustodyBusy(false);
+    }
   };
 
   useEffect(() => {
@@ -1211,6 +1249,18 @@ const CompanionPage = ({ chatId, character, onBack }) => {
             </button>
             <button
               type="button"
+              onClick={() => setShowCustody(true)}
+              className="cp-dock-btn"
+              aria-label="托管给角色"
+            >
+              <span className={`cp-dock-ico ${companion.custodyEnabled ? 'custody-on' : ''}`}>
+                <CompanionCustodyIcon />
+                {companion.custodyEnabled && <b className="cp-custody-dot" />}
+              </span>
+              托管
+            </button>
+            <button
+              type="button"
               onClick={() => setShowBackpack(true)}
               className="cp-dock-btn"
               aria-label="背包"
@@ -1334,10 +1384,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
                       <span className="cp-sticker"><KindIcon className="cp-ic" /></span>
                       <div className="cp-tl-bubble">
                         <div className="cp-tl-meta">
-                          <b>{kind === 'visit' ? `${character?.name || 'TA'} 自己来看过` : label}</b>
+                          <b>
+                            {kind === 'visit'
+                              ? `${character?.name || 'TA'} 自己来看过`
+                              : kind === 'custody'
+                                ? `${character?.name || 'TA'} 帮忙照顾好了`
+                                : label}
+                          </b>
                           {time && <time>{time}</time>}
                         </div>
                         <p>{log.content}</p>
+                        {kind === 'custody' && <span className="cp-tl-tag custody">贴心照顾 · 托管</span>}
                       </div>
                     </li>
                   );
@@ -1409,6 +1466,24 @@ const CompanionPage = ({ chatId, character, onBack }) => {
 
       {showTasks && (
         <CompanionTasksModal view={taskView} onClose={() => setShowTasks(false)} />
+      )}
+
+      {showCustody && (
+        <CompanionCustodyNote
+          enabled={Boolean(companion.custodyEnabled)}
+          busy={custodyBusy}
+          characterName={character?.name}
+          onToggle={handleToggleCustody}
+          onClose={() => setShowCustody(false)}
+        />
+      )}
+
+      {custodyLetter && (
+        <CompanionCustodyLetter
+          letter={custodyLetter}
+          characterName={character?.name}
+          onClose={() => setCustodyLetter(null)}
+        />
       )}
 
       {showFortune && (
