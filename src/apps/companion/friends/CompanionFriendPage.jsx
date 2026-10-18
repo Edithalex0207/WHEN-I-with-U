@@ -1,28 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import {
-  DAILY_SOCIAL_QUOTA,
   getFriendPlazaView,
   rerollFriendPlaza,
   sendFriendRequest,
   retryFriendRequest,
+  interactWithFriend,
+  visitFriend,
+  giftToFriend,
 } from './companionFriendService';
 import CompanionFriendCard from './CompanionFriendCard';
 import CompanionFriendNoteModal from './CompanionFriendNoteModal';
-import CompanionFriendAvatarView from './CompanionFriendAvatarView';
+import CompanionFriendMineCard from './CompanionFriendMineCard';
 import './companionFriendPage.css';
 import './companionFriendCard.css';
 
 /*
  * 好友页：广场 / 我的朋友 两个标签（视觉预览 v2/v3 确认过）。
  *
- * 这一版（好友广场 slice）只做广场本身 + 我的朋友的只读列表——互动/
- * 送礼/串门三个社交按钮放在下一块交付，这里先让用户能看到已经加好的
- * 朋友、确认申请-等待-回复整条链路没问题。
+ * "我的朋友"标签下每张卡片用 CompanionFriendMineCard 渲染，三个社交
+ * 按钮（互动/送礼/串门）调用的 interactWithFriend/giftToFriend/
+ * visitFriend 都在 companionFriendService.js 里；送礼要知道背包里有
+ * 什么，所以 backpackItems 由 CompanionPage.jsx 传进来（那边本来就在
+ * reload() 里读了 getBackpack，不用再开一条新的数据源）。
  *
  * 渲染在 CompanionPage.jsx 的 .cp-root 里，直接用 cp-overlay 的壳子。
  */
-const CompanionFriendPage = ({ companion, onClose, onRefresh }) => {
+const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) => {
   const [tab, setTab] = useState('plaza');
   const [loading, setLoading] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -98,6 +102,10 @@ const CompanionFriendPage = ({ companion, onClose, onRefresh }) => {
     setHasNewFriend(false);
   };
 
+  const handleInteract = (friend) => interactWithFriend(companion.id, friend.id).then(() => onRefresh?.());
+  const handleVisit = (friend) => visitFriend(companion.id, friend.id).then(() => onRefresh?.());
+  const handleGift = (friend, itemId) => giftToFriend(companion.id, friend.id, itemId).then(() => onRefresh?.());
+
   if (!companion) return null;
 
   return (
@@ -160,16 +168,16 @@ const CompanionFriendPage = ({ companion, onClose, onRefresh }) => {
             ) : (
               <div className="cfp-mine-list">
                 {friends.map((friend) => (
-                  <div key={friend.id} className="cfp-mine-row">
-                    <CompanionFriendAvatarView avatarId={friend.avatarId} className="sz-44" />
-                    <div className="cfp-mine-info">
-                      <p className="nm">{friend.name}</p>
-                      <p className="bio">{`${friend.k1} · ${friend.k2}`}</p>
-                    </div>
-                    <div className="cfp-mine-pts">{`${friend.friendship} / 100`}</div>
-                  </div>
+                  <CompanionFriendMineCard
+                    key={friend.id}
+                    friend={friend}
+                    backpackItems={backpackItems || []}
+                    onInteract={handleInteract}
+                    onVisit={handleVisit}
+                    onGift={handleGift}
+                    onFeedback={showFeedback}
+                  />
                 ))}
-                <p className="cfp-mine-note">互动 / 送礼 / 串门即将上线，每位朋友每天共 {DAILY_SOCIAL_QUOTA} 次</p>
               </div>
             )}
           </div>

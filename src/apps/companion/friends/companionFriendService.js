@@ -7,19 +7,23 @@
  *   companion.friendPlaza  当前广场候选数组，见 FriendCandidate 的注释
  *   companion.friends      好友数组，见 FriendRecord 的注释
  *
- * 依赖方向：本文件 import companionFriendAiService.js / 头像池；
- * 反过来它们都不 import 本文件。互动/送礼/串门（会用到
- * companionBackpackService.js）留到下一块交付再加，这一块只有广场
- * 申请-等待-回复这条链路。调度入口 runFriendTick 由
- * scheduledMessageService.js 现有的 60 秒调度器顺路调用，写法照抄
- * companionCustodyService.js 的 runCustodyTick。
+ * 依赖方向：本文件 import companionFriendAiService.js / 头像池 /
+ * companionShopData.js（送礼要知道道具名字/类别）；反过来它们都不
+ * import 本文件。送礼直接操作 db.companionBackpack 本身，不 import
+ * companionBackpackService.js 的 useBackpackItem——那边是"自己用掉道具、
+ * 加到 companion 自己的数值上"，这边是"转手送给朋友"，是两件不同的事，
+ * 混用会把送礼也加到小伙伴自己的饱食度/心情上，不对。
+ * 调度入口 runFriendTick 由 scheduledMessageService.js 现有的 60 秒
+ * 调度器顺路调用，写法照抄 companionCustodyService.js 的 runCustodyTick。
  */
 
 import db from '../../../db';
+import { findShopItem } from '../companionShopData';
 import { pickRandomAvatar } from './companionFriendAvatars';
 import {
   generateFriendCandidates,
   generateFriendReplyText,
+  generateFriendInteractionStory,
 } from './companionFriendAiService';
 
 // ---- 常量：全部写成常量方便以后调 ----
@@ -376,6 +380,152 @@ export const runFriendTick = async () => {
   }
 };
 
+// ---- 我的朋友：互动 / 送礼 / 串门，三个按钮共用每个朋友每天 3 次额度 ----
+
+const clamp100 = (value) => Math.max(0, Math.min(100, Math.round(value)));
+
+// 互动/串门的 AI 短文失败时的本地兜底（送礼反应走固定文案池，见下面，
+// 已跟用户确认不调 AI，省 token）。
+const TALK_FALLBACKS = [
+  '聊了好一会儿，彼此分享了今天的小事。',
+  '说了几句悄悄话，两个都笑了起来。',
+  '聊得很投机，约好了下次再聊。',
+];
+const VISIT_FALLBACKS = [
+  '一起在院子里玩了一会儿，很开心。',
+  '串门待了一阵，临走前还道了别。',
+  '去朋友家坐了坐，聊了会儿天才回来。',
+];
+const GIFT_REACTION_TEXTS = {
+  food: ['眼睛一下子亮了，立刻拆开吃了起来。', '闻了闻，满意地眯起眼睛收下了。', '开心地抱着礼物转了个圈。'],
+  clean: ['好奇地研究了一下，很喜欢这个礼物。', '用了用，整个人都精神了。', '捧在手里爱不释手。'],
+  toy: ['立刻抱着玩具玩了起来，根本停不下来。', '眼睛发光，马上试了试新玩具。', '开心地蹦跳着收下了。'],
+  default: ['收到礼物，笑得眼睛都眯起来了。', '很惊喜，连声说谢谢。'],
+};
+
+// 每个朋友每天的额度，跟好友申请那边的 todayDateStr 同一套逻辑：
+// 不是今天的记录就当作"今天还没用过"。
+const getOrResetFriendDaily = (friend) => {
+  const dateStr = todayDateStr();
+  return friend.daily?.dateStr === dateStr ? friend.daily : { dateStr, used: 0 };
+};
+
+// 供 UI 判断按钮要不要变灰。
+export const isFriendSocialExhausted = (friend) => (
+  (getOrResetFriendDaily(friend).used || 0) >= DAILY_SOCIAL_QUOTA
+);
+
+/*
+ * 互动/送礼/串门落地的最后一步：扣额度、加友谊值（封顶 100）、覆盖
+ * lastStory（已确认不存档，只留最新一条）。调用方已经自己处理完
+ * "这次具体要做什么"（AI 短文/送礼扣背包），这里只管写数据。
+ */
+const applyFriendSocialResult = async (companionId, friendId, { friendshipDelta, lastStory }) => {
+  const companion = await db.companions.get(companionId);
+  if (!companion) throw new Error('小伙伴不存在');
+
+  const friends = companion.friends || [];
+  const index = friends.findIndex((f) => f.id === friendId);
+  if (index === -1) throw new Error('这位朋友不见了。');
+
+  const friend = friends[index];
+  const daily = getOrResetFriendDaily(friend);
+  if ((daily.used || 0) >= DAILY_SOCIAL_QUOTA) {
+    throw new Error('今天跟这位朋友的互动次数已经用完啦，明天再来吧。');
+  }
+
+  const next = [...friends];
+  next[index] = {
+    ...friend,
+    friendship: clamp100(friend.friendship + friendshipDelta),
+    daily: { dateStr: daily.dateStr, used: (daily.used || 0) + 1 },
+    lastStory,
+  };
+
+  await db.companions.update(companionId, { friends: next, updatedAt: Date.now() });
+  return next[index];
+};
+
+/*
+ * 互动（+3 友谊值）：调 AI 生成一段"小伙伴和朋友聊天/互动"的短文，
+ * AI 失败就退回本地兜底池。
+ */
+export const interactWithFriend = async (companionId, friendId) => {
+  const companion = await db.companions.get(companionId);
+  const friend = (companion?.friends || []).find((f) => f.id === friendId);
+  if (!friend) throw new Error('这位朋友不见了。');
+  if (isFriendSocialExhausted(friend)) throw new Error('今天跟这位朋友的互动次数已经用完啦，明天再来吧。');
+
+  let text = null;
+  try {
+    text = await generateFriendInteractionStory({ companionName: companion.name, friend, mode: 'talk' });
+  } catch (error) {
+    console.warn('[CompanionFriend] AI 生成互动短文失败，退回本地兜底:', error);
+  }
+  if (!text) text = pickRandom(TALK_FALLBACKS);
+
+  return applyFriendSocialResult(companionId, friendId, {
+    friendshipDelta: FRIENDSHIP_DELTA.talk,
+    lastStory: { text, label: '聊了一会儿' },
+  });
+};
+
+/*
+ * 串门（+5 友谊值）：调 AI 生成一段"小伙伴去朋友家串门玩耍"的短文，
+ * AI 失败就退回本地兜底池。
+ */
+export const visitFriend = async (companionId, friendId) => {
+  const companion = await db.companions.get(companionId);
+  const friend = (companion?.friends || []).find((f) => f.id === friendId);
+  if (!friend) throw new Error('这位朋友不见了。');
+  if (isFriendSocialExhausted(friend)) throw new Error('今天跟这位朋友的互动次数已经用完啦，明天再来吧。');
+
+  let text = null;
+  try {
+    text = await generateFriendInteractionStory({ companionName: companion.name, friend, mode: 'visit' });
+  } catch (error) {
+    console.warn('[CompanionFriend] AI 生成串门短文失败，退回本地兜底:', error);
+  }
+  if (!text) text = pickRandom(VISIT_FALLBACKS);
+
+  return applyFriendSocialResult(companionId, friendId, {
+    friendshipDelta: FRIENDSHIP_DELTA.visit,
+    lastStory: { text, label: '串门记' },
+  });
+};
+
+/*
+ * 送礼（+8 友谊值）：从背包里挑一件送出，数量 -1；反应文案走固定
+ * 文案池（已确认不调 AI），按道具类别（food/clean/toy）挑一句。
+ * 额度检查放在真的扣背包之前，避免"额度用完了但东西已经送出去"。
+ */
+export const giftToFriend = async (companionId, friendId, itemId) => {
+  const companion = await db.companions.get(companionId);
+  const friend = (companion?.friends || []).find((f) => f.id === friendId);
+  if (!friend) throw new Error('这位朋友不见了。');
+  if (isFriendSocialExhausted(friend)) throw new Error('今天跟这位朋友的互动次数已经用完啦，明天再来吧。');
+
+  const row = await db.companionBackpack.where({ companionId, itemId }).first();
+  if (!row || (row.quantity || 0) <= 0) throw new Error('背包里没有这个东西了。');
+
+  const item = findShopItem(itemId);
+  if (!item) throw new Error('这件道具的数据不见了，没法送出。');
+
+  if ((row.quantity || 0) <= 1) {
+    await db.companionBackpack.delete(row.id);
+  } else {
+    await db.companionBackpack.update(row.id, { quantity: row.quantity - 1 });
+  }
+
+  const pool = GIFT_REACTION_TEXTS[item.category] || GIFT_REACTION_TEXTS.default;
+  const text = pickRandom(pool);
+
+  return applyFriendSocialResult(companionId, friendId, {
+    friendshipDelta: FRIENDSHIP_DELTA.gift,
+    lastStory: { text, label: `送出了「${item.name}」` },
+  });
+};
+
 /*
  * dock 红色数字角标：今天还没在 3 次社交额度里用完的好友数。
  * 没有好友时返回 0（UI 那边 0 就不显示角标）。纯同步计算，
@@ -384,12 +534,7 @@ export const runFriendTick = async () => {
 export const getFriendDockBadgeCount = (companion) => {
   const friends = companion?.friends || [];
   if (friends.length === 0) return 0;
-
-  const dateStr = todayDateStr();
-  return friends.filter((f) => {
-    const used = f.daily?.dateStr === dateStr ? (f.daily.used || 0) : 0;
-    return used < DAILY_SOCIAL_QUOTA;
-  }).length;
+  return friends.filter((f) => !isFriendSocialExhausted(f)).length;
 };
 
 /*

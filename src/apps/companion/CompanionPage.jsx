@@ -375,8 +375,12 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   // 不用像 reload() 那样顺带查日志/背包/事件。
   const refreshCompanionForFriends = async () => {
     if (!companion) return;
-    const fresh = await getCompanionSnapshot(companion.id);
+    const [fresh, freshBackpack] = await Promise.all([
+      getCompanionSnapshot(companion.id),
+      getBackpack(companion.id),
+    ]);
     if (fresh) setCompanion(fresh);
+    setBackpackItems(freshBackpack);
   };
 
   // 小纸条上的开关：打开时会立刻跑一轮托管，跑完如果有信就直接弹出来。
@@ -1516,6 +1520,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
       {showFriends && (
         <CompanionFriendPage
           companion={companion}
+          backpackItems={backpackItems}
           onRefresh={refreshCompanionForFriends}
           onClose={() => setShowFriends(false)}
         />
