@@ -122,14 +122,23 @@ export const unlockRoom = async (roomId) => {
 
 // 标定工具"应用到房间"：把这个房间的地板/障碍物配置（已经是百分比格式，
 // 由调用方用 tripRoomGeometry.toPercentPolygon 转换好）整份存起来。
-export const saveRoomFloorConfig = async (roomId, config) =>
+// 地板标定和背景图都存在同一个房间配置里，用合并写入，互相不覆盖
+const mergeRoomConfig = async (roomId, patch) =>
   db.transaction('rw', db.settings, async () => {
     const state = await readRoomStateInTx();
-    state.roomConfigs = { ...state.roomConfigs, [roomId]: config };
+    const prevConfig = state.roomConfigs?.[roomId] || {};
+    state.roomConfigs = { ...state.roomConfigs, [roomId]: { ...prevConfig, ...patch } };
     await writeRoomStateInTx(state);
     return { ok: true, state };
   });
 
+export const saveRoomFloorConfig = async (roomId, config) => mergeRoomConfig(roomId, config);
+
+export const saveRoomBackgroundImage = async (roomId, dataUrl) =>
+  mergeRoomConfig(roomId, { bgImageDataUrl: dataUrl });
+
+export const clearRoomBackgroundImage = async (roomId) =>
+  mergeRoomConfig(roomId, { bgImageDataUrl: '' });
 /* ---------- 留言板 ---------- */
 
 export const BOARD_AUTHOR = {

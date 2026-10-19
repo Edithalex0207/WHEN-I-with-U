@@ -35,10 +35,12 @@ import {
 } from './tripRoomGeometry';
 import {
   addUserBoardPost,
+  clearRoomBackgroundImage,
   ensureResidentPokeLines,
   getRoomState,
   listBoardPosts,
   pickPokeLine,
+  saveRoomBackgroundImage,
   saveRoomFloorConfig,
   setNightMode,
   setSelectedRoom,
@@ -49,6 +51,32 @@ const BUBBLE_MS = 2600;
 const HOP_MS = 480;
 const WALK_PX_PER_SEC_AT_SCALE1 = 42;
 
+// 用户传的背景图先压缩再存：长边最多 960px，JPEG 质量 0.82
+const MAX_BG_DIM = 960;
+const BG_JPEG_QUALITY = 0.82;
+
+const fileToCompressedDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read_failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode_failed'));
+      img.onload = () => {
+        const scale = Math.min(1, MAX_BG_DIM / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', BG_JPEG_QUALITY));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
   typeof window.matchMedia === 'function' &&
@@ -56,7 +84,7 @@ const prefersReducedMotion = () =>
 
 /* ---------- 顶层组件 ---------- */
 
-const TripRoom = ({ residents, journeys, notify }) => {
+const TripRoom = ({ residents, journeys, notify, onNightChange }) => {
   const [roomState, setRoomState] = useState(null);
   const [boardPosts, setBoardPosts] = useState([]);
   const [sheet, setSheet] = useState(null); // null | 'board' | 'unlock'
@@ -80,6 +108,7 @@ const TripRoom = ({ residents, journeys, notify }) => {
   const dragRef = useRef(null);
   const bubbleTimerRef = useRef(null);
   const mountedRef = useRef(true);
+  const bgFileInputRef = useRef(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -122,6 +151,15 @@ const TripRoom = ({ residents, journeys, notify }) => {
 
   const room = useMemo(() => getTripRoom(roomState?.selectedRoomId), [roomState?.selectedRoomId]);
   const isNight = !!roomState?.isNight;
+
+  // 把日/夜状态同步给外壳，外壳据此整页换色
+  useEffect(() => {
+    if (roomState) onNightChange?.(isNight);
+  }, [roomState, isNight, onNightChange]);
+
+  // 用户传的背景图优先，没传就用 tripCatalog.js 里的默认图
+  const customBgImage = roomState?.roomConfigs?.[room?.id]?.bgImageDataUrl || '';
+  const bgImage = customBgImage || room?.bgImageUrl || '';
 
   // 房间或它的标定配置变化时，重新算一份地板/障碍物（像素坐标，给走路
   // 用），存进 ref 给动画循环读，同时让所有居民原地重新挑一次目的地。
@@ -411,6 +449,45 @@ const TripRoom = ({ residents, journeys, notify }) => {
     }
   }, [unlockTarget, notify]);
 
+    /* ---- 背景图：传自己的图 / 恢复默认 ---- */
+
+  const pickBgImage = useCallback(() => {
+    if (calibOn) return;
+    bgFileInputRef.current?.click();
+  }, [calibOn]);
+
+  const handleBgFileChange = useCallback(
+    async (event) => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file || !room) return;
+      if (!file.type.startsWith('image/')) {
+        notify?.('请选择一张图片');
+        return;
+      }
+      try {
+        const dataUrl = await fileToCompressedDataUrl(file);
+        const result = await saveRoomBackgroundImage(room.id, dataUrl);
+        if (result.ok) {
+          setRoomState(result.state);
+          notify?.('背景图已换上');
+        }
+      } catch (error) {
+        notify?.('这张图片没读成功，换一张试试');
+      }
+    },
+    [room, notify]
+  );
+
+  const resetBgImage = useCallback(async () => {
+    if (!room) return;
+    const result = await clearRoomBackgroundImage(room.id);
+    if (result.ok) {
+      setRoomState(result.state);
+      notify?.('已恢复默认背景图');
+    }
+  }, [room, notify]);
+
   /* ---- 留言板 ---- */
 
   const [noteDraft, setNoteDraft] = useState('');
@@ -531,9 +608,9 @@ const TripRoom = ({ residents, journeys, notify }) => {
       >
         <svg className="trip-stage-svg" viewBox={`0 0 ${STAGE_W} ${STAGE_H}`} role="img" aria-label="旅行小屋房间">
           <g ref={bgLayerRef}>
-            {room.bgImageUrl ? (
+                        {bgImage ? (
               <image
-                href={room.bgImageUrl}
+                href={bgImage}
                 x="0"
                 y="0"
                 width={STAGE_W}
@@ -552,7 +629,7 @@ const TripRoom = ({ residents, journeys, notify }) => {
                   textAnchor="middle"
                   className="trip-stage-placeholder-hint"
                 >
-                  还没有背景图，去 tripCatalog.js 填一个链接
+                                    还没有背景图，点下面的"换背景图"传一张
                 </text>
               </>
             )}
@@ -654,6 +731,16 @@ const TripRoom = ({ residents, journeys, notify }) => {
             <MoonIcon />
             日 / 夜
           </button>
+          <button type="button" className="trip-tool" onClick={pickBgImage}>
+            <ImageIcon />
+            换背景图
+          </button>
+          {customBgImage && (
+            <button type="button" className="trip-tool" onClick={resetBgImage}>
+              <ResetIcon />
+              恢复默认
+            </button>
+          )}
           <button type="button" className="trip-tool" aria-pressed={calibOn} onClick={toggleCalib}>
             <CalibIcon />
             标定地板
@@ -666,7 +753,15 @@ const TripRoom = ({ residents, journeys, notify }) => {
           )}
         </div>
 
-        <p className="trip-hint">拖动房间看景深，戳戳居民。{gyroAvailable ? '开启陀螺仪视差后，倾斜手机也会有视差。' : ''}</p>
+        <input
+          ref={bgFileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleBgFileChange}
+        />
+
+        <p className="trip-hint">拖动房间看景深，戳戳居民，"换背景图"传你自己的图。{gyroAvailable ? '开启陀螺仪视差后，倾斜手机也会有视差。' : ''}</p>
 
         {calibOn && (
           <div className="trip-calib-panel">
@@ -839,6 +934,21 @@ const GyroIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <circle cx="12" cy="12" r="9" />
     <ellipse cx="12" cy="12" rx="4" ry="9" />
+  </svg>
+);
+
+const ImageIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="4" width="18" height="16" rx="2.5" />
+    <circle cx="9" cy="10" r="1.6" />
+    <path d="M3 17l5.5-5.5a2 2 0 012.8 0L16 16" />
+  </svg>
+);
+
+const ResetIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 10a8 8 0 1115 5" />
+    <path d="M4 10V5M4 10h5" />
   </svg>
 );
 

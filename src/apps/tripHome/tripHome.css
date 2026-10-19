@@ -49,6 +49,40 @@
   }
 }
 
+/* 整页日 / 夜：跟随房间里的日夜开关 */
+.trip-home-app[data-trip-time='day'] {
+  --trip-bg: #efe4df;
+  --trip-panel: #fffaf7;
+  --trip-fg: #3b2c2c;
+  --trip-muted: #8a7571;
+  --trip-line: #e5d6cf;
+  --trip-tool: #f6ebe6;
+  --trip-accent: #e0607e;
+  --trip-accent-ink: #ffffff;
+  --trip-shadow: 0 12px 34px rgba(120, 70, 70, 0.2);
+}
+
+.trip-home-app[data-trip-time='night'] {
+  --trip-bg: #141225;
+  --trip-panel: #211d38;
+  --trip-fg: #efe9fb;
+  --trip-muted: #a79fc9;
+  --trip-line: #35304f;
+  --trip-tool: #2a2545;
+  --trip-accent: #f2b84b;
+  --trip-accent-ink: #241a06;
+  --trip-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+}
+
+/* 铺满整个屏幕的底色层，不受 420px 内容区限制 */
+.trip-bg-fill {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--trip-bg);
+  transition: background-color 0.4s ease;
+}
+
 .trip-home-app *,
 .trip-home-app *::before,
 .trip-home-app *::after {

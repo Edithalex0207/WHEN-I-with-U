@@ -37,6 +37,8 @@ const TripApp = ({ onBackHub }) => {
   const [data, setData] = useState({ state: null, residents: [], journeys: [] });
   const [loaded, setLoaded] = useState(false);
   const [toast, setToast] = useState('');
+  // 日/夜状态提到外壳，用来给整页换色
+  const [isNight, setIsNight] = useState(false);
 
   const mountedRef = useRef(true);
   const toastTimerRef = useRef(null);
@@ -78,7 +80,8 @@ const TripApp = ({ onBackHub }) => {
   }, [refresh]);
 
   return (
-    <div className="trip-home-app">
+    <div className="trip-home-app" data-trip-time={isNight ? 'night' : 'day'}>
+      <div className="trip-bg-fill" aria-hidden="true" />
       <header className="trip-top">
         <button type="button" className="trip-round" onClick={onBackHub} aria-label="返回">
           <BackIcon />
@@ -108,7 +111,14 @@ const TripApp = ({ onBackHub }) => {
         <p className="trip-empty">正在翻找行李箱……</p>
       ) : (
         <>
-          {tab === 'room' && <TripRoom residents={data.residents} journeys={data.journeys} notify={notify} />}
+          {tab === 'room' && (
+            <TripRoom
+              residents={data.residents}
+              journeys={data.journeys}
+              notify={notify}
+              onNightChange={setIsNight}
+            />
+          )}
           {tab === 'tickets' && (
             <TripTickets residents={data.residents} journeys={data.journeys} onChange={refresh} notify={notify} />
           )}
