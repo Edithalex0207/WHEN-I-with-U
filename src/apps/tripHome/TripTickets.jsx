@@ -13,6 +13,11 @@ import { TripAvatar, TripVehicleIcon } from './TripParts';
 
 const MINUTE_MS = 60 * 1000;
 
+// 车票的一次性入场动效（出发翻转揭幕 / 到站图章砸下）只在“刚出发”“刚到站”
+// 的这段时间窗口内触发：departAt/arriveAt 离 now 很近时才判定为“新”，
+// 过了窗口自然就不再是新的，不需要额外的 ref/Set 记一次性播放过没有。
+const ENTRY_ANIM_WINDOW_MS = 2000;
+
 const pad2 = (value) => String(value).padStart(2, '0');
 
 const formatTime = (timestamp, now) => {
@@ -40,13 +45,19 @@ const TripTicket = ({ journey, resident, now, onOpen }) => {
   const span = Math.max(1, journey.arriveAt - journey.departAt);
   const progress = Math.min(1, Math.max(0, (now - journey.departAt) / span)) * 100;
   const plane = journey.transport === 'plane';
+  const isNewDeparture = !arrived && now - journey.departAt < ENTRY_ANIM_WINDOW_MS;
+  const isNewArrival = arrived && now - journey.arriveAt < ENTRY_ANIM_WINDOW_MS;
   const baggage = ['food', 'prop', 'gift']
     .map((slot) => getTripItem(journey.luggage?.[slot]))
     .filter(Boolean);
 
   return (
     <div className="trip-ticket-wrap">
-      <article className={`trip-ticket trip-ticket--${plane ? 'plane' : 'train'}${arrived ? ' is-done' : ''}`}>
+            <article
+        className={`trip-ticket trip-ticket--${plane ? 'plane' : 'train'}${arrived ? ' is-done' : ''}${
+          isNewDeparture ? ' trip-anim-in' : ''
+        }${isNewArrival ? ' trip-anim-arrive' : ''}`}
+      >
         <div className="trip-ticket__main">
           <div className="trip-ticket__top">
             <span>{plane ? 'Boarding pass' : 'Train ticket'}</span>

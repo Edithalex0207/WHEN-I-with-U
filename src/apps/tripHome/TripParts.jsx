@@ -56,6 +56,13 @@ export const TabShopIcon = () => (
   </TabSvg>
 );
 
+export const TabCollectionIcon = () => (
+  <TabSvg>
+    <rect x="3.5" y="6.5" width="14" height="11" rx="2" />
+    <rect x="6.5" y="3.5" width="14" height="11" rx="2" />
+  </TabSvg>
+);
+
 export const TripVehicleIcon = ({ kind }) => {
   if (kind === 'plane') {
     return (

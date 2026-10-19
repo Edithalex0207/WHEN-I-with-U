@@ -1,8 +1,10 @@
 // src/apps/tripHome/TripApp.jsx
 //
-// 「旅行小屋」顶层应用的外壳：顶部返回键 + 标题 + 旅费，下面是三个分页
-// （航班 / 行李 / 商店）。外壳负责统一读取数据（旅费和背包、居民、车票），
-// 分页之间共用一份，任何分页改了东西都调用 refresh() 重新读取。
+// 「旅行小屋」顶层应用的外壳：顶部返回键 + 标题 + 旅费，下面是五个分页
+// （小屋 / 航班 / 行李 / 商店 / 收藏）。外壳负责统一读取数据（旅费和背包、
+// 居民、车票），分页之间共用一份，任何分页改了东西都调用 refresh() 重新
+// 读取。收藏页（明信片册）是个例外：它看的是 claimed 状态的旅行记录，不在
+// 外壳读的 journeys 里，自己管自己的数据，见 TripCollection.jsx。
 //
 // 本应用跟旧的「旅行」应用（src/apps/travels/）完全独立，互不引用。
 // 它在 App.jsx 里沿用 shell 那种“整页车道、不加默认内边距”的处理，
@@ -22,11 +24,20 @@ import {
   runAutoDeparture,
   settleTripArrivals,
 } from './tripService';
+import TripCollection from './TripCollection';
 import TripLuggage from './TripLuggage';
 import TripRoom from './TripRoom';
 import TripShop from './TripShop';
 import TripTickets from './TripTickets';
-import { BackIcon, CoinDot, TabLuggageIcon, TabRoomIcon, TabShopIcon, TabTicketIcon } from './TripParts';
+import {
+  BackIcon,
+  CoinDot,
+  TabCollectionIcon,
+  TabLuggageIcon,
+  TabRoomIcon,
+  TabShopIcon,
+  TabTicketIcon,
+} from './TripParts';
 import { DEFAULT_THEME_HUE } from './tripTheme';
 import './tripHome.css';
 import './tripRoom.css';
@@ -39,6 +50,7 @@ const TABS = [
   { id: 'tickets', label: '航班', title: '航班', Icon: TabTicketIcon },
   { id: 'luggage', label: '行李', title: '行李', Icon: TabLuggageIcon },
   { id: 'shop', label: '商店', title: '商店', Icon: TabShopIcon },
+  { id: 'collection', label: '收藏', title: '明信片册', Icon: TabCollectionIcon },
 ];
 
 const TOAST_MS = 2600;
@@ -180,6 +192,7 @@ const TripApp = ({ onBackHub }) => {
             <TripLuggage state={data.state} residents={data.residents} onChange={refresh} notify={notify} />
           )}
           {tab === 'shop' && <TripShop state={data.state} onChange={refresh} notify={notify} />}
+          {tab === 'collection' && <TripCollection residents={data.residents} />}
         </>
       )}
 

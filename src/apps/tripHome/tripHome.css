@@ -245,7 +245,7 @@
   width: min(calc(100vw - 28px), 392px);
   height: 70px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   padding: 8px;
   border-radius: 30px;
@@ -280,6 +280,7 @@
 .trip-dk--tickets { --c: 200; }
 .trip-dk--luggage { --c: 48; }
 .trip-dk--shop { --c: 150; }
+.trip-dk--collection { --c: 275; }
 
 .trip-dk.is-on {
   transform: translateY(-6px);
@@ -677,6 +678,55 @@
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
 }
 
+/* ---------- 车票动效：出发翻转揭幕 / 到站图章砸下 ----------
+ * 两个 class 都是一次性入场动效，只在 TripTickets.jsx 判定"这张票是刚
+ * 出发/刚到站的"（departAt 或 arriveAt 离 now 很近）时才加上，加完就不摘掉——
+ * 动画播完之后的终态本来就等于车票平时的样子，摘不摘都一样，摘了反而多一次
+ * state 更新。见 TripTickets.jsx 的 ENTRY_ANIM_WINDOW_MS。 */
+
+@keyframes trip-ticket-flip-in {
+  0% { transform: perspective(700px) rotateY(-78deg); opacity: 0; }
+  100% { transform: perspective(700px) rotateY(0deg); opacity: 1; }
+}
+
+@keyframes trip-ticket-veh-in {
+  0% { opacity: 0; }
+  45% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.trip-ticket.trip-anim-in {
+  animation: trip-ticket-flip-in 0.46s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+  transform-origin: left center;
+}
+
+.trip-ticket.trip-anim-in .trip-ticket__veh {
+  animation: trip-ticket-veh-in 0.46s 0.05s ease-out both;
+}
+
+@keyframes trip-stamp-drop {
+  0% { transform: translateY(-34px) scale(1.6) rotate(-12deg); opacity: 0; }
+  62% { transform: translateY(2px) scale(0.94) rotate(-12deg); opacity: 1; }
+  80% { transform: translateY(-1px) scale(1.03) rotate(-12deg); }
+  100% { transform: translateY(0) scale(1) rotate(-12deg); opacity: 1; }
+}
+
+@keyframes trip-ticket-arrive-shake {
+  0%, 55% { transform: translateX(0); }
+  64% { transform: translateX(-3px); }
+  72% { transform: translateX(3px); }
+  80% { transform: translateX(-1.5px); }
+  100% { transform: translateX(0); }
+}
+
+.trip-ticket.trip-anim-arrive {
+  animation: trip-ticket-arrive-shake 0.5s 0.05s linear both;
+}
+
+.trip-ticket.trip-anim-arrive .trip-ticket__stamp {
+  animation: trip-stamp-drop 0.5s 0.05s cubic-bezier(0.3, 0.9, 0.3, 1.2) both;
+}
+
 /* ---------- 行李：旅行箱 ---------- */
 
 .trip-case {
@@ -981,6 +1031,7 @@
   height: 16px;
   border-width: 1.5px;
 }
+
 /* ---------- 小游戏：翻牌配对 ---------- */
 
 .trip-mg-intro {
@@ -1091,6 +1142,80 @@
   height: 24px;
 }
 
+/* ---------- 收藏：明信片册 ----------
+ * 筛选 chip 复用上面"分页和按钮"那一节已有的 .trip-chip / .trip-chip
+ * [aria-pressed='true']，这里不用再写。缩略图卡沿用 .trip-good 那种卡片
+ * 质感但自己独立一套类名（trip-pc-thumb-），避免以后改商店卡片牵连到这里。
+ */
+
+.trip-pc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trip-pc-thumb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 20px;
+  border: 2px solid var(--trip-line);
+  background: var(--trip-panel);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+  color: var(--trip-fg);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.trip-pc-thumb:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 1px 0 var(--trip-line-d);
+}
+
+.trip-pc-thumb__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--trip-tool);
+}
+
+.trip-pc-thumb__img-el {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trip-pc-thumb__blank {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--trip-muted);
+}
+
+.trip-pc-thumb__who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.trip-pc-thumb__dest {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--trip-muted);
+}
+
 /* ---------- 轻提示 ----------
  * 只用水平居中 + 底部定位。fixed 是相对整个视口的，而车道本身也是水平
  * 居中的，所以居中的提示不会像靠左的元素那样在宽屏下跑出车道。
@@ -1128,5 +1253,12 @@
   .trip-chip,
   .trip-btn {
     transition: none;
+  }
+
+  .trip-ticket.trip-anim-in,
+  .trip-ticket.trip-anim-in .trip-ticket__veh,
+  .trip-ticket.trip-anim-arrive,
+  .trip-ticket.trip-anim-arrive .trip-ticket__stamp {
+    animation: none;
   }
 }

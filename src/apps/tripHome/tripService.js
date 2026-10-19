@@ -392,6 +392,14 @@ export const settleTripArrivals = async (now = Date.now()) =>
     return due.length;
   });
 
+// 已收好、带明信片的旅行记录（收藏册用），按到站时间倒序排（最新收到的在
+// 最前面）。理论上 claimed 的车票都应该有明信片了，但以防万一（比如明信片
+// 生成失败又没重试就被收起来了）还是过滤一下，不在册子里留空白卡片。
+export const listClaimedJourneys = async () => {
+  const rows = await db.tripJourneys.where('status').equals(JOURNEY_STATUS.CLAIMED).toArray();
+  return rows.filter((journey) => journey.postcard).sort((a, b) => b.arriveAt - a.arriveAt);
+};
+
 // 还没收起的车票（外出中 + 已到站），按到站时间排序。
 export const listActiveJourneys = async () => {
   const rows = await db.tripJourneys
