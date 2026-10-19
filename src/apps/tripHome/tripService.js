@@ -19,11 +19,13 @@ import {
   TRIP_ANIMALS,
   TRIP_CHECKIN_REWARDS,
   TRIP_AUTO_DEPART,
+  TRIP_MEMORY_GAME_MAX_PLAYS,
   TRIP_RAIN_CHANCE,
   TRIP_SLOTS,
   defaultAnimalIdFor,
   emptyLuggage,
   getTripItem,
+  getTripMemoryGameReward,
   planTrip,
 } from './tripCatalog';
 
@@ -50,9 +52,20 @@ const createDefaultState = () => ({
   inventory: {},
   checkinStreak: 0,
   lastCheckinDate: '',
+  memoryGame: { playsToday: 0, lastPlayDate: '', bestMoves: 0 },
 });
 
 const toCount = (value) => Math.max(0, Math.floor(Number(value) || 0));
+
+const normalizeMemoryGame = (raw) => {
+  const base = { playsToday: 0, lastPlayDate: '', bestMoves: 0 };
+  if (!raw || typeof raw !== 'object') return base;
+  return {
+    playsToday: toCount(raw.playsToday),
+    lastPlayDate: typeof raw.lastPlayDate === 'string' ? raw.lastPlayDate : '',
+    bestMoves: toCount(raw.bestMoves),
+  };
+};
 
 const normalizeState = (raw) => {
   const base = createDefaultState();
@@ -71,6 +84,7 @@ const normalizeState = (raw) => {
     inventory,
     checkinStreak: toCount(raw.checkinStreak),
     lastCheckinDate: typeof raw.lastCheckinDate === 'string' ? raw.lastCheckinDate : '',
+    memoryGame: normalizeMemoryGame(raw.memoryGame),
   };
 };
 
@@ -470,12 +484,49 @@ export const runAutoDeparture = async (options = {}) => {
   ];
 };
 
-/* ---------- 调试（自动出发已上线；测试用，不需要时可连同界面上的调试面板一起移除） ---------- */
+/* ---------- 小游戏：翻牌配对 ---------- */
 
-export const debugGrantCoins = async (amount) =>
+// 今天还能玩几次、最佳步数（界面用，纯读不改数据）。跨天（本地日期变了）
+// 自动当作还没玩过，不需要专门清零。
+export const getMemoryGameView = (state, now = Date.now()) => {
+  const today = toLocalDateKey(now);
+  const memoryGame = state.memoryGame || { playsToday: 0, lastPlayDate: '', bestMoves: 0 };
+  const playsToday = memoryGame.lastPlayDate === today ? memoryGame.playsToday : 0;
+
+  return {
+    playsToday,
+    playsLeft: Math.max(0, TRIP_MEMORY_GAME_MAX_PLAYS - playsToday),
+    maxPlays: TRIP_MEMORY_GAME_MAX_PLAYS,
+    bestMoves: memoryGame.bestMoves > 0 ? memoryGame.bestMoves : null,
+  };
+};
+
+// 结算一局：按步数发旅费，今天玩的次数 +1（跨天自动从 0 重新算）。今天的
+// 次数已经用完时拒绝结算，不发钱也不计次数。
+export const claimMemoryGameReward = async (moves, now = Date.now()) =>
   db.transaction('rw', db.settings, async () => {
     const state = await readStateInTx();
-    state.coins += toCount(amount);
+    const today = toLocalDateKey(now);
+    const prev = state.memoryGame && state.memoryGame.lastPlayDate === today
+      ? state.memoryGame
+      : { playsToday: 0, lastPlayDate: today, bestMoves: state.memoryGame ? state.memoryGame.bestMoves : 0 };
+
+    if (prev.playsToday >= TRIP_MEMORY_GAME_MAX_PLAYS) {
+      return { ok: false, reason: 'memory_game_limit', state };
+    }
+
+    const reward = getTripMemoryGameReward(toCount(moves) || 1);
+    const bestMoves = prev.bestMoves > 0 ? Math.min(prev.bestMoves, moves) : moves;
+    const playsToday = prev.playsToday + 1;
+
+    state.coins += reward;
+    state.memoryGame = { playsToday, lastPlayDate: today, bestMoves };
     await writeStateInTx(state);
-    return { ok: true, state };
+
+    return {
+      ok: true,
+      reward,
+      state,
+      playsLeft: Math.max(0, TRIP_MEMORY_GAME_MAX_PLAYS - playsToday),
+    };
   });

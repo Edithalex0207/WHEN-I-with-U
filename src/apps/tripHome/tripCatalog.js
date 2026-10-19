@@ -103,8 +103,48 @@ export const TRIP_REASON_TEXT = {
   no_stock: '背包里没有这件东西了',
   away: 'TA 正在旅行，回来之前不能这样做',
   unclaimed: '上一趟的车票还没有收起',
-  already_signed: '今天已经签到过了',
+    already_signed: '今天已经签到过了',
+  memory_game_limit: '今天的翻牌配对次数用完了，明天再来',
 };
+
+// ---------- 小游戏：翻牌配对 ----------
+// 商店页"小游戏赚旅费"入口的第一个小游戏。6 对共 12 张牌，配完按用了
+// 多少步结算：步数越少奖励越高。每天能玩的次数有上限，防止靠反复刷它
+// 无限赚旅费；次数和最佳步数记在 tripHomeState 里（见 tripService.js），
+// 不是单独的表，不需要升级数据库版本。
+
+// 每天最多玩几次，过了本地日期的 0 点重新计数。
+export const TRIP_MEMORY_GAME_MAX_PLAYS = 3;
+
+// 6 对最少 6 步就能配完。按本局用了多少步，从上到下找第一个
+// "步数 <= maxMoves" 的档位用它的奖励；超过最后一档都按 TRIP_MEMORY_GAME_FALLBACK_REWARD
+// 结算。想改奖励曲线直接改这个数组。
+export const TRIP_MEMORY_GAME_REWARDS = [
+  { maxMoves: 7, reward: 30 },
+  { maxMoves: 9, reward: 22 },
+  { maxMoves: 12, reward: 16 },
+  { maxMoves: 16, reward: 10 },
+];
+export const TRIP_MEMORY_GAME_FALLBACK_REWARD = 6;
+
+export const getTripMemoryGameReward = (moves) => {
+  const found = TRIP_MEMORY_GAME_REWARDS.find((row) => moves <= row.maxMoves);
+  return found ? found.reward : TRIP_MEMORY_GAME_FALLBACK_REWARD;
+};
+
+// 卡片主题：6 对，每对一个图标 id（图标画在 TripMemoryGame.jsx 里）+ 一个
+// 糖板色（复用 tripHome.css 里已有的 6 个色相类 trip-c-xxx，跟其它"糖果
+// 按钮"是同一套配色，不用再定义新颜色）。想换主题图案，加/改这个数组，
+// 同时在 TripMemoryGame.jsx 的 ICONS 里补上同名图标就行。
+export const TRIP_MEMORY_GAME_PAIRS = [
+  { id: 'ticket', label: '车票', colorClass: 'trip-c-sun' },
+  { id: 'suitcase', label: '行李箱', colorClass: 'trip-c-peach' },
+  { id: 'postcard', label: '明信片', colorClass: 'trip-c-mint' },
+  { id: 'coin', label: '旅行币', colorClass: 'trip-c-rose' },
+  { id: 'camera', label: '相机', colorClass: 'trip-c-sky' },
+  { id: 'home', label: '小屋', colorClass: 'trip-c-lilac' },
+];
+
 
 export const TRIP_REASON_FALLBACK = '出了点小问题，请刷新后再试';
 

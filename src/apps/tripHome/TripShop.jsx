@@ -1,17 +1,18 @@
-// src/apps/tripHome/TripShop.jsx
-//
-// 「商店」分页：每日签到（7 天一个循环，奖励递增）、赚旅费的小游戏入口
-// （先占位，玩法以后一个个定）、商品列表。买到的东西进背包，在「行李」
-// 分页里放进箱子。
+// 「商店」分页：每日签到（7 天一个循环，奖励递增）、赚旅费的小游戏
+// （第一个是翻牌配对，玩法在 TripMemoryGame.jsx）、商品列表。买到的东西
+// 进背包，在「行李」分页里放进箱子。
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import { TRIP_ITEMS, getTripDestination, getTripReasonText } from './tripCatalog';
-import { claimDailyCheckin, getCheckinView, purchaseTripItem } from './tripService';
+import { claimDailyCheckin, getCheckinView, getMemoryGameView, purchaseTripItem } from './tripService';
 import { CoinDot, TripItemIcon } from './TripParts';
+import TripMemoryGame from './TripMemoryGame';
 
 const TripShop = ({ state, onChange, notify }) => {
   const view = getCheckinView(state);
+  const memoryView = getMemoryGameView(state);
+  const [showMemoryGame, setShowMemoryGame] = useState(false);
 
   const handleCheckin = async () => {
     try {
@@ -63,13 +64,16 @@ const TripShop = ({ state, onChange, notify }) => {
         </button>
       </section>
 
-      <section className="trip-card trip-card--row">
+            <section className="trip-card trip-card--row">
         <div>
-          <b>小游戏赚旅费</b>
-          <p className="trip-hint">玩法稍后一个个定</p>
+          <b>翻牌配对</b>
+          <p className="trip-hint">
+            今天还能玩 {memoryView.playsLeft} / {memoryView.maxPlays} 次
+            {memoryView.bestMoves ? ` · 最佳 ${memoryView.bestMoves} 步` : ''}
+          </p>
         </div>
-        <button type="button" className="trip-btn trip-btn--ghost trip-btn--sm" disabled>
-          敬请期待
+        <button type="button" className="trip-btn trip-btn--sm" onClick={() => setShowMemoryGame(true)}>
+          玩一局
         </button>
       </section>
 
@@ -95,9 +99,18 @@ const TripShop = ({ state, onChange, notify }) => {
                 </button>
               </div>
             </div>
-          );
+                   );
         })}
       </div>
+
+      {showMemoryGame && (
+        <TripMemoryGame
+          state={state}
+          onChange={onChange}
+          notify={notify}
+          onClose={() => setShowMemoryGame(false)}
+        />
+      )}
     </div>
   );
 };

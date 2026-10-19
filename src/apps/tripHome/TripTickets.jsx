@@ -1,19 +1,13 @@
-// src/apps/tripHome/TripTickets.jsx
-//
 // 「航班」分页：外出中的居民显示成一张张车票/机票（火车票或机票由目的地
-// 决定），进度虚线上的小车/小飞机按时间前进，到站后盖“已到站”章。
-//
-// 页面底部有一个“调试”面板：自动出发上线之前，用它手动让某个居民出发、
-// 领取测试旅费，好测试车票界面。自动出发做好后，整个 TripDebugPanel
-// 连同它的调用一起删掉即可。
+// 决定），进度虚线上的小车/小飞机按时间前进，到站后盖"已到站"章。
 //
 // 到点的车票由本组件每秒检查一次，刚越过到站时间时调用一次 onChange()，
 // 让父组件重新读取（settleTripArrivals 会把它在数据库里标成已到站）。
 
 import React, { useEffect, useRef, useState } from 'react';
 
-import { getTripItem, getTripReasonText } from './tripCatalog';
-import { debugGrantCoins, dismissArrivedJourney, startTripJourney } from './tripService';
+import { getTripItem } from './tripCatalog';
+import { dismissArrivedJourney } from './tripService';
 import TripPostcard from './TripPostcard';
 import { TripAvatar, TripVehicleIcon } from './TripParts';
 
@@ -124,78 +118,8 @@ const TripTicket = ({ journey, resident, now, onOpen }) => {
   );
 };
 
-// 调试面板：自动出发上线后删除本组件和下面的调用。
-const TripDebugPanel = ({ residents, onChange, notify }) => {
-  const candidates = residents.filter((resident) => resident.status === 'home' && !resident.currentJourneyId);
-  const [selectedId, setSelectedId] = useState('');
-  const activeId = candidates.some((resident) => String(resident.id) === selectedId)
-    ? selectedId
-    : candidates[0]
-      ? String(candidates[0].id)
-      : '';
-
-  const handleStart = async (hours, label) => {
-    if (!activeId) return;
-    try {
-      const result = await startTripJourney(Number(activeId), { hours });
-      if (!result.ok) {
-        notify(getTripReasonText(result.reason));
-        return;
-      }
-      notify(`已出发，${label}后到站`);
-      onChange();
-    } catch (error) {
-      console.warn('调试出发失败：', error);
-      notify('出发失败，请看控制台');
-    }
-  };
-
-  const handleCoins = async () => {
-    try {
-      await debugGrantCoins(100);
-      notify('已领取 100 测试旅费');
-      onChange();
-    } catch (error) {
-      console.warn('领取测试旅费失败：', error);
-    }
-  };
-
-  return (
-    <section className="trip-debug">
-      <h3>调试</h3>
-      <p>自动出发上线前用来测试车票界面，之后会移除。出发时行李里的东西会全部用掉。</p>
-
-      <label className="trip-debug__row">
-        <span>让谁出发</span>
-        <select value={activeId} onChange={(event) => setSelectedId(event.target.value)} disabled={candidates.length === 0}>
-          {candidates.length === 0 && <option value="">没有可出发的居民</option>}
-          {candidates.map((resident) => (
-            <option key={resident.id} value={String(resident.id)}>
-              {resident.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="trip-debug__btns">
-        <button type="button" className="trip-btn trip-btn--ghost trip-btn--sm" disabled={!activeId} onClick={() => handleStart(1 / 60, '1 分钟')}>
-          出发 1 分钟
-        </button>
-        <button type="button" className="trip-btn trip-btn--ghost trip-btn--sm" disabled={!activeId} onClick={() => handleStart(1, '1 小时')}>
-          出发 1 小时
-        </button>
-        <button type="button" className="trip-btn trip-btn--ghost trip-btn--sm" disabled={!activeId} onClick={() => handleStart(6, '6 小时')}>
-          出发 6 小时
-        </button>
-        <button type="button" className="trip-btn trip-btn--sm" onClick={handleCoins}>
-          领 100 测试旅费
-        </button>
-      </div>
-    </section>
-  );
-};
-
 const TripTickets = ({ residents, journeys, onChange, notify }) => {
+
   const [now, setNow] = useState(() => Date.now());
   const notifiedRef = useRef(new Set());
   const [openId, setOpenId] = useState(null);
@@ -266,8 +190,6 @@ const TripTickets = ({ residents, journeys, onChange, notify }) => {
           onClaim={handleClaim}
         />
       )}
-
-      <TripDebugPanel residents={residents} onChange={onChange} notify={notify} />
     </div>
   );
 };
