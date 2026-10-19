@@ -162,7 +162,8 @@
 }
 
 .trip-sprite-flip {
-  transform-origin: center;
+  transform-box: fill-box;
+  transform-origin: center bottom;
 }
 
 .trip-sprite--walk .trip-sprite-flip {

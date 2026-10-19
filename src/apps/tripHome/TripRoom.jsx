@@ -1,3 +1,4 @@
+
 // src/apps/tripHome/TripRoom.jsx
 //
 // 「旅行小屋」的房间分页（切片 B1）：居民在地板上乱走、戳戳冒气泡、拖动
@@ -260,8 +261,11 @@ const TripRoom = ({ residents, journeys, notify, onNightChange, onThemeHue, onRe
     if (!node || !anim) return;
     const scale = scaleAtY(anim.y, floorRef.current.floor);
     node.setAttribute('transform', `translate(${anim.x.toFixed(1)} ${anim.y.toFixed(1)}) scale(${scale.toFixed(3)})`);
-    const flip = node.querySelector('.trip-sprite-flip');
-    if (flip) flip.style.transform = `scaleX(${anim.face})`;
+    // 左右翻转用 SVG 属性，以居民中线（局部 x=0）为轴；不能用 CSS transform：
+    // SVG 里 transform-origin 默认相对整个画布，翻转后居民会被甩到身体外面，
+    // 而且走路晃动动画会把行内 transform 整个覆盖掉。
+    const face = node.querySelector('.trip-sprite-face');
+    if (face) face.setAttribute('transform', `scale(${anim.face} 1)`);
     node.classList.toggle('trip-sprite--walk', anim.mode === 'walk' && anim.hold <= 0);
   }, []);
 
@@ -314,13 +318,16 @@ const TripRoom = ({ residents, journeys, notify, onNightChange, onThemeHue, onRe
         placeSprite(residentId);
       });
 
-      // 景深排序：简单起见每帧都按 y 重排一次 DOM 顺序（居民数量通常不多，
-      // 这个开销可以接受；比预览里的"算出顺序字符串比对"更直白）。
+      // 景深排序：按 y 排（越靠下越靠前画）。只在顺序真的变了的时候才动 DOM。
+      // 之前每帧都 appendChild 一遍：节点每帧被摘下再装上，走路的上下晃动
+      // 动画每帧都被重置（居民走路时是僵的），图片元素也可能闪一下甚至空白。
       if (objLayerRef.current) {
+        const layer = objLayerRef.current;
         const entries = Array.from(spriteRefs.current.entries())
           .map(([id, node]) => ({ id, node, y: animRef.current.get(id)?.y ?? 0 }))
           .sort((a, b) => a.y - b.y);
-        entries.forEach(({ node }) => objLayerRef.current.appendChild(node));
+        const inOrder = entries.every(({ node }, index) => layer.children[index] === node);
+        if (!inOrder) entries.forEach(({ node }) => layer.appendChild(node));
       }
 
       // 视差：目标值由拖拽/陀螺仪事件更新，这里只做缓动 + 应用到两层。
@@ -1201,12 +1208,14 @@ const ResidentSprite = ({ resident, isAway, isReturned, registerNode, onPoke }) 
       }}
     >
       <ellipse cx="0" cy="0" rx="15" ry="5" className="trip-sprite-shadow" />
-      <g className="trip-sprite-flip">
-        {resident.skinDataUrl ? (
-          <TripSkinMark src={resident.skinDataUrl} />
-        ) : (
-          <TripAnimalMark animalId={resident.animalId} />
-        )}
+      <g className="trip-sprite-face">
+        <g className="trip-sprite-flip">
+          {resident.skinDataUrl ? (
+            <TripSkinMark src={resident.skinDataUrl} />
+          ) : (
+            <TripAnimalMark animalId={resident.animalId} />
+          )}
+        </g>
       </g>
       {isReturned && (
         <g className="trip-sprite-badge" transform="translate(0,-66)">
