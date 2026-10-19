@@ -1,0 +1,48 @@
+/* =========================================================
+ * schoolCardStory.css —— 收藏卡「小故事」的样式。
+ * 前缀约定：cs-（新卡小故事弹窗）、sc-story（收藏册详情里的故事块）。
+ * 颜色变量复用 companionPage.css 的 --cp-*；--sd-heart-deep 只在
+ * .sd-root 里定义，弹窗不在 .sd-root 里，所以这里都带了兜底色。
+ * ========================================================= */
+
+/* 比结算页的 .cp-overlay（z-index 60）再高一层，盖在它上面 */
+.cs-layer { z-index: 61; }
+
+.cs-pop {
+  position: relative; z-index: 1; width: 100%; max-width: 320px; max-height: 86%; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 22px 22px 20px; border-radius: 32px;
+  background: var(--cp-card); border: 2px solid var(--cp-border); color: var(--cp-text);
+  box-shadow: 0 22px 40px -18px var(--cp-shadow);
+  scrollbar-width: none;
+  animation: cs-pop-in 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.cs-pop::-webkit-scrollbar { display: none; }
+
+.cs-kicker { margin-bottom: 12px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; color: var(--sd-heart-deep, #D95F72); }
+.cs-art { flex: none; padding: 8px; border-radius: 30px; margin-bottom: 12px; background: var(--sd-t-bg); }
+.cs-art img, .cs-art .sc-face { display: block; }
+.cs-title { margin: 8px 0 10px; font-family: var(--cp-font-display); font-weight: 400; font-size: 21px; color: var(--cp-text); }
+.cs-story { margin: 0; font-size: 13.5px; line-height: 1.85; font-weight: 700; color: var(--cp-sub); text-align: left; }
+
+.cs-btn {
+  flex: none; margin-top: 18px; min-width: 140px; height: 46px; padding: 0 28px; border: 0; border-radius: 99px;
+  background: var(--cp-accent); color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 6px 0 -2px var(--sd-blue-deep, #2B7FC9), 0 12px 16px -8px var(--cp-shadow);
+  transition: transform 0.2s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+.cs-btn:active { transform: translateY(3px); }
+.cs-btn:focus-visible { outline: 3px solid var(--cp-accent); outline-offset: 2px; }
+
+@keyframes cs-pop-in {
+  from { transform: translateY(24px) scale(0.86); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-pop { animation: none; }
+}
+
+/* ================= 收藏册详情里的小故事 ================= */
+.sc-story { margin-top: 16px; width: 100%; max-width: 290px; padding: 12px 14px 14px; border-radius: 20px; background: var(--cp-soft); text-align: left; }
+.sc-story h4 { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: var(--cp-muted); }
+.sc-story p { margin: 0; font-size: 13px; line-height: 1.8; font-weight: 700; color: var(--cp-sub); }

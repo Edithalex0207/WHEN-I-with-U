@@ -34,6 +34,7 @@
 .sc-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .sc-cell .sc-face { width: 100%; aspect-ratio: 1; }
 .sc-cell.is-locked .sc-face { filter: grayscale(1) brightness(0.9); opacity: 0.55; }
+.sc-face.is-locked { background: var(--cp-border, #E2D9F7); color: var(--cp-muted, #9A90BD); }
 .sc-cell span.sc-name { font-size: 11px; font-weight: 800; color: var(--cp-text); text-align: center; line-height: 1.3; }
 .sc-cell.is-locked span.sc-name { color: var(--cp-muted); }
 .sc-count {

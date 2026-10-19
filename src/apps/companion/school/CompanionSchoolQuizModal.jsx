@@ -42,6 +42,7 @@ import { startQuizSet, finishQuizSet } from './companionSchoolQuizService';
 import { rollCampusActivity } from './companionSchoolActivityService';
 import { rollCollectibleCard } from './companionSchoolCardService';
 import { CARD_RARITY_LABELS } from './companionSchoolCardCatalog';
+import CompanionSchoolCardStoryModal from './CompanionSchoolCardStoryModal';
 import { CloseGlyph, CheckGlyph, StarGlyph, PetFace, CardArt } from './SchoolArt';
 
 const CHEER_RIGHT = ['答对啦！你好厉害', '哇，答对了！', '太棒啦，这题对了！', '好厉害，一下就对了！'];
@@ -61,6 +62,7 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
   const [result, setResult] = useState(null); // finishQuizSet 的返回值
   const [activity, setActivity] = useState(null); // rollCampusActivity 的返回值，没中是 null
   const [cardDrop, setCardDrop] = useState(null); // rollCollectibleCard 的返回值，没中是 null
+  const [storyOpen, setStoryOpen] = useState(false); // 抽到新卡时弹小故事
   const [resultLine] = useState(() => pickRandom(RESULT_LINES));
   const [errorMsg, setErrorMsg] = useState('');
   const [finishing, setFinishing] = useState(false);
@@ -116,7 +118,12 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
         teacherId: res.status?.record?.teacherId,
         companionName: companion.name,
       }).then(setActivity).catch(() => setActivity(null));
-      rollCollectibleCard(companion.id).then(setCardDrop).catch(() => setCardDrop(null));
+            rollCollectibleCard(companion.id)
+        .then((drop) => {
+          setCardDrop(drop);
+          if (drop?.isNew) setStoryOpen(true);
+        })
+        .catch(() => setCardDrop(null));
     } catch (err) {
       setErrorMsg(err?.message || '结算没有成功，再试一次吧');
     } finally {
@@ -242,9 +249,16 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
             >
               错题本
             </button>
-            <button type="button" className="sd-btn main" onClick={onClose}>回到小伙伴</button>
+                        <button type="button" className="sd-btn main" onClick={onClose}>回到小伙伴</button>
           </div>
         </div>
+        {storyOpen && cardDrop?.isNew && (
+          <CompanionSchoolCardStoryModal
+            drop={cardDrop}
+            companionName={companion.name}
+            onClose={() => setStoryOpen(false)}
+          />
+        )}
       </div>
     );
   }

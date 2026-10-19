@@ -27,9 +27,11 @@ import React, { useEffect, useState } from 'react';
 
 import './school.css';
 import './schoolCards.css';
+import './schoolCardStory.css';
 
 import { CARD_RARITY_ORDER, CARD_RARITY_LABELS } from './companionSchoolCardCatalog';
 import { getCardCollection } from './companionSchoolCardService';
+import { getCardStory } from './companionSchoolCardStories';
 import { CloseGlyph, BackGlyph, CardArt } from './SchoolArt';
 
 const CompanionSchoolCardsModal = ({ companion, onClose }) => {
@@ -107,7 +109,7 @@ const CompanionSchoolCardsModal = ({ companion, onClose }) => {
                     onClick={() => setSelectedId(card.id)}
                   >
                     {card.owned && card.count > 1 && <span className="sc-count">×{card.count}</span>}
-                    <CardArt card={card} />
+                                        <CardArt card={card} locked={!card.owned} />
                     <span className="sc-name">{card.owned ? card.title : '？？？'}</span>
                   </button>
                 ))}
@@ -122,7 +124,7 @@ const CompanionSchoolCardsModal = ({ companion, onClose }) => {
               <button type="button" className="sc-detail-back" onClick={() => setSelectedId(null)}>
                 <BackGlyph size={14} />返回
               </button>
-              <CardArt card={selected} size={160} />
+                           <CardArt card={selected} size={160} locked={!selected.owned} />
               <h3>{selected.owned ? selected.title : '？？？'}</h3>
               <span className={`sc-rarity-badge sd-tone-${selected.rarity === 'hidden' ? 'lavender' : selected.rarity === 'rare' ? 'heart' : 'sky'}`}>
                 {CARD_RARITY_LABELS[selected.rarity]}
@@ -130,6 +132,12 @@ const CompanionSchoolCardsModal = ({ companion, onClose }) => {
               <p className="sc-text">
                 {selected.owned ? selected.text : '还没有收集到这张，去小课堂多做几组题，说不定下次就抽到了。'}
               </p>
+                            {selected.owned && getCardStory(selected.id, companion.name) && (
+                <div className="sc-story">
+                  <h4>小故事</h4>
+                  <p>{getCardStory(selected.id, companion.name)}</p>
+                </div>
+              )}
               {selected.owned && <p className="sc-held">已收集 {selected.count} 张</p>}
             </div>
           </div>

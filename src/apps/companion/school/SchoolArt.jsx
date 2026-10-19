@@ -244,7 +244,29 @@ export const ClassArt = ({ schoolClass, size = 58 }) => {
  * 稀有/隐藏档星星更大一点；隐藏档额外带 is-hidden class，一圈微光由
  * schoolCards.css 的 .sc-face.is-hidden 负责，这里不管颜色细节。
  */
-export const CardArt = ({ card, size = 96 }) => {
+export const QuestionGlyph = ({ size = 24 }) => (
+  <Glyph size={size}>
+    <path
+      d="M9 9.2c0-1.9 1.4-3.2 3.2-3.2s3.2 1.2 3.2 3c0 2.6-3.2 2.8-3.2 5.2"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12.2" cy="18.4" r="1.6" fill="currentColor" />
+  </Glyph>
+);
+
+export const CardArt = ({ card, size = 96, locked = false }) => {
+  // 还没收集到的卡：不管有没有图，一律显示问号，不泄露画面
+  if (locked) {
+    return (
+      <span className="sc-face is-locked" style={{ width: size, height: size }}>
+        <QuestionGlyph size={Math.round(size * 0.4)} />
+      </span>
+    );
+  }
   if (card?.url) {
     return (
       <img
