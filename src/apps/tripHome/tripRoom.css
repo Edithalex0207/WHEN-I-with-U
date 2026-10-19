@@ -1,0 +1,1289 @@
+/* src/apps/tripHome/tripRoom.css
+ *
+ * 房间分页专用样式。沿用 tripHome.css 里 .trip-home-app 定义的主题变量
+ * （--trip-bg / --trip-panel / --trip-accent 等，色相来自 --trip-h），
+ * 不重复定义颜色。类名统一 trip-room-/trip-stage-/trip-sprite-/
+ * trip-calib-/trip-crop-/trip-guide-/trip-skin- 前缀，跟别的分页的 trip-
+ * 类名不会撞。
+ *
+ * 通用的"卡片"和"糖果按钮"质感在 tripHome.css 里（.trip-card / .trip-cbtn
+ * / .trip-c-xxx），这里只写房间页自己的东西。
+ */
+
+.trip-room {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- 舞台 ---------- */
+
+.trip-stage {
+  position: relative;
+  aspect-ratio: 400 / 440;
+  overflow: hidden;
+  border-radius: 30px;
+  background: linear-gradient(var(--trip-bg2), var(--trip-panel));
+  border: 3px solid var(--trip-panel);
+  box-shadow: 0 0 0 2px var(--trip-line), 0 6px 0 2px var(--trip-line-d), 0 22px 28px -14px var(--trip-drop);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.trip-stage-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.trip-stage-placeholder {
+  fill: var(--trip-tool);
+}
+
+.trip-stage-placeholder-text {
+  font-size: 20px;
+  font-weight: 700;
+  fill: var(--trip-fg);
+}
+
+.trip-stage-placeholder-hint {
+  font-size: 11px;
+  fill: var(--trip-muted);
+}
+
+.trip-stage-floorshadow {
+  fill: #000000;
+  opacity: 0.1;
+}
+
+.trip-stage-tint {
+  fill: #1b2150;
+  opacity: 0;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+
+.trip-stage-glow {
+  fill: #ffd88a;
+  opacity: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+
+.trip-stage[data-time='night'] .trip-stage-tint {
+  opacity: 0.5;
+}
+
+.trip-stage[data-time='night'] .trip-stage-glow {
+  opacity: 0.4;
+}
+
+.trip-stage-top {
+  position: absolute;
+  z-index: 5;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.trip-stage-top > * {
+  pointer-events: auto;
+}
+
+.trip-stage-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  border: 2px solid var(--trip-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d), 0 8px 12px -6px var(--trip-drop);
+  font-weight: 800;
+}
+
+.trip-stage-pill--name {
+  font-size: 15px;
+}
+
+.trip-round--sm {
+  width: 38px;
+  height: 38px;
+}
+
+/* 标定时舞台顶部的步骤提示 */
+.trip-calib-hint {
+  position: absolute;
+  z-index: 6;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  padding: 8px 12px;
+  border: 2px solid var(--trip-line);
+  border-radius: 16px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+}
+
+.trip-calib-hint b {
+  color: var(--trip-accent-d);
+}
+
+/* ---------- 居民精灵 ---------- */
+
+.trip-sprite {
+  cursor: pointer;
+}
+
+.trip-sprite:focus-visible {
+  outline: none;
+}
+
+.trip-sprite-shadow {
+  fill: #000000;
+  opacity: 0.16;
+}
+
+.trip-sprite-flip {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.trip-sprite--walk .trip-sprite-flip {
+  animation: trip-sprite-bob 0.38s ease-in-out infinite;
+}
+
+.trip-sprite--hop .trip-sprite-flip {
+  animation: trip-sprite-hop 0.46s ease-out;
+}
+
+@keyframes trip-sprite-bob {
+  50% {
+    transform: translateY(-2.6px);
+  }
+}
+
+@keyframes trip-sprite-hop {
+  35% {
+    transform: translateY(-11px);
+  }
+}
+
+.trip-sprite-badge {
+  animation: trip-sprite-float 1.6s ease-in-out infinite;
+}
+
+@keyframes trip-sprite-float {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.trip-sprite-badge-bg {
+  fill: #fff;
+  stroke: var(--trip-accent-d);
+  stroke-width: 1.6;
+}
+
+.trip-sprite-badge-mark {
+  fill: none;
+  stroke: var(--trip-accent-d);
+  stroke-width: 1.6;
+}
+
+/* ---------- 戳戳气泡 ---------- */
+
+.trip-bubble {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -100%);
+  max-width: 62%;
+  background: #ffffff;
+  color: #3b2c2c;
+  border: 2px solid var(--trip-line-d);
+  border-radius: 16px;
+  padding: 6px 11px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  box-shadow: 0 3px 0 var(--trip-line-d), 0 8px 12px -4px rgba(80, 40, 40, 0.25);
+  pointer-events: none;
+}
+
+.trip-bubble b {
+  display: block;
+  font-size: 11px;
+  color: var(--trip-accent-d);
+}
+
+.trip-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-right: 2px solid var(--trip-line-d);
+  border-bottom: 2px solid var(--trip-line-d);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* ---------- 外出条 ---------- */
+
+.trip-away-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trip-away-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 2px solid var(--trip-line);
+  border-radius: 22px;
+  background: var(--trip-panel);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 4px 0 var(--trip-line-d), 0 14px 22px -12px var(--trip-drop);
+}
+
+.trip-away-dot {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(#c8f0cd, #9fdca8);
+  border: 2px solid #6fb97c;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 3px 0 #6fb97c;
+  color: #2f5a38;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.trip-away-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-away-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trip-away-line small {
+  color: var(--trip-muted);
+  font-weight: 700;
+}
+
+.trip-away-bar {
+  height: 14px;
+  border-radius: 9px;
+  background: var(--trip-tool);
+  border: 2px solid var(--trip-line);
+  overflow: hidden;
+  margin-top: 6px;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.trip-away-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 9px;
+  background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.3) 0 6px, transparent 6px 12px), var(--trip-accent);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* ---------- 居民形象（点头像换自己的贴图） ---------- */
+
+.trip-crew {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  scrollbar-width: none;
+}
+
+.trip-crew::-webkit-scrollbar {
+  display: none;
+}
+
+.trip-crew-item {
+  flex: none;
+  width: 66px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  border: 2px solid var(--trip-line);
+  border-radius: 20px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.trip-crew-item:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 1px 0 var(--trip-line-d);
+}
+
+.trip-crew-item span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 底部控制区 ---------- */
+
+.trip-room-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trip-room-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+  gap: 8px;
+}
+
+.trip-tool {
+  position: relative;
+  min-height: 74px;
+  border-radius: 22px;
+  padding: 10px 2px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.trip-tool[aria-pressed='true'] {
+  transform: translateY(3px);
+  outline: 3px solid var(--trip-accent-d);
+  outline-offset: 1px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 1px 0 hsl(var(--c) calc(var(--trip-k-s) - 20%) calc(var(--trip-k-l) - 24%));
+}
+
+.trip-tool__q {
+  position: absolute;
+  right: -5px;
+  top: -7px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #e0607a;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #e0607a;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 2px 0 #e0607a;
+}
+
+/* ---------- 标定面板 ---------- */
+
+.trip-calib-panel {
+  background: var(--trip-panel);
+  border: 2px solid var(--trip-line);
+  border-radius: 22px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 4px 0 var(--trip-line-d), 0 14px 22px -12px var(--trip-drop);
+}
+
+.trip-calib-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.trip-calib-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-calib-json {
+  margin: 0;
+  max-height: 96px;
+  overflow: auto;
+  background: var(--trip-tool);
+  border-radius: 12px;
+  padding: 8px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.trip-calib-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  cursor: crosshair;
+}
+
+.trip-calib-shape {
+  fill-opacity: 0.2;
+  stroke-width: 2;
+}
+
+.trip-calib-shape--floor {
+  fill: #2aa7d6;
+  stroke: #2aa7d6;
+}
+
+.trip-calib-shape--block {
+  fill: #e0456b;
+  stroke: #e0456b;
+}
+
+.trip-calib-shape--open {
+  fill: none;
+  stroke-dasharray: 5 4;
+}
+
+/* ---------- 弹层 / 留言板 / 解锁确认 / 教程 / 裁剪 ---------- */
+
+.trip-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(40, 25, 30, 0.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+}
+
+.trip-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  border-top: 3px solid var(--trip-line);
+  border-radius: 30px 30px 0 0;
+  padding: 24px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  max-height: 88vh;
+  overflow: auto;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25);
+  scrollbar-width: none;
+  animation: trip-sheet-up 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.trip-sheet::-webkit-scrollbar {
+  display: none;
+}
+
+/* 顶部的小把手 */
+.trip-sheet::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 46px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--trip-line-d);
+  transform: translateX(-50%);
+}
+
+@keyframes trip-sheet-up {
+  from {
+    transform: translateY(60px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.trip-sheet-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.trip-sheet-title--center {
+  text-align: center;
+}
+
+.trip-sheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.trip-sheet-row--end {
+  justify-content: flex-end;
+}
+
+.trip-sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.trip-sheet-actions .trip-btn {
+  padding: 12px 8px;
+  font-size: 15px;
+}
+
+.trip-textarea {
+  width: 100%;
+  min-height: 62px;
+  border: 2px solid var(--trip-line);
+  background: var(--trip-tool);
+  color: var(--trip-fg);
+  border-radius: 14px;
+  padding: 10px;
+  font: inherit;
+  resize: vertical;
+}
+
+/* ---------- 留言板：整张弹层是一块木板 ---------- */
+
+.trip-sheet--board {
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 14px 14px, var(--trip-wood-line) 0 3px, transparent 3.6px),
+    radial-gradient(circle at calc(100% - 14px) 14px, var(--trip-wood-line) 0 3px, transparent 3.6px),
+    repeating-linear-gradient(180deg, transparent 0 118px, var(--trip-wood-line) 118px 120px),
+    repeating-linear-gradient(179deg, var(--trip-wood-grain-l) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(178deg, var(--trip-wood-grain-d) 0 2px, transparent 2px 19px),
+    linear-gradient(var(--trip-wood-hi), var(--trip-wood));
+  border-top-color: var(--trip-wood-line);
+  color: var(--trip-wood-ink);
+}
+
+.trip-sheet--board::before {
+  background: var(--trip-wood-line);
+}
+
+.trip-bd-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+/* 木牌标题 */
+.trip-bd-head .trip-sheet-title {
+  padding: 4px 16px;
+  border: 2px solid var(--trip-wood-line);
+  border-radius: 10px;
+  background: var(--trip-wood-d);
+  color: var(--trip-wood-paper);
+  font-size: 19px;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-wood-line);
+}
+
+.trip-bd-spacer {
+  flex: 1;
+}
+
+/* 问号按钮 */
+.trip-bd-help {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid var(--trip-accent-d);
+  border-radius: 50%;
+  background: linear-gradient(var(--trip-accent-hi), var(--trip-accent));
+  color: var(--trip-accent-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 2px 0 var(--trip-accent-d);
+}
+
+/* 提示气泡：浮在便签上面，不推开下面的内容 */
+.trip-bd-tipwrap {
+  position: relative;
+  flex: none;
+  height: 0;
+  z-index: 3;
+}
+
+.trip-bd-tip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  border: 2px solid var(--trip-line);
+  border-radius: 14px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  font-size: 12.5px;
+  line-height: 1.7;
+  font-weight: 700;
+  box-shadow: 0 3px 0 var(--trip-line-d), 0 14px 22px -10px var(--trip-drop);
+  transform-origin: 40px -8px;
+  animation: trip-bd-pop 0.2s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.trip-bd-tip::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 32px;
+  width: 14px;
+  height: 14px;
+  background: var(--trip-panel);
+  border-left: 2px solid var(--trip-line);
+  border-top: 2px solid var(--trip-line);
+  transform: rotate(45deg);
+}
+
+.trip-bd-tip li {
+  position: relative;
+  padding-left: 14px;
+}
+
+.trip-bd-tip li + li {
+  margin-top: 3px;
+}
+
+.trip-bd-tip li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--trip-accent);
+}
+
+/* 可以上下滑的木板区域：固定最大高度，输入区始终在下面 */
+.trip-bd-scroll {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: clamp(200px, 46vh, 420px);
+  margin: 14px -4px 10px;
+  padding: 18px 8px 26px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 22px), transparent 100%);
+}
+
+.trip-bd-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 便签：我的用图钉，居民的用胶带 */
+.trip-bd-note {
+  position: relative;
+  width: 88%;
+  padding: 14px 12px 10px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  border-radius: 6px 6px 8px 8px;
+  box-shadow: 0 3px 0 var(--trip-wood-line), 0 8px 10px -6px var(--trip-drop);
+  transform: rotate(var(--r, -1deg));
+  transform-origin: 50% 0;
+  animation: trip-bd-rise 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation-delay: var(--d, 0s);
+}
+
+.trip-bd-note--me {
+  justify-self: start;
+  --r: -1.2deg;
+}
+
+.trip-bd-note--them {
+  justify-self: end;
+  --r: 1deg;
+  background: var(--trip-tool);
+}
+
+.trip-bd-note-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 22px;
+}
+
+.trip-bd-note small {
+  color: var(--trip-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.trip-bd-note p {
+  margin: 3px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.trip-bd-note::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--trip-accent-hi), var(--trip-accent) 55%, var(--trip-accent-d));
+  box-shadow: 0 2px 2px var(--trip-drop);
+}
+
+.trip-bd-note--them::before {
+  top: -9px;
+  width: 46px;
+  height: 16px;
+  margin-left: -23px;
+  border-radius: 3px;
+  background: var(--trip-gold);
+  opacity: 0.78;
+  transform: rotate(-3deg);
+  box-shadow: none;
+}
+
+.trip-bd-pending {
+  position: absolute;
+  right: 10px;
+  bottom: -11px;
+  padding: 2px 9px;
+  border: 2px solid var(--trip-accent-d);
+  border-radius: 999px;
+  background: var(--trip-accent-hi);
+  color: var(--trip-accent-ink);
+  font-size: 11px;
+  font-weight: 900;
+  transform-origin: 50% -8px;
+  animation: trip-bd-swing 3.2s ease-in-out infinite;
+}
+
+/* 重 roll 按钮 */
+.trip-bd-roll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px 2px 7px;
+  border: 2px solid var(--trip-line);
+  border-radius: 999px;
+  background: var(--trip-panel);
+  color: var(--trip-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 2px 0 var(--trip-line-d);
+}
+
+.trip-bd-roll:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 1px 0 var(--trip-line-d);
+}
+
+.trip-bd-roll:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.trip-bd-note--rolling {
+  animation: trip-bd-shake 0.42s ease-in-out infinite;
+}
+
+.trip-bd-note--rolling .trip-bd-roll svg {
+  animation: trip-bd-spin 0.7s linear infinite;
+}
+
+.trip-bd-note--fresh p {
+  animation: trip-bd-flip 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.trip-bd-note--fall {
+  animation: trip-bd-fall 0.55s ease-in both;
+  animation-delay: var(--fd, 0s);
+}
+
+.trip-bd-empty {
+  justify-self: center;
+  width: 80%;
+  padding: 16px 12px;
+  text-align: center;
+  background: var(--trip-panel);
+  color: var(--trip-muted);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 3px 0 var(--trip-wood-line);
+  transform: rotate(-1deg);
+  animation: trip-bd-rise 0.45s both;
+}
+
+/* 输入区：始终在木板下面 */
+.trip-bd-compose {
+  display: grid;
+  gap: 10px;
+  flex: none;
+}
+
+.trip-bd-compose .trip-textarea {
+  margin: 0;
+  resize: none;
+  background: var(--trip-panel);
+  border-color: var(--trip-wood-line);
+}
+
+.trip-bd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trip-bd-post {
+  margin-left: auto;
+}
+
+.trip-bd-confirm {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid var(--trip-line);
+  border-radius: 14px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  box-shadow: 0 3px 0 var(--trip-wood-line);
+  animation: trip-bd-pop 0.2s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.trip-bd-confirm p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 800;
+  text-align: center;
+}
+
+@keyframes trip-bd-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes trip-bd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) rotate(var(--r, -1deg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(var(--r, -1deg));
+  }
+}
+
+@keyframes trip-bd-swing {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes trip-bd-shake {
+  0%,
+  100% {
+    transform: rotate(var(--r, 1deg));
+  }
+  25% {
+    transform: rotate(calc(var(--r, 1deg) - 3deg)) translateX(-2px);
+  }
+  75% {
+    transform: rotate(calc(var(--r, 1deg) + 3deg)) translateX(2px);
+  }
+}
+
+@keyframes trip-bd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes trip-bd-flip {
+  from {
+    opacity: 0;
+    transform: rotateX(80deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes trip-bd-fall {
+  to {
+    opacity: 0;
+    transform: translateY(160px) rotate(calc(var(--r, 1deg) + 24deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-bd-note,
+  .trip-bd-pending,
+  .trip-bd-tip,
+  .trip-bd-confirm,
+  .trip-bd-empty,
+  .trip-bd-note--fresh p,
+  .trip-bd-roll svg {
+    animation: none !important;
+  }
+
+  .trip-bd-note--fall {
+    opacity: 0;
+  }
+}
+
+/* ---------- 裁剪 ---------- */
+
+.trip-crop-frame {
+  position: relative;
+  width: min(100%, 300px);
+  margin: 14px auto 12px;
+  overflow: hidden;
+  border: 3px solid var(--trip-line-d);
+  border-radius: 22px;
+  background: #2a2226;
+  box-shadow: 0 4px 0 var(--trip-line-d);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.trip-crop-frame:active {
+  cursor: grabbing;
+}
+
+.trip-crop-frame img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* 三分线，帮助构图 */
+.trip-crop-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+      90deg,
+      transparent calc(33.3% - 0.5px),
+      rgba(255, 255, 255, 0.5) 33.3%,
+      transparent calc(33.3% + 0.5px),
+      transparent calc(66.6% - 0.5px),
+      rgba(255, 255, 255, 0.5) 66.6%,
+      transparent calc(66.6% + 0.5px)
+    ),
+    linear-gradient(
+      transparent calc(33.3% - 0.5px),
+      rgba(255, 255, 255, 0.5) 33.3%,
+      transparent calc(33.3% + 0.5px),
+      transparent calc(66.6% - 0.5px),
+      rgba(255, 255, 255, 0.5) 66.6%,
+      transparent calc(66.6% + 0.5px)
+    );
+}
+
+/* 圆形取景：圆外压暗，直观看到最终留下的范围 */
+.trip-crop-frame.is-circle::after {
+  background: radial-gradient(circle closest-side at 50% 50%, transparent 98%, rgba(30, 20, 24, 0.62) 100%);
+}
+
+.trip-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--trip-muted);
+}
+
+.trip-zoom input {
+  flex: 1;
+  height: 28px;
+  accent-color: var(--trip-accent-d);
+}
+
+/* ---------- 标定地板教程 ---------- */
+
+.trip-guide-sub {
+  margin: 4px 0 14px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--trip-muted);
+}
+
+.trip-guide-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 2px solid var(--trip-line);
+  border-radius: 20px;
+  background: var(--trip-panel);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 4px 0 var(--trip-line-d);
+}
+
+.trip-guide-no {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--trip-accent-d);
+  border-radius: 50%;
+  background: var(--trip-accent);
+  color: var(--trip-accent-ink);
+  font-weight: 800;
+  box-shadow: 0 3px 0 var(--trip-accent-d);
+}
+
+.trip-guide-step p {
+  flex: 1;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.trip-guide-step p b {
+  color: var(--trip-accent-d);
+}
+
+.trip-guide-il {
+  flex: none;
+  width: 88px;
+  height: 70px;
+}
+
+.trip-guide-tip {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 2px dashed var(--trip-line-d);
+  border-radius: 16px;
+  background: var(--trip-tool);
+  color: var(--trip-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.trip-guide-tip b {
+  color: var(--trip-fg);
+}
+
+.trip-guide-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 12px;
+}
+
+.trip-guide-actions .trip-btn {
+  padding: 13px 8px;
+  font-size: 16px;
+}
+
+/* ---------- 居民贴图面板 ---------- */
+
+.trip-skin-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 14px 0;
+}
+
+.trip-skin-box {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--trip-muted);
+}
+
+.trip-skin-art {
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border: 2px solid var(--trip-line);
+  border-radius: 24px;
+  background: var(--trip-tool);
+  box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.trip-skin-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.trip-skin-animals {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.trip-skin-animal {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px 2px 7px;
+  border: 2px solid var(--trip-line);
+  border-radius: 16px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.trip-skin-animal:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 1px 0 var(--trip-line-d);
+}
+
+.trip-skin-animal[aria-pressed='true'] {
+  border-color: var(--trip-accent-d);
+  background: linear-gradient(var(--trip-accent-hi), var(--trip-accent));
+  color: var(--trip-accent-ink);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 3px 0 var(--trip-accent-d);
+}
+
+.trip-skin-animal__fig {
+  display: block;
+  width: 100%;
+  max-width: 44px;
+  aspect-ratio: 56 / 68;
+  padding: 2px;
+  border-radius: 12px;
+}
+
+.trip-sec + .trip-textarea {
+  margin-top: 8px;
+}
+
+.trip-skin-persona-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.trip-skin-persona-row .trip-btn {
+  margin-top: 0;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.trip-skin-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--trip-muted);
+}
+
+.trip-skin-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.trip-skin-actions .trip-btn {
+  padding: 12px 8px;
+  font-size: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-sprite--walk .trip-sprite-flip,
+  .trip-sprite--hop .trip-sprite-flip,
+  .trip-sprite-badge,
+  .trip-sheet {
+    animation: none;
+  }
+}

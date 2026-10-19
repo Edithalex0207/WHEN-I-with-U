@@ -1,0 +1,1068 @@
+/* src/apps/tripHome/tripHome.css
+ *
+ * 旅行小屋的样式。所有选择器都挂在 .trip-home-app 下，类名统一 trip- 前缀，
+ * 不会影响别的应用。
+ *
+ * 颜色体系：整个应用的颜色都从一个色相变量 --trip-h（0 到 360）派生。
+ * TripApp.jsx 会从当前房间背景图里取主色相，写到 .trip-home-app 的
+ * style 上，所以换一张房间图，底色、卡片、边框、主按钮整体跟着换色；
+ * 没有房间图或取色失败时用下面的默认值 345（暖粉）。
+ * 不跟随用户在设置里选的 App 主题走，是旅行小屋自己的一套。
+ *
+ * 改颜色的位置：
+ *   白天：.trip-home-app 这一段（默认值就是白天）。
+ *   夜晚：.trip-home-app[data-trip-time='night'] 这一段，只写和白天不同的。
+ * 颜色一律写 var(--trip-xxx)，不要写死色值，否则日夜切换时那块不会变。
+ *
+ * 变量一览：
+ *   --trip-h           主题色相（程序自动写入，一般不用手改）
+ *   --trip-bg          整页底色          --trip-bg2    底色的浅一档（顶部光晕）
+ *   --trip-panel       卡片、弹窗的"纸"色  --trip-fg     主要文字
+ *   --trip-muted       次要小字           --trip-line   边框、分隔线
+ *   --trip-line-d      卡片下沿的"厚度"色  --trip-tool   浅色块（行李格底色等）
+ *   --trip-accent      强调色（选中的标签、主按钮）
+ *   --trip-accent-hi   强调色渐变的亮端    --trip-accent-d  强调色的"厚度"色
+ *   --trip-accent-ink  强调色上的文字
+ *   --trip-hi          顶部高光           --trip-drop   投影颜色
+ *   --trip-k-s / --trip-k-l / --trip-k-ink
+ *                      "糖果按钮"的饱和度、亮度、文字色。糖果按钮每个功能
+ *                      一个固定色相（见 .trip-c-xxx），不随主题变，但深浅
+ *                      会随日夜变。
+ */
+
+.trip-home-app {
+  --trip-h: 345;
+  --trip-bg: hsl(var(--trip-h) 62% 93%);
+  --trip-bg2: hsl(var(--trip-h) 55% 87%);
+  --trip-panel: hsl(var(--trip-h) 75% 98%);
+  --trip-fg: hsl(var(--trip-h) 32% 20%);
+  --trip-muted: hsl(var(--trip-h) 14% 44%);
+  --trip-line: hsl(var(--trip-h) 40% 82%);
+  --trip-line-d: hsl(var(--trip-h) 34% 71%);
+  --trip-tool: hsl(var(--trip-h) 62% 91%);
+  --trip-accent: hsl(var(--trip-h) 86% 69%);
+  --trip-accent-hi: hsl(var(--trip-h) 92% 77%);
+  --trip-accent-d: hsl(var(--trip-h) 62% 49%);
+  --trip-accent-ink: #ffffff;
+  --trip-hi: rgba(255, 255, 255, 0.75);
+  --trip-drop: rgba(80, 40, 40, 0.16);
+  --trip-gold: #f2b84b;
+  /* 留言板木板（只有留言板用）：木头、钉子线、木牌上的字、木纹 */
+  --trip-wood-hi: hsl(32 52% 70%);
+  --trip-wood: hsl(30 44% 58%);
+  --trip-wood-d: hsl(27 38% 44%);
+  --trip-wood-line: hsl(25 36% 33%);
+  --trip-wood-ink: hsl(25 40% 22%);
+  --trip-wood-paper: hsl(40 70% 95%);
+  --trip-wood-grain-l: rgba(255, 255, 255, 0.11);
+  --trip-wood-grain-d: rgba(80, 40, 15, 0.09);
+  --trip-shadow: 0 12px 30px -12px var(--trip-drop);
+  --trip-k-s: 86%;
+  --trip-k-l: 72%;
+  --trip-k-ink: hsl(var(--trip-h) 40% 18%);
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100dvh;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(108px + env(safe-area-inset-bottom, 0px));
+  background: var(--trip-bg);
+  color: var(--trip-fg);
+}
+
+.trip-home-app[data-trip-time='night'] {
+  --trip-bg: hsl(var(--trip-h) 24% 13%);
+  --trip-bg2: hsl(var(--trip-h) 22% 19%);
+  --trip-panel: hsl(var(--trip-h) 22% 22%);
+  --trip-fg: hsl(var(--trip-h) 36% 93%);
+  --trip-muted: hsl(var(--trip-h) 14% 68%);
+  --trip-line: hsl(var(--trip-h) 20% 31%);
+  --trip-line-d: hsl(var(--trip-h) 26% 9%);
+  --trip-tool: hsl(var(--trip-h) 20% 28%);
+  --trip-accent: hsl(var(--trip-h) 68% 68%);
+  --trip-accent-hi: hsl(var(--trip-h) 74% 75%);
+  --trip-accent-d: hsl(var(--trip-h) 52% 36%);
+  --trip-accent-ink: hsl(var(--trip-h) 50% 12%);
+  --trip-hi: rgba(255, 255, 255, 0.1);
+  --trip-drop: rgba(0, 0, 0, 0.45);
+  --trip-k-s: 62%;
+  --trip-k-l: 58%;
+  --trip-k-ink: hsl(var(--trip-h) 40% 10%);
+  --trip-wood-hi: hsl(28 26% 36%);
+  --trip-wood: hsl(26 24% 29%);
+  --trip-wood-d: hsl(24 22% 22%);
+  --trip-wood-line: hsl(22 24% 13%);
+  --trip-wood-ink: hsl(30 40% 88%);
+  --trip-wood-paper: hsl(36 42% 82%);
+  --trip-wood-grain-l: rgba(255, 255, 255, 0.05);
+  --trip-wood-grain-d: rgba(0, 0, 0, 0.14);
+}
+
+/* 铺满整个屏幕的底色层，不受 420px 内容区限制。顶部一层柔和光晕，
+ * 让底色不是死平铺（没有点阵）。 */
+.trip-bg-fill {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 50% -10%, var(--trip-bg2) 0, transparent 60%), var(--trip-bg);
+  transition: background-color 0.4s ease;
+}
+
+.trip-home-app *,
+.trip-home-app *::before,
+.trip-home-app *::after {
+  box-sizing: border-box;
+}
+
+/* :where() 让这条重置的优先级为零，不会盖过下面各按钮自己写的 font-size。 */
+:where(.trip-home-app) button {
+  font: inherit;
+}
+
+.trip-home-app :focus-visible {
+  outline: 2px solid var(--trip-accent-d);
+  outline-offset: 2px;
+}
+
+/* ---------- 通用：有厚度的"卡片" ----------
+ * 顶部一条高光、底部一条实色"厚度"、再加一层柔和投影，所以卡片和底色之间
+ * 有明确的层次，不是平铺的。需要卡片质感的元素都用同一组样式。 */
+
+.trip-card,
+.trip-good,
+.trip-item,
+.trip-plan,
+.trip-coins,
+.trip-title {
+  background: var(--trip-panel);
+  border: 2px solid var(--trip-line);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 4px 0 var(--trip-line-d), 0 14px 22px -12px var(--trip-drop);
+}
+
+/* ---------- 通用：糖果按钮 ----------
+ * 每个功能一个色相，用 --c 控制（.trip-c-xxx 给色相）。没指定的默认跟随
+ * 主题色相。深浅和文字色由 --trip-k-* 决定，日夜自动切换。 */
+
+:where(.trip-cbtn, .trip-round, .trip-tool, .trip-dk) {
+  --c: var(--trip-h);
+}
+
+.trip-c-sun { --c: 48; }
+.trip-c-sky { --c: 200; }
+.trip-c-mint { --c: 150; }
+.trip-c-lilac { --c: 275; }
+.trip-c-rose { --c: 340; }
+.trip-c-peach { --c: 28; }
+
+.trip-cbtn,
+.trip-round,
+.trip-tool,
+.trip-dk.is-on {
+  background: linear-gradient(
+    hsl(var(--c) var(--trip-k-s) calc(var(--trip-k-l) + 9%)),
+    hsl(var(--c) var(--trip-k-s) var(--trip-k-l))
+  );
+  color: var(--trip-k-ink);
+  border: 2px solid hsl(var(--c) calc(var(--trip-k-s) - 18%) calc(var(--trip-k-l) - 14%));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55),
+    0 4px 0 hsl(var(--c) calc(var(--trip-k-s) - 20%) calc(var(--trip-k-l) - 24%)),
+    0 10px 14px -6px var(--trip-drop);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.trip-cbtn:active,
+.trip-round:active,
+.trip-tool:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 1px 0 hsl(var(--c) calc(var(--trip-k-s) - 20%) calc(var(--trip-k-l) - 24%));
+}
+
+/* ---------- 顶部 ---------- */
+
+.trip-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trip-round {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.trip-title {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.trip-coins {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px 0 9px;
+  border-radius: 22px;
+  font-weight: 800;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-coin {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3b0 0, #ffd54a 40%, #f2a900 100%);
+  border: 2px solid #c98a00;
+  box-shadow: inset 0 -2px 0 rgba(160, 90, 0, 0.35);
+}
+
+/* ---------- 底部导航：浮起的药丸，选中的一颗会"鼓出来" ---------- */
+
+.trip-dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  transform: translateX(-50%);
+  width: min(calc(100vw - 28px), 392px);
+  height: 70px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border-radius: 30px;
+  background: var(--trip-panel);
+  border: 2px solid var(--trip-line);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 5px 0 var(--trip-line-d), 0 18px 26px -10px var(--trip-drop);
+}
+
+.trip-dk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 22px;
+  background: transparent;
+  color: var(--trip-muted);
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.trip-dk svg {
+  width: 24px;
+  height: 24px;
+}
+
+.trip-dk--room { --c: var(--trip-h); }
+.trip-dk--tickets { --c: 200; }
+.trip-dk--luggage { --c: 48; }
+.trip-dk--shop { --c: 150; }
+
+.trip-dk.is-on {
+  transform: translateY(-6px);
+}
+
+/* ---------- 分页和按钮 ---------- */
+
+.trip-tabs,
+.trip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--trip-line);
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.trip-chip:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 1px 0 var(--trip-line-d);
+}
+
+.trip-chip[aria-pressed='true'] {
+  border-color: var(--trip-accent-d);
+  background: linear-gradient(var(--trip-accent-hi), var(--trip-accent));
+  color: var(--trip-accent-ink);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 3px 0 var(--trip-accent-d);
+}
+
+.trip-btn {
+  border: 2px solid var(--trip-accent-d);
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: linear-gradient(var(--trip-accent-hi), var(--trip-accent));
+  color: var(--trip-accent-ink);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 4px 0 var(--trip-accent-d), 0 10px 14px -6px var(--trip-drop);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.trip-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 1px 0 var(--trip-accent-d);
+}
+
+.trip-btn--sm {
+  padding: 6px 14px;
+  font-size: 12px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 3px 0 var(--trip-accent-d);
+}
+
+.trip-btn--ghost {
+  border-color: var(--trip-line);
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+}
+
+.trip-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---------- 通用文字 ---------- */
+
+.trip-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trip-sec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 2px 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--trip-fg);
+}
+
+.trip-sec::before {
+  content: '';
+  width: 6px;
+  height: 17px;
+  border-radius: 3px;
+  background: var(--trip-accent);
+  box-shadow: 0 2px 0 var(--trip-accent-d);
+}
+
+.trip-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--trip-muted);
+  font-weight: 600;
+}
+
+.trip-hint--center {
+  text-align: center;
+}
+
+.trip-empty {
+  margin: 0;
+  padding: 22px 16px;
+  border: 2px dashed var(--trip-line-d);
+  border-radius: 18px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--trip-muted);
+}
+
+/* ---------- 动物 / 头像 / 物品图标 ---------- */
+
+.trip-figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.trip-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 0 var(--trip-line-d);
+}
+
+.trip-avatar__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 物品小图标：按分类各一个色相，立体小方块。 */
+.trip-ico {
+  --c: 35;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(
+    hsl(var(--c) var(--trip-k-s) calc(var(--trip-k-l) + 9%)),
+    hsl(var(--c) var(--trip-k-s) var(--trip-k-l))
+  );
+  border: 2px solid hsl(var(--c) calc(var(--trip-k-s) - 18%) calc(var(--trip-k-l) - 14%));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 3px 0 hsl(var(--c) calc(var(--trip-k-s) - 20%) calc(var(--trip-k-l) - 24%));
+  color: var(--trip-k-ink);
+}
+
+.trip-ico--food { --c: 35; }
+.trip-ico--prop { --c: 205; }
+.trip-ico--gift { --c: 340; }
+
+.trip-ico--img {
+  display: block;
+  object-fit: cover;
+  background: var(--trip-tool);
+}
+
+/* ---------- 车票 / 机票 ---------- */
+
+.trip-ticket-wrap {
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.18)) drop-shadow(0 12px 10px var(--trip-drop));
+}
+
+/* 票根两端的半圆缺口用 mask 真的挖掉，这样不管背景是什么主题/渐变都对得上。 */
+.trip-ticket {
+  --tc: #3f9a93;
+  --tc2: #2f7a76;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(var(--tc), var(--tc2));
+  color: #ffffff;
+  -webkit-mask-image: radial-gradient(circle 8px at calc(100% - 96px) 0, transparent 97%, #000 100%),
+    radial-gradient(circle 8px at calc(100% - 96px) 100%, transparent 97%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: radial-gradient(circle 8px at calc(100% - 96px) 0, transparent 97%, #000 100%),
+    radial-gradient(circle 8px at calc(100% - 96px) 100%, transparent 97%, #000 100%);
+  mask-composite: intersect;
+}
+
+.trip-ticket--plane {
+  --tc: #5a9be6;
+  --tc2: #3d79c4;
+}
+
+.trip-ticket__main {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.trip-ticket__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: -12px -14px 0;
+  padding: 7px 14px;
+  background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.16) 0 8px, transparent 8px 16px), rgba(0, 0, 0, 0.12);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.trip-ticket__who {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.trip-ticket__who b {
+  display: block;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.trip-ticket__who small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.trip-ticket__route {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.trip-ticket__stn b {
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-ticket__stn small {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.trip-ticket__stn--to {
+  max-width: 112px;
+  text-align: right;
+}
+
+.trip-ticket__line {
+  position: relative;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0 5px, transparent 5px 10px);
+}
+
+.trip-ticket.is-done .trip-ticket__line {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.trip-ticket__veh {
+  position: absolute;
+  top: -11px;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--tc2);
+  border: 2px solid #ffffff;
+  transform: translateX(-50%);
+}
+
+.trip-ticket__times {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-ticket__times span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.trip-ticket__bag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.trip-ticket__bag i {
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.trip-ticket__stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 8px;
+  border-left: 3px dashed rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.14);
+  text-align: center;
+}
+
+.trip-ticket__stub small {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  opacity: 0.9;
+}
+
+.trip-ticket__stub strong {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-ticket__bars {
+  width: 100%;
+  height: 28px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    #ffffff 0 2px,
+    transparent 2px 4px,
+    #ffffff 4px 5px,
+    transparent 5px 8px,
+    #ffffff 8px 11px,
+    transparent 11px 13px
+  );
+  opacity: 0.9;
+}
+
+.trip-ticket__stamp {
+  padding: 2px 8px;
+  border: 2.5px solid #ffe2e7;
+  border-radius: 8px;
+  color: #ffe2e7;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  transform: rotate(-12deg);
+}
+
+.trip-ticket__btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #ffffff;
+  color: #3b2c2c;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
+}
+
+.trip-ticket__btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+}
+
+/* ---------- 行李：旅行箱 ---------- */
+
+.trip-case {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px 14px 14px;
+  border-radius: 26px;
+  background: linear-gradient(var(--trip-accent-hi), var(--trip-accent));
+  border: 3px solid var(--trip-accent-d);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.5), 0 7px 0 var(--trip-accent-d), 0 20px 24px -12px var(--trip-drop);
+}
+
+/* 提手 */
+.trip-case::before {
+  content: '';
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  width: 90px;
+  height: 24px;
+  border: 8px solid var(--trip-accent-d);
+  border-bottom: 0;
+  border-radius: 22px 22px 0 0;
+  transform: translateX(-50%);
+}
+
+/* 箱子两侧的竖条（箱体的包边） */
+.trip-case::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 8px;
+  right: 8px;
+  border-left: 8px solid rgba(0, 0, 0, 0.1);
+  border-right: 8px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.trip-case > * {
+  position: relative;
+  z-index: 1;
+  margin-left: 14px;
+  margin-right: 14px;
+}
+
+.trip-case .trip-hint {
+  color: var(--trip-accent-ink);
+  text-align: center;
+}
+
+.trip-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  padding: 10px;
+  border-radius: 18px;
+  background: var(--trip-panel);
+  border: 2px solid var(--trip-accent-d);
+  box-shadow: inset 0 4px 0 rgba(0, 0, 0, 0.08);
+}
+
+.trip-slot {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 92px;
+  padding: 8px 6px;
+  border: 2px dashed var(--trip-line-d);
+  border-radius: 16px;
+  background: var(--trip-tool);
+  color: var(--trip-fg);
+  text-align: center;
+  box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.trip-slot small {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--trip-muted);
+}
+
+.trip-slot strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.trip-slot__none {
+  color: var(--trip-muted);
+}
+
+.trip-slot__empty-ico {
+  opacity: 0.45;
+}
+
+.trip-slot.is-full {
+  border-style: solid;
+  border-color: var(--trip-line-d);
+  background: linear-gradient(var(--trip-panel), var(--trip-tool));
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+  cursor: pointer;
+}
+
+.trip-slot.is-full:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 1px 0 var(--trip-line-d);
+}
+
+.trip-slot.is-full:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.trip-plan {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+}
+
+.trip-plan > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trip-plan span {
+  flex: none;
+  color: var(--trip-muted);
+  font-weight: 700;
+}
+
+.trip-plan b {
+  min-width: 0;
+  text-align: right;
+}
+
+.trip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trip-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+}
+
+.trip-item__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-item__text small {
+  display: block;
+  font-size: 12px;
+  color: var(--trip-muted);
+}
+
+.trip-item__count {
+  flex: none;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--trip-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 商店 ---------- */
+
+.trip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 22px;
+}
+
+.trip-card--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trip-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trip-card__head span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--trip-muted);
+}
+
+.trip-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.trip-day {
+  padding: 6px 0;
+  border: 2px solid var(--trip-line);
+  border-radius: 12px;
+  background: var(--trip-tool);
+  color: var(--trip-muted);
+  font-size: 11px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-day b {
+  display: block;
+  font-size: 13px;
+  color: var(--trip-fg);
+}
+
+.trip-day.is-on {
+  border-color: var(--trip-accent-d);
+  background: linear-gradient(var(--trip-accent-hi), var(--trip-accent));
+  color: var(--trip-accent-ink);
+  box-shadow: 0 3px 0 var(--trip-accent-d);
+}
+
+.trip-day.is-on b {
+  color: var(--trip-accent-ink);
+}
+
+.trip-goods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.trip-good {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 22px;
+}
+
+.trip-good .trip-ico {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+}
+
+.trip-good h3 {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.trip-good p {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--trip-muted);
+}
+
+.trip-tag {
+  align-self: flex-start;
+  padding: 1px 9px;
+  border: 2px solid var(--trip-line);
+  border-radius: 999px;
+  background: var(--trip-tool);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.trip-good__buy {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.trip-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-price .trip-coin {
+  width: 16px;
+  height: 16px;
+  border-width: 1.5px;
+}
+
+/* ---------- 调试面板（自动出发上线后删除） ---------- */
+
+.trip-debug {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 2px dashed var(--trip-line-d);
+  border-radius: 18px;
+}
+
+.trip-debug h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.trip-debug p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--trip-muted);
+}
+
+.trip-debug__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.trip-debug__row select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 2px solid var(--trip-line);
+  border-radius: 12px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+}
+
+.trip-debug__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- 轻提示 ----------
+ * 只用水平居中 + 底部定位。fixed 是相对整个视口的，而车道本身也是水平
+ * 居中的，所以居中的提示不会像靠左的元素那样在宽屏下跑出车道。
+ * 放在屏幕顶部：底部有浮动导航，而且各种底部弹层（裁剪、教程、贴图、
+ * 留言板）的按钮都在底部，提示放底部会盖住按钮。
+ * z-index 要盖过房间分页的弹层（tripRoom.css 的 .trip-scrim/.trip-sheet
+ * 是 70），不然解锁/留言板这类弹层开着的时候提示会被压在底下看不见——
+ * 切片 B 时在 Chromium 里实测点"解锁"钱不够应该弹提示，结果被弹层挡住
+ * 发现的。 */
+
+.trip-toast {
+  position: fixed;
+  left: 50%;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  z-index: 80;
+  width: max-content;
+  max-width: min(360px, 88vw);
+  padding: 10px 16px;
+  border-radius: 16px;
+  border: 2px solid var(--trip-line);
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  transform: translateX(-50%);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 4px 0 var(--trip-line-d), 0 14px 22px -8px var(--trip-drop);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-cbtn,
+  .trip-round,
+  .trip-tool,
+  .trip-dk,
+  .trip-chip,
+  .trip-btn {
+    transition: none;
+  }
+}
