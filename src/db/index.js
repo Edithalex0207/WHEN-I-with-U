@@ -5057,4 +5057,12 @@ db.version(94).stores({
   `,
 });
 
+// 旅行小屋（src/apps/tripHome/）：每个聊天角色一条居民记录，每趟旅行一条
+// 车票记录。旅费、背包、签到记录放在 settings 表 key = 'tripHomeState' 的
+// 一行里，不需要单独建表。
+db.version(95).stores({
+  tripResidents: '++id, characterId, status',
+  tripJourneys: '++id, residentId, characterId, status, arriveAt',
+});
+
 export default db;

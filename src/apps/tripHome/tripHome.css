@@ -1,0 +1,743 @@
+/* src/apps/tripHome/tripHome.css
+ *
+ * 旅行小屋的样式。所有选择器都挂在 .trip-home-app 下，类名统一 trip- 前缀，
+ * 不会影响别的应用。
+ *
+ * 颜色：卡片、文字、分割线全部用全局主题变量（--card-bg / --text-main /
+ * --control-soft-bg 等），所以会跟着用户选的主题走；只有强调色（粉红）
+ * 和车票本身的颜色（火车票青绿、机票蓝）是这个应用自己的。
+ */
+
+.trip-home-app {
+  --trip-accent: #e0607e;
+  --trip-accent-ink: #ffffff;
+  --trip-gold: #f2b84b;
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100dvh;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(32px + env(safe-area-inset-bottom, 0px));
+  color: var(--text-main, #111111);
+}
+
+.trip-home-app *,
+.trip-home-app *::before,
+.trip-home-app *::after {
+  box-sizing: border-box;
+}
+
+/* :where() 让这条重置的优先级为零，不会盖过下面各按钮自己写的 font-size。 */
+:where(.trip-home-app) button {
+  font: inherit;
+}
+
+.trip-home-app :focus-visible {
+  outline: 2px solid var(--trip-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 顶部 ---------- */
+
+.trip-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trip-round {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--card-border, #dededb);
+  background: var(--card-bg, #ffffff);
+  color: var(--text-main, #111111);
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(30, 20, 20, 0.12);
+}
+
+.trip-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.trip-coins {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border, #dededb);
+  background: var(--card-bg, #ffffff);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-coin {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe69a, var(--trip-gold));
+  box-shadow: inset 0 0 0 2px #d9952a;
+}
+
+/* ---------- 分页和按钮 ---------- */
+
+.trip-tabs,
+.trip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--divider, #d9d9d6);
+  background: transparent;
+  color: var(--text-main, #111111);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.trip-chip[aria-pressed='true'] {
+  border-color: var(--trip-accent);
+  background: var(--trip-accent);
+  color: var(--trip-accent-ink);
+}
+
+.trip-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: var(--trip-accent);
+  color: var(--trip-accent-ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trip-btn--sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.trip-btn--ghost {
+  border: 1.5px solid var(--divider, #d9d9d6);
+  background: transparent;
+  color: var(--text-main, #111111);
+}
+
+.trip-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---------- 通用文字 ---------- */
+
+.trip-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trip-sec {
+  margin: 4px 2px 0;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #707070);
+}
+
+.trip-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted, #707070);
+}
+
+.trip-empty {
+  margin: 0;
+  padding: 22px 16px;
+  border: 1px dashed var(--divider, #d9d9d6);
+  border-radius: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted, #707070);
+}
+
+/* ---------- 动物 / 头像 / 物品图标 ---------- */
+
+.trip-figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.trip-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+}
+
+.trip-avatar__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trip-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+}
+
+.trip-ico--food {
+  background: #ffd9a8;
+  color: #7a4a12;
+}
+
+.trip-ico--prop {
+  background: #cfe6ff;
+  color: #1f4d7a;
+}
+
+.trip-ico--gift {
+  background: #ffd3de;
+  color: #8a2a45;
+}
+
+.trip-ico--img {
+  display: block;
+  object-fit: cover;
+}
+
+/* ---------- 车票 / 机票 ---------- */
+
+.trip-ticket-wrap {
+  filter: drop-shadow(0 6px 10px rgba(30, 20, 20, 0.22));
+}
+
+/* 票根两端的半圆缺口用 mask 真的挖掉，这样不管背景是什么主题/渐变都对得上。 */
+.trip-ticket {
+  --tc: #2f6f73;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--tc);
+  color: #ffffff;
+  -webkit-mask-image: radial-gradient(circle 8px at calc(100% - 96px) 0, transparent 97%, #000 100%),
+    radial-gradient(circle 8px at calc(100% - 96px) 100%, transparent 97%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: radial-gradient(circle 8px at calc(100% - 96px) 0, transparent 97%, #000 100%),
+    radial-gradient(circle 8px at calc(100% - 96px) 100%, transparent 97%, #000 100%);
+  mask-composite: intersect;
+}
+
+.trip-ticket--plane {
+  --tc: #3d79c4;
+}
+
+.trip-ticket__main {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.trip-ticket__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.trip-ticket__who {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.trip-ticket__who b {
+  display: block;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.trip-ticket__who small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.trip-ticket__route {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.trip-ticket__stn b {
+  display: block;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-ticket__stn small {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.trip-ticket__stn--to {
+  max-width: 112px;
+  text-align: right;
+}
+
+.trip-ticket__line {
+  position: relative;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.75) 0 5px, transparent 5px 10px);
+}
+
+.trip-ticket.is-done .trip-ticket__line {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.trip-ticket__veh {
+  position: absolute;
+  top: -11px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--tc);
+  transform: translateX(-50%);
+}
+
+.trip-ticket__times {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-ticket__times span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+.trip-ticket__bag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.trip-ticket__bag i {
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.trip-ticket__stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 8px;
+  border-left: 2px dashed rgba(255, 255, 255, 0.55);
+  background: rgba(0, 0, 0, 0.14);
+  text-align: center;
+}
+
+.trip-ticket__stub small {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+
+.trip-ticket__stub strong {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-ticket__bars {
+  width: 100%;
+  height: 28px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    #ffffff 0 2px,
+    transparent 2px 4px,
+    #ffffff 4px 5px,
+    transparent 5px 8px,
+    #ffffff 8px 11px,
+    transparent 11px 13px
+  );
+  opacity: 0.9;
+}
+
+.trip-ticket__stamp {
+  padding: 2px 8px;
+  border: 2.5px solid #ffd2d9;
+  border-radius: 8px;
+  color: #ffd2d9;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transform: rotate(-12deg);
+}
+
+.trip-ticket__btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: #ffffff;
+  color: #3b2c2c;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- 行李 ---------- */
+
+.trip-case {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--control-soft-bg, #f0f0ee);
+}
+
+.trip-case::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 64px;
+  height: 16px;
+  border: 3px solid var(--divider, #d9d9d6);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  transform: translateX(-50%);
+}
+
+.trip-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.trip-slot {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 88px;
+  padding: 8px 6px;
+  border: 2px dashed var(--divider, #d9d9d6);
+  border-radius: 14px;
+  background: var(--card-bg, #ffffff);
+  color: var(--text-main, #111111);
+  text-align: center;
+}
+
+.trip-slot small {
+  font-size: 11px;
+  color: var(--text-muted, #707070);
+}
+
+.trip-slot strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.trip-slot__none {
+  color: var(--text-muted, #707070);
+}
+
+.trip-slot__empty-ico {
+  opacity: 0.45;
+}
+
+.trip-slot.is-full {
+  border-style: solid;
+  border-color: var(--trip-accent);
+  cursor: pointer;
+}
+
+.trip-slot.is-full:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.trip-plan {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--card-bg, #ffffff);
+  font-size: 13px;
+}
+
+.trip-plan > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trip-plan span {
+  flex: none;
+  color: var(--text-muted, #707070);
+}
+
+.trip-plan b {
+  min-width: 0;
+  text-align: right;
+}
+
+.trip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trip-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  background: var(--control-soft-bg, #f0f0ee);
+}
+
+.trip-item__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-item__text small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted, #707070);
+}
+
+.trip-item__count {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-muted, #707070);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 商店 ---------- */
+
+.trip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--control-soft-bg, #f0f0ee);
+}
+
+.trip-card--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trip-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trip-card__head span {
+  font-size: 12px;
+  color: var(--text-muted, #707070);
+}
+
+.trip-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.trip-day {
+  padding: 6px 0;
+  border-radius: 10px;
+  background: var(--card-bg, #ffffff);
+  color: var(--text-muted, #707070);
+  font-size: 11px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-day b {
+  display: block;
+  font-size: 13px;
+  color: var(--text-main, #111111);
+}
+
+.trip-day.is-on {
+  background: var(--trip-accent);
+  color: var(--trip-accent-ink);
+}
+
+.trip-day.is-on b {
+  color: var(--trip-accent-ink);
+}
+
+.trip-goods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.trip-good {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 11px;
+  border-radius: 16px;
+  background: var(--control-soft-bg, #f0f0ee);
+}
+
+.trip-good h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.trip-good p {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted, #707070);
+}
+
+.trip-tag {
+  align-self: flex-start;
+  padding: 1px 9px;
+  border: 1px solid var(--divider, #d9d9d6);
+  border-radius: 999px;
+  background: var(--card-bg, #ffffff);
+  font-size: 11px;
+}
+
+.trip-good__buy {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.trip-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-price .trip-coin {
+  width: 13px;
+  height: 13px;
+}
+
+/* ---------- 调试面板（自动出发上线后删除） ---------- */
+
+.trip-debug {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed var(--divider, #d9d9d6);
+  border-radius: 16px;
+}
+
+.trip-debug h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.trip-debug p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted, #707070);
+}
+
+.trip-debug__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.trip-debug__row select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--divider, #d9d9d6);
+  border-radius: 10px;
+  background: var(--card-bg, #ffffff);
+  color: var(--text-main, #111111);
+}
+
+.trip-debug__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- 轻提示 ----------
+ * 只用水平居中 + 底部定位。fixed 是相对整个视口的，而车道本身也是水平
+ * 居中的，所以居中的提示不会像靠左的元素那样在宽屏下跑出车道。 */
+
+.trip-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  width: max-content;
+  max-width: min(360px, 88vw);
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(40, 24, 28, 0.9);
+  color: #ffffff;
+  font-size: 13px;
+  text-align: center;
+  transform: translateX(-50%);
+}

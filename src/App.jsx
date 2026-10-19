@@ -139,6 +139,7 @@ const SharedWorldApp = lazyWithRetry(() => import('./apps/shared-world/SharedWor
 const RhythmApp = lazyWithRetry(() => import('./apps/rhythm/RhythmApp'), 'RhythmApp');
 const WorkflowApp = lazyWithRetry(() => import('./apps/workflows/WorkflowApp'), 'WorkflowApp');
 const TextGameHallApp = lazyWithRetry(() => import('./apps/textgames/TextGameHallApp'), 'TextGameHallApp');
+const TripHomeApp = lazyWithRetry(() => import('./apps/tripHome/TripApp'), 'TripHomeApp');
 const FlightChessApp = lazyWithRetry(() => import('./apps/flightchess/FlightChessApp'), 'FlightChessApp');
 
 // 只是"这个模块的代码正在下载"那零点几秒到一两秒（视网络而定）的占位，
@@ -233,6 +234,7 @@ const REGISTERED_APPS = [
   'margin-notes',
   'workflows',
   'textgames',
+  'tripHome',
   'flightchess',
 ];
 
@@ -899,7 +901,9 @@ const [hubBackground, setHubBackground] = useState('');
   const isMarginNotesApp =
     currentApp === 'margin-notes';
 
- const isShellApp = currentApp === 'shell';
+ // 旅行小屋（tripHome）沿用 shell 的整页车道处理：车道宽度不变，去掉
+// 默认的上下内边距，由它自己的样式负责内边距（含安全区）。
+const isShellApp = currentApp === 'shell' || currentApp === 'tripHome';
 const isEmotionKitApp = currentApp === 'emotionkit';
  // 文字游戏大厅是一整张边到边铺满视口的黑白弥散杂志背景，不是普通
   // 卡片车道里的内容——跟 emotionkit 一样需要真正的整视口宽度（不封顶
@@ -1375,6 +1379,16 @@ const isTextGameHallApp = currentApp === 'textgames';
           <ErrorBoundary>
             <React.Suspense fallback={<AppLoadingFallback />}>
               <TextGameHallApp
+                onBackHub={() => openApp('hub')}
+              />
+            </React.Suspense>
+          </ErrorBoundary>
+        )}
+
+        {currentApp === 'tripHome' && (
+          <ErrorBoundary>
+            <React.Suspense fallback={<AppLoadingFallback />}>
+              <TripHomeApp
                 onBackHub={() => openApp('hub')}
               />
             </React.Suspense>
