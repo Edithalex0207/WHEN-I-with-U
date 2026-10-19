@@ -162,8 +162,12 @@ const AnimalFace = ({ animalId }) => (
   </>
 );
 
-// 内置的动物剪影（白色描边的贴纸风格）。
-export const TripAnimalFigure = ({ animalId, color }) => {
+// 动物剪影的 <g> 本体（不带外层 <svg>/viewBox），局部坐标原点在脚下，
+// 头顶到 y=-62 左右。单独导出是因为房间地板上的居民精灵（TripRoom.jsx）
+// 要把它直接当成大 SVG 场景里的一个子节点定位（translate+scale），不能
+// 再套一层有自己 viewBox 的 <svg>。TripAnimalFigure（下面，给列表/头像
+// 这类独立小图标用）就是在这个 <g> 外面套一层 svg。
+export const TripAnimalMark = ({ animalId, color }) => {
   const animal = getTripAnimal(animalId);
   const id = animal.id;
   const body = (
@@ -175,15 +179,23 @@ export const TripAnimalFigure = ({ animalId, color }) => {
   );
 
   return (
-    <svg className="trip-figure" viewBox="-28 -62 56 68" aria-hidden="true">
+    <g aria-hidden="true">
       <g fill="#fff" stroke="#fff" strokeWidth="6" strokeLinejoin="round">
         {body}
       </g>
       <g fill={color || animal.color}>{body}</g>
       <AnimalFace animalId={id} />
-    </svg>
+    </g>
   );
 };
+
+// 内置的动物剪影（白色描边的贴纸风格），带独立的 svg/viewBox，给列表行、
+// 头像这类单独摆放的小图标用。
+export const TripAnimalFigure = ({ animalId, color }) => (
+  <svg className="trip-figure" viewBox="-28 -62 56 68" aria-hidden="true">
+    <TripAnimalMark animalId={animalId} color={color} />
+  </svg>
+);
 
 // 居民头像（圆形）：用户上传/填写的头像 > 动物预设的图片 > 内置剪影。
 export const TripAvatar = ({ resident, size = 36 }) => {

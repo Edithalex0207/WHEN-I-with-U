@@ -3,15 +3,27 @@
  * 旅行小屋的样式。所有选择器都挂在 .trip-home-app 下，类名统一 trip- 前缀，
  * 不会影响别的应用。
  *
- * 颜色：卡片、文字、分割线全部用全局主题变量（--card-bg / --text-main /
- * --control-soft-bg 等），所以会跟着用户选的主题走；只有强调色（粉红）
- * 和车票本身的颜色（火车票青绿、机票蓝）是这个应用自己的。
+ * 颜色：这个应用有自己独立的一套米杏色调色板（--trip-bg / --trip-panel /
+ * --trip-fg 等），不跟随用户在设置里选的四个 App 主题（素雾灰/奶油拿铁/
+ * 黑曜石暗/赛博丝绒）走——参考 2026-10 的「异地任务挑战」杂志风整页，
+ * 同样是「整本独立小册子」的质感，换肤不影响它。只在 prefers-color-scheme
+ * 上跟一下系统深浅色，给出一个柔和的夜间变体，避免纯白面板在深色系统下
+ * 太刺眼；这跟 App 自己的四主题系统无关，是旅行小屋自己的深浅色。
+ * 之后房间场景（切片 B）的日/夜切换是另一回事：只影响房间画面本身的光
+ * 线颜色，不影响这里定义的外壳配色。
  */
 
 .trip-home-app {
+  --trip-bg: #efe4df;
+  --trip-panel: #fffaf7;
+  --trip-fg: #3b2c2c;
+  --trip-muted: #8a7571;
+  --trip-line: #e5d6cf;
+  --trip-tool: #f6ebe6;
   --trip-accent: #e0607e;
   --trip-accent-ink: #ffffff;
   --trip-gold: #f2b84b;
+  --trip-shadow: 0 12px 34px rgba(120, 70, 70, 0.2);
 
   box-sizing: border-box;
   display: flex;
@@ -19,7 +31,22 @@
   gap: 14px;
   min-height: 100dvh;
   padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(32px + env(safe-area-inset-bottom, 0px));
-  color: var(--text-main, #111111);
+  background: var(--trip-bg);
+  color: var(--trip-fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .trip-home-app {
+    --trip-bg: #1c1618;
+    --trip-panel: #2a2224;
+    --trip-fg: #f4e8e6;
+    --trip-muted: #b39d9a;
+    --trip-line: #43363b;
+    --trip-tool: #372c2f;
+    --trip-accent: #f08ba0;
+    --trip-accent-ink: #2a1a1f;
+    --trip-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+  }
 }
 
 .trip-home-app *,
@@ -53,9 +80,9 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 1px solid var(--card-border, #dededb);
-  background: var(--card-bg, #ffffff);
-  color: var(--text-main, #111111);
+  border: 1px solid var(--trip-line);
+  background: var(--trip-panel);
+  color: var(--trip-fg);
   cursor: pointer;
   box-shadow: 0 3px 10px rgba(30, 20, 20, 0.12);
 }
@@ -75,8 +102,8 @@
   gap: 7px;
   padding: 6px 13px;
   border-radius: 999px;
-  border: 1px solid var(--card-border, #dededb);
-  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--trip-line);
+  background: var(--trip-panel);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -105,9 +132,9 @@
   gap: 6px;
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1.5px solid var(--divider, #d9d9d6);
+  border: 1.5px solid var(--trip-line);
   background: transparent;
-  color: var(--text-main, #111111);
+  color: var(--trip-fg);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -134,9 +161,9 @@
 }
 
 .trip-btn--ghost {
-  border: 1.5px solid var(--divider, #d9d9d6);
+  border: 1.5px solid var(--trip-line);
   background: transparent;
-  color: var(--text-main, #111111);
+  color: var(--trip-fg);
 }
 
 .trip-btn:disabled {
@@ -156,23 +183,23 @@
   margin: 4px 2px 0;
   font-size: 12px;
   letter-spacing: 0.06em;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-hint {
   margin: 0;
   font-size: 12px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-empty {
   margin: 0;
   padding: 22px 16px;
-  border: 1px dashed var(--divider, #d9d9d6);
+  border: 1px dashed var(--trip-line);
   border-radius: 16px;
   text-align: center;
   font-size: 13px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 /* ---------- 动物 / 头像 / 物品图标 ---------- */
@@ -438,7 +465,7 @@
   gap: 12px;
   padding: 14px;
   border-radius: 20px;
-  background: var(--control-soft-bg, #f0f0ee);
+  background: var(--trip-tool);
 }
 
 .trip-case::before {
@@ -448,7 +475,7 @@
   left: 50%;
   width: 64px;
   height: 16px;
-  border: 3px solid var(--divider, #d9d9d6);
+  border: 3px solid var(--trip-line);
   border-bottom: 0;
   border-radius: 10px 10px 0 0;
   transform: translateX(-50%);
@@ -467,16 +494,16 @@
   gap: 4px;
   min-height: 88px;
   padding: 8px 6px;
-  border: 2px dashed var(--divider, #d9d9d6);
+  border: 2px dashed var(--trip-line);
   border-radius: 14px;
-  background: var(--card-bg, #ffffff);
-  color: var(--text-main, #111111);
+  background: var(--trip-panel);
+  color: var(--trip-fg);
   text-align: center;
 }
 
 .trip-slot small {
   font-size: 11px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-slot strong {
@@ -485,7 +512,7 @@
 }
 
 .trip-slot__none {
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-slot__empty-ico {
@@ -508,7 +535,7 @@
   gap: 4px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: var(--card-bg, #ffffff);
+  background: var(--trip-panel);
   font-size: 13px;
 }
 
@@ -520,7 +547,7 @@
 
 .trip-plan span {
   flex: none;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-plan b {
@@ -540,7 +567,7 @@
   gap: 10px;
   padding: 9px 10px;
   border-radius: 14px;
-  background: var(--control-soft-bg, #f0f0ee);
+  background: var(--trip-tool);
 }
 
 .trip-item__text {
@@ -551,13 +578,13 @@
 .trip-item__text small {
   display: block;
   font-size: 12px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-item__count {
   flex: none;
   font-size: 12px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -569,7 +596,7 @@
   gap: 10px;
   padding: 12px;
   border-radius: 18px;
-  background: var(--control-soft-bg, #f0f0ee);
+  background: var(--trip-tool);
 }
 
 .trip-card--row {
@@ -586,7 +613,7 @@
 
 .trip-card__head span {
   font-size: 12px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-days {
@@ -598,8 +625,8 @@
 .trip-day {
   padding: 6px 0;
   border-radius: 10px;
-  background: var(--card-bg, #ffffff);
-  color: var(--text-muted, #707070);
+  background: var(--trip-panel);
+  color: var(--trip-muted);
   font-size: 11px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -608,7 +635,7 @@
 .trip-day b {
   display: block;
   font-size: 13px;
-  color: var(--text-main, #111111);
+  color: var(--trip-fg);
 }
 
 .trip-day.is-on {
@@ -633,7 +660,7 @@
   min-width: 0;
   padding: 11px;
   border-radius: 16px;
-  background: var(--control-soft-bg, #f0f0ee);
+  background: var(--trip-tool);
 }
 
 .trip-good h3 {
@@ -645,15 +672,15 @@
   flex: 1;
   margin: 0;
   font-size: 12px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-tag {
   align-self: flex-start;
   padding: 1px 9px;
-  border: 1px solid var(--divider, #d9d9d6);
+  border: 1px solid var(--trip-line);
   border-radius: 999px;
-  background: var(--card-bg, #ffffff);
+  background: var(--trip-panel);
   font-size: 11px;
 }
 
@@ -684,7 +711,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border: 1px dashed var(--divider, #d9d9d6);
+  border: 1px dashed var(--trip-line);
   border-radius: 16px;
 }
 
@@ -696,7 +723,7 @@
 .trip-debug p {
   margin: 0;
   font-size: 12px;
-  color: var(--text-muted, #707070);
+  color: var(--trip-muted);
 }
 
 .trip-debug__row {
@@ -710,10 +737,10 @@
   flex: 1;
   min-width: 0;
   padding: 6px 8px;
-  border: 1px solid var(--divider, #d9d9d6);
+  border: 1px solid var(--trip-line);
   border-radius: 10px;
-  background: var(--card-bg, #ffffff);
-  color: var(--text-main, #111111);
+  background: var(--trip-panel);
+  color: var(--trip-fg);
 }
 
 .trip-debug__btns {
@@ -724,13 +751,17 @@
 
 /* ---------- 轻提示 ----------
  * 只用水平居中 + 底部定位。fixed 是相对整个视口的，而车道本身也是水平
- * 居中的，所以居中的提示不会像靠左的元素那样在宽屏下跑出车道。 */
+ * 居中的，所以居中的提示不会像靠左的元素那样在宽屏下跑出车道。
+ * z-index 要盖过房间分页的弹层（tripRoom.css 的 .trip-scrim/.trip-sheet
+ * 是 70），不然解锁/留言板这类弹层开着的时候提示会被压在底下看不见——
+ * 切片 B 时在 Chromium 里实测点"解锁"钱不够应该弹提示，结果被弹层挡住
+ * 发现的。 */
 
 .trip-toast {
   position: fixed;
   left: 50%;
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  z-index: 60;
+  z-index: 80;
   width: max-content;
   max-width: min(360px, 88vw);
   padding: 8px 14px;

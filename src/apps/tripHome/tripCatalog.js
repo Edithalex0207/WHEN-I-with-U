@@ -35,6 +35,17 @@ export const TRIP_ANIMALS = [
   { id: 'frog', name: '青蛙', color: '#9ed7a3', imageUrl: '' },
 ];
 
+// 房间。bgImageUrl 留给用户自己填背景图链接；没填之前界面显示一个朴素的
+// 占位色块（不是手绘房间），提示还没填图。unlockCost 为 0 表示一开始就
+// 解锁；其余房间要花旅费解锁，解锁后永久保留，不会再次收费。地板/障碍物
+// 的标定数据不放在这里——那是运行时在设置里按房间 id 存一份，标定工具
+// 标完直接生效，不需要改这个文件。
+export const TRIP_ROOMS = [
+  { id: 'pink', name: '暖粉小屋', unlockCost: 0, bgImageUrl: '' },
+  { id: 'mint', name: '薄荷阁楼', unlockCost: 0, bgImageUrl: '' },
+  { id: 'dusk', name: '星夜露台', unlockCost: 120, bgImageUrl: '' },
+];
+
 // 目的地。special 为 true 的只有带对应特殊食品才能去；为 false 的是
 // 没带特殊食品时随机抽的普通目的地。transport 决定车票是火车票还是机票。
 export const TRIP_DESTINATIONS = [
@@ -79,10 +90,12 @@ export const getTripReasonText = (reason) => TRIP_REASON_TEXT[reason] || TRIP_RE
 const ITEM_MAP = new Map(TRIP_ITEMS.map((item) => [item.id, item]));
 const DESTINATION_MAP = new Map(TRIP_DESTINATIONS.map((dest) => [dest.id, dest]));
 const ANIMAL_MAP = new Map(TRIP_ANIMALS.map((animal) => [animal.id, animal]));
+const ROOM_MAP = new Map(TRIP_ROOMS.map((room) => [room.id, room]));
 
 export const getTripItem = (id) => (id ? ITEM_MAP.get(id) || null : null);
 export const getTripDestination = (id) => (id ? DESTINATION_MAP.get(id) || null : null);
 export const getTripAnimal = (id) => ANIMAL_MAP.get(id) || TRIP_ANIMALS[0];
+export const getTripRoom = (id) => ROOM_MAP.get(id) || TRIP_ROOMS[0];
 
 // 用角色 id 稳定地挑一个默认动物（同一个角色每次都是同一只）。
 export const defaultAnimalIdFor = (characterId) => {

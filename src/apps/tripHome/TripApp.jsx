@@ -16,12 +16,15 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getTripState, listActiveJourneys, listTripResidents, settleTripArrivals } from './tripService';
 import TripLuggage from './TripLuggage';
+import TripRoom from './TripRoom';
 import TripShop from './TripShop';
 import TripTickets from './TripTickets';
 import { BackIcon, CoinDot } from './TripParts';
 import './tripHome.css';
+import './tripRoom.css';
 
 const TABS = [
+  { id: 'room', label: '小屋' },
   { id: 'tickets', label: '航班' },
   { id: 'luggage', label: '行李' },
   { id: 'shop', label: '商店' },
@@ -30,7 +33,7 @@ const TABS = [
 const TOAST_MS = 2600;
 
 const TripApp = ({ onBackHub }) => {
-  const [tab, setTab] = useState('tickets');
+  const [tab, setTab] = useState('room');
   const [data, setData] = useState({ state: null, residents: [], journeys: [] });
   const [loaded, setLoaded] = useState(false);
   const [toast, setToast] = useState('');
@@ -105,6 +108,7 @@ const TripApp = ({ onBackHub }) => {
         <p className="trip-empty">正在翻找行李箱……</p>
       ) : (
         <>
+          {tab === 'room' && <TripRoom residents={data.residents} journeys={data.journeys} notify={notify} />}
           {tab === 'tickets' && (
             <TripTickets residents={data.residents} journeys={data.journeys} onChange={refresh} notify={notify} />
           )}

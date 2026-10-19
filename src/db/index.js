@@ -5065,4 +5065,11 @@ db.version(95).stores({
   tripJourneys: '++id, residentId, characterId, status, arriveAt',
 });
 
+// 旅行小屋·留言板（切片 B）：一条留言/回应一条记录，不挂在具体某个居民
+// 身上（留言板是整个小屋共用的）。authorType 区分是用户贴的还是角色
+// 回来时贴的。只保留最近 20 条，旧的在 tripRoomService.js 里物理删除。
+db.version(96).stores({
+  tripBoardPosts: '++id, createdAt',
+});
+
 export default db;
