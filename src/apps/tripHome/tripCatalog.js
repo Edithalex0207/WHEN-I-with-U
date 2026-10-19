@@ -48,12 +48,13 @@ export const TRIP_FRIEND_CHANCE_WITH_GUIDE = 0.85;
 
 // 动物预设。imageUrl 填了就用图片，没填用内置剪影（color 是剪影的主色）。
 export const TRIP_ANIMALS = [
-  { id: 'cat', name: '猫', color: '#f2b36e', imageUrl: '' },
-  { id: 'bunny', name: '兔', color: '#fbe3ec', imageUrl: '' },
-  { id: 'bear', name: '熊', color: '#b98a66', imageUrl: '' },
+  { id: 'cat', name: '猫', color: '#f2b36e', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/3nX4/1254X1254/gi2-e1792395404.png/webp' },
+  { id: 'bunny', name: '兔', color: '#fbe3ec', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/KYX9/1254X1254/gi2-e1792395719.png/webp' },
+  { id: 'bear', name: '熊', color: '#b98a66', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/PrUW/1254X1254/gi2-e1792395722.png/webp' },
   { id: 'fox', name: '狐狸', color: '#f08a4b', imageUrl: '' },
   { id: 'frog', name: '青蛙', color: '#9ed7a3', imageUrl: '' },
 ];
+
 
 // 房间。bgImageUrl 留给用户自己填背景图链接；没填之前界面显示一个朴素的
 // 占位色块（不是手绘房间），提示还没填图。房间页下面那排"切换房间"的按钮
