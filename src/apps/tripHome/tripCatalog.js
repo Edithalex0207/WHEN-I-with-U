@@ -72,30 +72,74 @@ export const TRIP_ROOMS = [
 // 目的地。special 为 true 的只有带对应特殊食品才能去；为 false 的是
 // 没带特殊食品时随机抽的普通目的地。transport 决定车票是火车票还是机票。
 export const TRIP_DESTINATIONS = [
-  { id: 'park', name: '近郊公园', code: 'PRK', transport: 'train', special: false, sceneImageUrl: '' },
-  { id: 'riverside', name: '河边小镇', code: 'RVR', transport: 'train', special: false, sceneImageUrl: '' },
-  { id: 'snow-lake', name: '雪镇 · 浮冰湖畔', code: 'SNW', transport: 'train', special: true, sceneImageUrl: '' },
-  { id: 'lighthouse', name: '海边灯塔', code: 'LTH', transport: 'plane', special: true, sceneImageUrl: '' },
-  { id: 'chestnut-forest', name: '山间栗子林', code: 'CHN', transport: 'train', special: true, sceneImageUrl: '' },
-  { id: 'rainy-konbini', name: '雨夜便利店', code: 'KNB', transport: 'plane', special: true, sceneImageUrl: '' },
+  { 
+    id: 'park', 
+    name: '近郊公园', 
+    code: 'PRK', 
+    transport: 'train', 
+    special: false, 
+    sceneImageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/8bai/1408X1056/gi2-e1792389842.png/webp' 
+  },
+  { 
+    id: 'riverside', 
+    name: '河边小镇', 
+    code: 'RVR', 
+    transport: 'train', 
+    special: false, 
+    sceneImageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/BHAL/1408X1056/gi2-e1792389838.png/webp' 
+  },
+  { 
+    id: 'snow-lake', 
+    name: '雪镇 · 浮冰湖畔', 
+    code: 'SNW', 
+    transport: 'train', 
+    special: true, 
+    sceneImageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/3Een/1408X1056/gi2-e1792389839.png/webp' 
+  },
+  { 
+    id: 'lighthouse', 
+    name: '海边灯塔', 
+    code: 'LTH', 
+    transport: 'plane', 
+    special: true, 
+    sceneImageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/01AE/1408X1056/gi2-e1792389846.png/webp' 
+  },
+  { 
+    id: 'chestnut-forest', 
+    name: '山间栗子林', 
+    code: 'CHN', 
+    transport: 'train', 
+    special: true, 
+    sceneImageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/4mQJ/1448X1086/gi2-e1792394328.png/webp' 
+  },
+  { 
+    id: 'rainy-konbini', 
+    name: '雨夜便利店', 
+    code: 'KNB', 
+    transport: 'plane', 
+    special: true, 
+    sceneImageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/Y61K/1408X1056/gi2-e1792389872.png/webp' 
+  },
 ];
+
 
 // 物品。cat 对应行李的三个格子（food / prop / gift）。
 // food 有 hours（行程时长范围，小时）；特殊食品另有 destinationId。
 // prop / gift 的 effectKey 留给后面的旅行结算逻辑使用。
 export const TRIP_ITEMS = [
-  { id: 'rice', cat: 'food', name: '干粮饭团', price: 10, desc: '最长 16 小时，在附近转转', hours: [3, 16], imageUrl: '' },
-  { id: 'cocoa', cat: 'food', name: '热可可', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'snow-lake', imageUrl: '' },
-  { id: 'soda', cat: 'food', name: '椰子汽水', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'lighthouse', imageUrl: '' },
-  { id: 'chestnut', cat: 'food', name: '烤栗子', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'chestnut-forest', imageUrl: '' },
-  { id: 'oden', cat: 'food', name: '关东煮', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'rainy-konbini', imageUrl: '' },
-  { id: 'camera', cat: 'prop', name: '一次性相机', price: 35, desc: '多带回一张旅途照片', effectKey: 'extra_photo', imageUrl: '' },
-  { id: 'umbrella', cat: 'prop', name: '小雨伞', price: 25, desc: '雨天也能多写一段旅途小故事', effectKey: 'rain_story', imageUrl: '' },
-  { id: 'guide', cat: 'prop', name: '旅行指南', price: 40, desc: '更容易遇到新朋友', effectKey: 'more_friends', imageUrl: '' },
-  { id: 'cookie', cat: 'gift', name: '手工饼干', price: 15, desc: '送给路上的朋友，关系升得更快', effectKey: 'friend_affinity', imageUrl: '' },
-  { id: 'sticker', cat: 'gift', name: '星星贴纸', price: 10, desc: '送给路上的朋友，关系升得更快', effectKey: 'friend_affinity', imageUrl: '' },
-  { id: 'honey', cat: 'gift', name: '蜂蜜罐', price: 20, desc: '送给路上的朋友，关系升得更快', effectKey: 'friend_affinity', imageUrl: '' },
+  { id: 'rice', cat: 'food', name: '干粮饭团', price: 10, desc: '最长 16 小时，在附近转转', hours: [3, 16], imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/xnjt/1567X1686/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D7206879116793343054%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'cocoa', cat: 'food', name: '热可可', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'snow-lake', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/cqwR/1827X1565/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D4916021180020688412%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'soda', cat: 'food', name: '椰子汽水', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'lighthouse', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/GC12/1465X1661/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D5723462652510112945%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'chestnut', cat: 'food', name: '烤栗子', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'chestnut-forest', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/xiHA/1705X1838/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D4046989359351068534%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'oden', cat: 'food', name: '关东煮', price: 45, desc: '能走很远，最长 48 小时', hours: [12, 48], destinationId: 'rainy-konbini', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/QOYS/1800X1719/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D5940018108327720955%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'camera', cat: 'prop', name: '一次性相机', price: 35, desc: '多带回一张旅途照片', effectKey: 'extra_photo', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/1RHb/1518X1810/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D3155757863999616372%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'umbrella', cat: 'prop', name: '小雨伞', price: 25, desc: '雨天也能多写一段旅途小故事', effectKey: 'rain_story', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/aFlz/2028X1427/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D862788438501809633%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'guide', cat: 'prop', name: '旅行指南', price: 40, desc: '更容易遇到新朋友', effectKey: 'more_friends', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/iCYu/2045X1814/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D309013692404893704%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'cookie', cat: 'gift', name: '手工饼干', price: 15, desc: '送给路上的朋友，关系升得更快', effectKey: 'friend_affinity', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/vveC/1971X1936/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D5917501419085854529%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'sticker', cat: 'gift', name: '星星贴纸', price: 10, desc: '送给路上的朋友，关系升得更快', effectKey: 'friend_affinity', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/orVY/1790X2044/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D4852739444244690100%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'honey', cat: 'gift', name: '蜂蜜罐', price: 20, desc: '送给路上的朋友，关系升得更快', effectKey: 'friend_affinity', imageUrl: 'https://img.pagehost.cn/autoupload/amqnh/20261019/VwQ8/1919X1836/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D6317146600821142457%26skey%3D%40crypt_5a237c93_6cb7ffc698d2e08600b05973be3db467%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
 ];
+
 
 // 界面上给用户看的失败原因。
 export const TRIP_REASON_TEXT = {
