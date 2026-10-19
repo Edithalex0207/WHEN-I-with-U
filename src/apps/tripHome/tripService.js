@@ -16,6 +16,7 @@
 
 import db from '../../db';
 import {
+  TRIP_ANIMALS,
   TRIP_CHECKIN_REWARDS,
   TRIP_SLOTS,
   defaultAnimalIdFor,
@@ -245,6 +246,28 @@ export const saveResidentSkin = async (residentId, dataUrl) => {
 export const clearResidentSkin = async (residentId) => {
   const updated = await db.tripResidents.update(residentId, { skinDataUrl: '' });
   return updated ? { ok: true } : { ok: false, reason: 'no_resident' };
+};
+
+/* ---------- 居民的动物种类和动物人设 ---------- */
+
+// 用户手动给某个居民换动物（可选的动物见 tripCatalog.js 的 TRIP_ANIMALS）。
+// animalId、animalPersona 都不是索引字段，所以不需要升级数据库版本。
+export const setResidentAnimal = async (residentId, animalId) => {
+  if (!TRIP_ANIMALS.some((animal) => animal.id === animalId)) {
+    return { ok: false, reason: 'bad_animal' };
+  }
+  const updated = await db.tripResidents.update(residentId, { animalId });
+  return updated ? { ok: true } : { ok: false, reason: 'no_resident' };
+};
+
+// 动物人设：一两句话，写这个角色变成动物后的样子和小习惯。目前只是存下来，
+// 后面旅途故事、明信片（切片 C）会参考它。
+export const ANIMAL_PERSONA_MAX = 120;
+
+export const saveResidentAnimalPersona = async (residentId, text) => {
+  const persona = String(text || '').trim().slice(0, ANIMAL_PERSONA_MAX);
+  const updated = await db.tripResidents.update(residentId, { animalPersona: persona });
+  return updated ? { ok: true, persona } : { ok: false, reason: 'no_resident' };
 };
 
 /* ---------- 行李 ---------- */

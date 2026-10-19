@@ -21,10 +21,16 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getTripRoom, TRIP_ROOMS } from './tripCatalog';
+import { getTripRoom, TRIP_ANIMALS, TRIP_ROOMS } from './tripCatalog';
 import TripCropSheet, { readImageFile } from './TripCropSheet';
-import { TripAnimalMark, TripAvatar, TripSkinMark } from './TripParts';
-import { clearResidentSkin, saveResidentSkin } from './tripService';
+import { TripAnimalFigure, TripAnimalMark, TripAvatar, TripSkinMark } from './TripParts';
+import {
+  ANIMAL_PERSONA_MAX,
+  clearResidentSkin,
+  saveResidentAnimalPersona,
+  saveResidentSkin,
+  setResidentAnimal,
+} from './tripService';
 import { extractThemeHue } from './tripTheme';
 import {
   DEFAULT_BLOCKS,
@@ -96,6 +102,7 @@ const TripRoom = ({ residents, journeys, notify, onNightChange, onThemeHue, onRe
   const [boardPosts, setBoardPosts] = useState([]);
   const [sheet, setSheet] = useState(null); // null | 'board' | 'unlock' | 'calibGuide' | 'skin'
   const [skinTargetId, setSkinTargetId] = useState(null);
+  const [personaDraft, setPersonaDraft] = useState('');
   // 正在裁剪的图：{ kind: 'bg' | 'skin', image, url, residentId? }
   const [cropJob, setCropJob] = useState(null);
   const [unlockTarget, setUnlockTarget] = useState(null);
@@ -541,6 +548,7 @@ const TripRoom = ({ residents, journeys, notify, onNightChange, onThemeHue, onRe
     (resident) => {
       if (calibOn) return;
       setSkinTargetId(resident.id);
+      setPersonaDraft(resident.animalPersona || '');
       setSheet('skin');
     },
     [calibOn]
@@ -568,6 +576,35 @@ const TripRoom = ({ residents, journeys, notify, onNightChange, onThemeHue, onRe
       notify?.('恢复失败，请刷新后再试');
     }
   }, [skinTargetId, notify, onResidentsChange]);
+
+  const pickAnimal = useCallback(
+    async (animalId) => {
+      if (!skinTargetId) return;
+      try {
+        const result = await setResidentAnimal(skinTargetId, animalId);
+        if (result.ok) onResidentsChange?.();
+      } catch (error) {
+        notify?.('换动物失败，请刷新后再试');
+      }
+    },
+    [skinTargetId, notify, onResidentsChange]
+  );
+
+  const savePersona = useCallback(async () => {
+    if (!skinTargetId) return;
+    try {
+      const result = await saveResidentAnimalPersona(skinTargetId, personaDraft);
+      if (result.ok) {
+        setPersonaDraft(result.persona);
+        notify?.('动物人设已保存');
+        onResidentsChange?.();
+      }
+    } catch (error) {
+      notify?.('保存失败，请刷新后再试');
+    }
+  }, [skinTargetId, personaDraft, notify, onResidentsChange]);
+
+  const personaDirty = !!skinTarget && personaDraft.trim() !== (skinTarget.animalPersona || '');
 
   const confirmCrop = useCallback(
     async (dataUrl) => {
@@ -1119,6 +1156,45 @@ const TripRoom = ({ residents, journeys, notify, onNightChange, onThemeHue, onRe
                     {skinTarget.skinDataUrl ? '你上传的形象' : '默认形象'}
                   </div>
                 </div>
+                <div className="trip-sec">TA 是什么动物</div>
+                <div className="trip-skin-animals" role="group" aria-label="选择动物">
+                  {TRIP_ANIMALS.map((animal) => (
+                    <button
+                      key={animal.id}
+                      type="button"
+                      className="trip-skin-animal"
+                      aria-pressed={skinTarget.animalId === animal.id}
+                      onClick={() => pickAnimal(animal.id)}
+                    >
+                      <span className="trip-skin-animal__fig" style={{ background: animal.color }}>
+                        <TripAnimalFigure animalId={animal.id} />
+                      </span>
+                      {animal.name}
+                    </button>
+                  ))}
+                </div>
+                {skinTarget.skinDataUrl && (
+                  <p className="trip-hint">你传了自己的图，房间里显示的是那张图；这里选的动物管头像底色和默认形象。</p>
+                )}
+
+                <div className="trip-sec">动物人设</div>
+                <textarea
+                  className="trip-textarea"
+                  value={personaDraft}
+                  maxLength={ANIMAL_PERSONA_MAX}
+                  placeholder="写一两句：变成动物后的样子和小习惯，比如：嘴硬心软的橘猫，嫌弃但会在门口等人"
+                  onChange={(event) => setPersonaDraft(event.target.value)}
+                />
+                <div className="trip-skin-persona-row">
+                  <span className="trip-skin-count">
+                    {personaDraft.length}/{ANIMAL_PERSONA_MAX}
+                  </span>
+                  <button type="button" className="trip-btn" disabled={!personaDirty} onClick={savePersona}>
+                    保存人设
+                  </button>
+                </div>
+                <p className="trip-hint">人设先存着，之后的旅途故事和明信片会参考它。</p>
+
                 <p className="trip-guide-tip">
                   <b>选什么图好看：</b>最好是背景透明的 PNG（抠好的小动物），会保留它的形状并加一圈白色贴纸边。普通照片会被裁成圆形再加白边。选好后可以拖动、缩放来裁剪。
                 </p>

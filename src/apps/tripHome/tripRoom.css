@@ -808,6 +808,76 @@
   object-fit: contain;
 }
 
+.trip-skin-animals {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.trip-skin-animal {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px 2px 7px;
+  border: 2px solid var(--trip-line);
+  border-radius: 16px;
+  background: var(--trip-panel);
+  color: var(--trip-fg);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 3px 0 var(--trip-line-d);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.trip-skin-animal:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 var(--trip-hi), 0 1px 0 var(--trip-line-d);
+}
+
+.trip-skin-animal[aria-pressed='true'] {
+  border-color: var(--trip-accent-d);
+  background: linear-gradient(var(--trip-accent-hi), var(--trip-accent));
+  color: var(--trip-accent-ink);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 3px 0 var(--trip-accent-d);
+}
+
+.trip-skin-animal__fig {
+  display: block;
+  width: 100%;
+  max-width: 44px;
+  aspect-ratio: 56 / 68;
+  padding: 2px;
+  border-radius: 12px;
+}
+
+.trip-sec + .trip-textarea {
+  margin-top: 8px;
+}
+
+.trip-skin-persona-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.trip-skin-persona-row .trip-btn {
+  margin-top: 0;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.trip-skin-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--trip-muted);
+}
+
 .trip-skin-actions {
   display: grid;
   gap: 10px;
