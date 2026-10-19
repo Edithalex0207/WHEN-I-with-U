@@ -694,6 +694,38 @@ const [hubBackground, setHubBackground] = useState('');
     };
   }, []);
 
+  // 2026-10：主题（activeTheme）持久化读取。
+  //
+  // 背景：设置页保存主题时确实把 { key: 'theme', value } 写进了
+  // db.settings（和 glassStyle 走的是同一套存储方式），但这里原来一直
+  // 没有对应的"挂载时读一次"逻辑——activeTheme 的 useState 初始值写死
+  // 成了 'mono-mist'，只有用户在本次会话里手动改过设置才会变。结果是
+  // 每次重新打开网页，主题都会先弹回默认值，直到用户再去设置页点一次，
+  // 表现就是"每次进来都要重新设置一次主题"。写法完全照抄紧接着下面的
+  // loadGlassStyle：只在挂载时读一次，设置页保存时再通过 onChangeTheme
+  // 回写这里的状态，两者是完全独立的两次读取，互不影响。
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTheme = async () => {
+      try {
+        const setting = await db.settings.get('theme');
+
+        if (!cancelled && typeof setting?.value === 'string') {
+          setActiveTheme(setting.value);
+        }
+      } catch (error) {
+        console.warn('[App] 读取主题设置失败:', error);
+      }
+    };
+
+    void loadTheme();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // 玻璃质感风格（毛玻璃 frosted / 液态玻璃 liquid）持久化读取，写法
   // 对照上面的 loadHubBackground：只在挂载时读一次，设置页保存时再
   // 通过 onChangeGlassStyle 回写这里的状态。
