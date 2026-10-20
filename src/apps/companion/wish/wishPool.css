@@ -113,6 +113,8 @@
 .wp-toss { height: 52px; border-radius: 99px; font-family: var(--wp-font); font-weight: 700; font-size: 16px; letter-spacing: 0.03em; color: #fff; background: linear-gradient(135deg, var(--wp-violet), var(--wp-heart-deep)); text-shadow: 0 1px 2px rgba(36, 65, 90, 0.35); box-shadow: 0 12px 18px -10px #8466DA; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.25s cubic-bezier(0.3, 1.7, 0.5, 1); }
 .wp-toss:active:not(:disabled) { transform: scale(0.96); }
 .wp-toss:disabled { opacity: 0.6; box-shadow: none; filter: grayscale(0.4); }
+.wp-toss svg { width: 20px; height: 20px; flex: none; }
+.wp-burst i svg { width: 100%; height: 100%; }
 .wp-note { margin: 0; text-align: center; font-size: 11px; color: var(--cp-muted); font-weight: 700; }
 .wp-odds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .wp-odd { border-radius: 14px; padding: 7px 2px; text-align: center; background: var(--cp-soft); }
