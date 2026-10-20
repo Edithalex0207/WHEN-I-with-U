@@ -1,0 +1,49 @@
+/* =========================================================
+ * companionProfile.css —— 小伙伴「档案」（物种/性格）的样式。
+ * 前缀约定：cpf-。颜色变量复用 companionPage.css 的 --cp-*。
+ * 顶部圆按钮的第三个位置 .cp-round-btn.right3 也放在这里，跟
+ * companionPage.css 里的 .right / .right2 是同一套排法（每个往左 48px）。
+ * ========================================================= */
+
+.cp-round-btn.right3 { right: 112px; }
+
+.cpf-body { display: flex; flex-direction: column; gap: 14px; }
+.cpf-note {
+  margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--cp-accent-soft); color: var(--cp-sub);
+  font-size: 12.5px; font-weight: 700; line-height: 1.6;
+}
+
+.cpf-field { display: flex; flex-direction: column; gap: 6px; }
+.cpf-field label { font-size: 13px; font-weight: 800; color: var(--cp-text); padding-left: 4px; }
+.cpf-input-wrap { position: relative; }
+.cpf-input-wrap input,
+.cpf-input-wrap textarea {
+  width: 100%; padding: 13px 18px; border-radius: 22px; border: 2px solid var(--cp-border);
+  background: var(--cp-card); color: var(--cp-text); font: inherit; font-size: 14.5px; font-weight: 700;
+  line-height: 1.5; outline: 0; resize: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cpf-input-wrap input { padding-right: 62px; border-radius: 99px; }
+.cpf-input-wrap textarea { padding-bottom: 26px; }
+.cpf-input-wrap input:focus,
+.cpf-input-wrap textarea:focus { border-color: var(--cp-accent); box-shadow: 0 0 0 4px var(--cp-accent-soft); }
+.cpf-input-wrap input::placeholder,
+.cpf-input-wrap textarea::placeholder { color: var(--cp-muted); font-weight: 700; }
+.cpf-input-wrap small { position: absolute; right: 18px; font-size: 11px; font-weight: 800; color: var(--cp-muted); }
+.cpf-input-wrap input + small { top: 50%; transform: translateY(-50%); }
+.cpf-input-wrap textarea + small { bottom: 9px; }
+
+.cpf-actions { flex: none; margin-top: 4px; }
+
+/* 第一次打开时的提示小窗，盖在设置弹窗上面 */
+.cpf-tip-layer { z-index: 62; }
+.cpf-tip {
+  max-width: 320px; padding: 24px 22px 20px; border-radius: 32px; text-align: center;
+  animation: cp-card-in 0.55s cubic-bezier(0.2, 1.7, 0.4, 1);
+}
+.cpf-tip h4 { margin: 0 0 10px; font-family: var(--cp-font-display); font-weight: 400; font-size: 20px; }
+.cpf-tip p { margin: 0 0 18px; font-size: 13.5px; font-weight: 700; line-height: 1.7; color: var(--cp-sub); }
+.cpf-tip .cp-btn { width: 100%; flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cpf-tip { animation: none; }
+}

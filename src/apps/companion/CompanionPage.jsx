@@ -45,6 +45,8 @@ import { buyFreezeCard, getStreakForChat } from '../messages/streak/streakServic
 import CompanionShopModal from './CompanionShopModal';
 import CompanionSceneModal from './CompanionSceneModal';
 import CompanionHeartsInfoModal from './CompanionHeartsInfoModal';
+import CompanionProfileModal from './profile/CompanionProfileModal';
+import CompanionProfileIcon from './profile/CompanionProfileIcon';
 import CompanionHeartIcon from './CompanionHeartIcon';
 import CompanionFortuneModal from './fortune/CompanionFortuneModal';
 import CompanionCatchGameModal from './play/CompanionCatchGameModal';
@@ -253,6 +255,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [backpackItems, setBackpackItems] = useState([]);
   const [showScenePicker, setShowScenePicker] = useState(false);
   const [showHeartsInfo, setShowHeartsInfo] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [showFortune, setShowFortune] = useState(false);
   const [showCatchGame, setShowCatchGame] = useState(false);
      const [showMoodCalendar, setShowMoodCalendar] = useState(false);
@@ -1065,6 +1068,16 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         <Palette className="cp-ic" />
       </button>
 
+          <button
+        type="button"
+        onClick={() => setShowProfile(true)}
+        title="小伙伴的档案"
+        aria-label="小伙伴的档案"
+        className="cp-round-btn right3"
+      >
+        <CompanionProfileIcon />
+      </button>
+
       {/* 特殊事件吊牌：最多同时显示 2 个，点一下看详情/领取 */}
       {activeEvents.length > 0 && (
         <div className="cp-tags">
@@ -1506,8 +1519,16 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         />
       )}
 
-      {showHeartsInfo && (
+           {showHeartsInfo && (
         <CompanionHeartsInfoModal onClose={() => setShowHeartsInfo(false)} />
+      )}
+
+      {showProfile && companion && (
+        <CompanionProfileModal
+          companion={companion}
+          onSaved={(updated) => setCompanion(updated)}
+          onClose={() => setShowProfile(false)}
+        />
       )}
 
       {showTasks && (
