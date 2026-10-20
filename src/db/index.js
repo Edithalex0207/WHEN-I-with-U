@@ -5076,4 +5076,7 @@ db.version(97).stores({
   marblePlays: '++id, companionId, dateStr, createdAt, [companionId+dateStr]',
 });
 
+db.version(98).stores({
+  wishPlays: '++id, companionId, dateStr, createdAt, [companionId+dateStr]',
+});
 export default db;

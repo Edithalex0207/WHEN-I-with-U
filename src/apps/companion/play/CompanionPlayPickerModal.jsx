@@ -26,7 +26,17 @@ const MarblesIcon = () => (
   </svg>
 );
 
-const CompanionPlayPickerModal = ({ onPickCatch, onPickMarbles, onClose }) => (
+const WishPoolIcon = () => (
+  <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true" focusable="false">
+    <ellipse cx="16" cy="22" rx="13" ry="6" fill="#DDD3F0" stroke="#A89BCB" strokeWidth="1.6" />
+    <ellipse cx="16" cy="21" rx="10" ry="4.2" fill="#9ED7F7" />
+    <path d="M16 18s-5-3.1-5-6.6c0-1.9 1.4-3.1 2.9-3.1.9 0 1.7.5 2.1 1.2.4-.7 1.2-1.2 2.1-1.2 1.5 0 2.9 1.2 2.9 3.1C21 14.9 16 18 16 18z" fill="#FF86A0" stroke="#D95F72" strokeWidth="1.2" />
+  </svg>
+);
+
+const CompanionPlayPickerModal = ({
+  onPickCatch, onPickMarbles, onPickWish, onClose,
+}) => (
   <div className="cp-overlay center">
     <div className="cp-backdrop" onClick={onClose} />
     <div className="cp-panel pp-card">
@@ -44,6 +54,13 @@ const CompanionPlayPickerModal = ({ onPickCatch, onPickMarbles, onClose }) => (
           <span className="pp-option-text">
             <b>小伙伴弹珠</b>
             <small>三关祖玛式弹珠，消除同色珠子过关</small>
+          </span>
+        </button>
+             <button type="button" className="pp-option" onClick={onPickWish}>
+          <span className="pp-option-ico"><WishPoolIcon /></span>
+          <span className="pp-option-text">
+            <b>心心许愿池</b>
+            <small>抛心心进池里，可能翻倍，也可能被池水收下</small>
           </span>
         </button>
       </div>

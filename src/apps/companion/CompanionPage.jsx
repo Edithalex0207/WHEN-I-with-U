@@ -52,6 +52,7 @@ import CompanionFortuneModal from './fortune/CompanionFortuneModal';
 import CompanionCatchGameModal from './play/CompanionCatchGameModal';
 import CompanionPlayPickerModal from './play/CompanionPlayPickerModal';
 import CompanionMarblesModal from './marbles/CompanionMarblesModal';
+import CompanionWishPoolModal from './wish/CompanionWishPoolModal';
 import CompanionBackpackModal from './backpack/CompanionBackpackModal';
    import CompanionDiaryBook from './diary/CompanionDiaryBook';
    import CompanionDiaryIcon from './diary/CompanionDiaryIcon';
@@ -262,6 +263,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
    const [showCatchGame, setShowCatchGame] = useState(false);
   const [showPlayPicker, setShowPlayPicker] = useState(false);
   const [showMarblesGame, setShowMarblesGame] = useState(false);
+  const [showWishPool, setShowWishPool] = useState(false);
      const [showMoodCalendar, setShowMoodCalendar] = useState(false);
   const [showDailyQa, setShowDailyQa] = useState(false);
   const [showDiary, setShowDiary] = useState(false);
@@ -1589,6 +1591,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         <CompanionPlayPickerModal
           onPickCatch={() => { setShowPlayPicker(false); setShowCatchGame(true); }}
           onPickMarbles={() => { setShowPlayPicker(false); setShowMarblesGame(true); }}
+          onPickWish={() => { setShowPlayPicker(false); setShowWishPool(true); }}
           onClose={() => setShowPlayPicker(false)}
         />
       )}
@@ -1616,6 +1619,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
             setLogs(await getRecentLogs(updatedCompanion.id));
           }}
           onClose={() => setShowMarblesGame(false)}
+        />
+      )}
+
+      {showWishPool && (
+        <CompanionWishPoolModal
+          companionId={companion.id}
+          onRewardApplied={async (updatedCompanion) => {
+            setCompanion(updatedCompanion);
+            setLogs(await getRecentLogs(updatedCompanion.id));
+          }}
+          onClose={() => setShowWishPool(false)}
         />
       )}
 
