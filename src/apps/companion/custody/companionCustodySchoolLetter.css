@@ -1,0 +1,169 @@
+/*
+ * 「学校来信」弹窗（托管上学）。配色走 --cp-* 的天蓝体系，跟"贴心照顾"信
+ * （--cp-heart 粉色）区分开，呼应 school.css 既有的蓝色调。
+ */
+
+.ccsl-overlay { --ccsl-bounce: cubic-bezier(.34, 1.7, .5, 1); }
+
+.ccsl-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px 0;
+}
+
+.ccsl-letter {
+  position: relative;
+  width: min(300px, calc(100vw - 44px));
+  padding: 26px 18px 16px;
+  text-align: center;
+  background: linear-gradient(170deg, #FFFFFF 0%, var(--cp-soft) 100%);
+  border: 1.5px solid var(--cp-border);
+  border-radius: 20px;
+  box-shadow: 0 18px 36px -14px var(--cp-shadow);
+  color: var(--cp-text);
+  animation: ccsl-in 0.4s var(--ccsl-bounce) both;
+}
+
+@keyframes ccsl-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.93); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ccsl-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 76px;
+  height: 22px;
+  transform: translateX(-50%) rotate(2deg);
+  background: var(--cp-sky-bg, #E3F1FF);
+  border: 1px dashed var(--cp-sky-fg, #3E8EDE);
+  border-radius: 3px;
+}
+
+.ccsl-seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #9FD2FF, var(--cp-sky-fg, #3E8EDE));
+  box-shadow: 0 6px 14px -4px rgba(62, 142, 222, 0.45), 0 0 0 3px #fff;
+  color: #fff;
+}
+.ccsl-seal svg { width: 20px; height: 20px; }
+
+.ccsl-title {
+  margin: 0 0 8px;
+  font-family: var(--cp-font-display);
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ccsl-body {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--cp-sub);
+}
+
+.ccsl-grade {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.ccsl-score {
+  margin: 0 0 12px;
+  font-size: 11px;
+  color: var(--cp-muted);
+}
+
+.ccsl-comfort {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--cp-sky-bg, #E3F1FF);
+  text-align: left;
+}
+.ccsl-comfort-hint {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cp-sky-fg, #3E8EDE);
+  text-align: center;
+}
+.ccsl-comfort-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid var(--cp-border);
+  border-radius: 10px;
+  background: #fff;
+  font-family: var(--cp-font-body);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--cp-text);
+  resize: none;
+  box-sizing: border-box;
+}
+.ccsl-comfort-input:disabled { opacity: 0.6; }
+.ccsl-comfort-error {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  color: #E05B5B;
+}
+.ccsl-comfort-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--cp-sky-fg, #3E8EDE);
+  color: #fff;
+  font-family: var(--cp-font-body);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.ccsl-comfort-btn:disabled { opacity: 0.5; cursor: default; }
+.ccsl-comfort-btn:not(:disabled):active { transform: scale(0.96); }
+
+.ccsl-comfort-result {
+  margin: 0 0 12px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.ccsl-comfort-result.ok { background: var(--cp-heart-soft); color: var(--cp-heart); }
+.ccsl-comfort-result.no { background: var(--cp-border); color: var(--cp-sub); }
+
+.ccsl-btn {
+  width: 100%;
+  margin-top: 2px;
+  padding: 9px 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--cp-accent);
+  color: var(--cp-on-accent);
+  font-family: var(--cp-font-body);
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.ccsl-btn:active { transform: scale(0.96); }
+
+.ccsl-sign { margin: 9px 0 0; font-size: 10px; color: var(--cp-muted); }

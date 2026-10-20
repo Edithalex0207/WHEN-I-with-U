@@ -28,6 +28,7 @@ import {
   SHOP_TOY_ITEMS,
   FOOD_TIERS,
 } from '../companionShopData';
+import { runCustodySchoolLesson } from './companionCustodySchoolService';
 
 // 每天自动购买次数上限（用户确认：3 次）。
 export const CUSTODY_DAILY_BUY_CAP = 3;
@@ -181,7 +182,16 @@ export const runCustodyForCompanion = async (companionId) => {
   if (runningIds.has(companionId)) return false;
   runningIds.add(companionId);
   try {
-    return await runCustodyInner(companionId);
+    const didCare = await runCustodyInner(companionId);
+    // 上学的课跟喂食清洁玩耍是两件独立的事（各自的信、各自的每日名额），
+    // 这里只是顺路带一下，失败不影响上面已经做完的照顾结果。
+    let didSchool = false;
+    try {
+      didSchool = await runCustodySchoolLesson(companionId);
+    } catch (error) {
+      console.error('[Companion] 托管上课失败:', error);
+    }
+    return didCare || didSchool;
   } catch (error) {
     console.error('[Companion] 托管执行失败:', error);
     return false;

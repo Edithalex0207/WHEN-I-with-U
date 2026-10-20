@@ -348,7 +348,11 @@ const snapshotOf = (question) => ({
  *   status:object,         // 更新后的 getSchoolStatus（次数 / 冷却 / 升班进度）
  * }}
  */
-export const finishQuizSet = async (companionId, played, { mode = QUIZ_MODE.MIXED } = {}) => {
+export const finishQuizSet = async (companionId, played, {
+  mode = QUIZ_MODE.MIXED,
+  rewardMultiplier = 1,
+  countsTowardDailyLimit = true,
+} = {}) => {
   if (!Array.isArray(played) || played.length === 0) {
     throw new SchoolError('no_questions', '没有做完的题');
   }
@@ -364,9 +368,9 @@ export const finishQuizSet = async (companionId, played, { mode = QUIZ_MODE.MIXE
   const perfect = correct === total;
 
   const heartsGained = round1(
-    correct * SET_REWARD.HEARTS_PER_CORRECT + (perfect ? SET_REWARD.PERFECT_BONUS_HEARTS : 0),
+    (correct * SET_REWARD.HEARTS_PER_CORRECT + (perfect ? SET_REWARD.PERFECT_BONUS_HEARTS : 0)) * rewardMultiplier,
   );
-  const moodGained = SET_REWARD.MOOD_BASE + correct * SET_REWARD.MOOD_PER_CORRECT;
+  const moodGained = round1((SET_REWARD.MOOD_BASE + correct * SET_REWARD.MOOD_PER_CORRECT) * rewardMultiplier);
 
   let setRow = null;
   const wrongQids = [];
@@ -393,15 +397,17 @@ export const finishQuizSet = async (companionId, played, { mode = QUIZ_MODE.MIXE
         updatedAt: now,
       });
 
-      // 2. 学籍上的计数：累计组数、今天几组、最后一次完成时间
-      const todayKey = getDayKey(now);
-      const daySets = (record.dayKey === todayKey ? (record.daySets || 0) : 0) + 1;
-      await db.companionSchool.update(record.id, {
-        stageSets: (record.stageSets || 0) + 1,
-        dayKey: todayKey,
-        daySets,
-        lastSetAt: now,
-      });
+           // 2. 学籍上的计数：升班进度（stageSets）不管哪种方式做的都照常累计；
+      // 今天几组/最后完成时间（daySets/lastSetAt，决定用户自己的每日名额和
+      // 冷却）只在 countsTowardDailyLimit 时才更新——托管上课不占这个名额。
+      const schoolChanges = { stageSets: (record.stageSets || 0) + 1 };
+      if (countsTowardDailyLimit) {
+        const todayKey = getDayKey(now);
+        schoolChanges.dayKey = todayKey;
+        schoolChanges.daySets = (record.dayKey === todayKey ? (record.daySets || 0) : 0) + 1;
+        schoolChanges.lastSetAt = now;
+      }
+      await db.companionSchool.update(record.id, schoolChanges);
 
       // 每日任务：去上两节课——做完一组题就算上了一节课，
       // 累计到任务要求的节数由 recordTaskEvent 自己算。

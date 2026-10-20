@@ -75,6 +75,8 @@ import CompanionCustodyNote from './custody/CompanionCustodyNote';
 import CompanionCustodyLetter from './custody/CompanionCustodyLetter';
 import CompanionCustodyIcon from './custody/CompanionCustodyIcon';
 import { setCustodyEnabled, takePendingCustodyLetter } from './custody/companionCustodyService';
+import CompanionCustodySchoolLetter from './custody/CompanionCustodySchoolLetter';
+import { takePendingCustodySchoolLetter, comfortCompanionAfterBadLesson } from './custody/companionCustodySchoolService';
 import CompanionFriendPage from './friends/CompanionFriendPage';
 import CompanionFriendMealLetter from './friends/CompanionFriendMealLetter';
 import { takePendingFriendMealLetter } from './friends/companionFriendMealService';
@@ -276,6 +278,8 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showCustody, setShowCustody] = useState(false);
   const [custodyBusy, setCustodyBusy] = useState(false);
   const [custodyLetter, setCustodyLetter] = useState(null);
+  // 托管上学：还没弹过的"学校来信"
+  const [schoolLetter, setSchoolLetter] = useState(null);
   // 好友广场 + 我的朋友
   const [showFriends, setShowFriends] = useState(false);
     const [mealLetter, setMealLetter] = useState(null);
@@ -381,10 +385,16 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         if (pendingLetter) setCustodyLetter(pendingLetter);
       } catch (_) { /* 静默失败，不影响页面加载 */ }
 
-      // 蹭饭期间攒下的"蹭饭"信，跟贴心照顾信一样用户回来时弹一次。
+            // 蹭饭期间攒下的"蹭饭"信，跟贴心照顾信一样用户回来时弹一次。
       try {
         const pendingMealLetter = await takePendingFriendMealLetter(found.id);
         if (pendingMealLetter) setMealLetter(pendingMealLetter);
+      } catch (_) { /* 静默失败，不影响页面加载 */ }
+
+      // 托管上学期间攒下的"学校来信"，同样用户回来时弹一次、取走即清空。
+      try {
+        const pendingSchoolLetter = await takePendingCustodySchoolLetter(found.id);
+        if (pendingSchoolLetter) setSchoolLetter(pendingSchoolLetter);
       } catch (_) { /* 静默失败，不影响页面加载 */ }
     }
 
@@ -412,11 +422,18 @@ const CompanionPage = ({ chatId, character, onBack }) => {
       const updated = await setCustodyEnabled(companion.id, !companion.custodyEnabled);
       if (updated) setCompanion(updated);
       setLogs(await getRecentLogs(companion.id));
-      if (updated?.custodyEnabled) {
+           if (updated?.custodyEnabled) {
         const letter = await takePendingCustodyLetter(companion.id);
         if (letter) {
           setShowCustody(false);
           setCustodyLetter(letter);
+        }
+        // 打开开关这一下也会顺手带课（见 runCustodyForCompanion），
+        // 一样取一次学校来信，没有就是 null，不影响上面那封信。
+        const lessonLetter = await takePendingCustodySchoolLetter(companion.id);
+        if (lessonLetter) {
+          setShowCustody(false);
+          setSchoolLetter(lessonLetter);
         }
       }
     } catch (error) {
@@ -426,6 +443,14 @@ const CompanionPage = ({ chatId, character, onBack }) => {
     }
   };
 
+  // 考砸之后的"安慰一下"：提交安慰话，成功/不成功都更新 companion
+  // （succeeded 时心情回涨），把结果透传给信件组件展示。
+  const handleComfortSchool = async (text) => {
+    if (!companion) return null;
+    const res = await comfortCompanionAfterBadLesson(companion.id, text);
+    if (res?.companion) setCompanion(res.companion);
+    return res;
+  };
   useEffect(() => {
     void reload();
     return () => {
@@ -1559,12 +1584,21 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         />
       )}
 
-            {!custodyLetter && mealLetter && (
+                       {!custodyLetter && mealLetter && (
         <CompanionFriendMealLetter
           letter={mealLetter}
           companionName={companion.name}
           companionAvatarUrl={companion.avatarUrl}
           onClose={() => setMealLetter(null)}
+        />
+      )}
+
+      {!custodyLetter && !mealLetter && schoolLetter && (
+        <CompanionCustodySchoolLetter
+          letter={schoolLetter}
+          companion={companion}
+          onComfort={handleComfortSchool}
+          onClose={() => setSchoolLetter(null)}
         />
       )}
 
