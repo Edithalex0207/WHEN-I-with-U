@@ -8,6 +8,7 @@ import {
   X
 } from 'lucide-react';
 import ConfirmModal from '../../../components/ConfirmModal';
+import { triggerGlobalToast } from '../../../components/NotificationToast';
 import {
   clearScheduledMessageArchiveHistory,
   deleteScheduledMessageArchiveItem,
@@ -79,11 +80,29 @@ const ScheduledMessageArchive = ({
     }
   };
 
-  const clearableCount = records.filter((item) => (
+   const clearableCount = records.filter((item) => (
     item.status === 'sent' ||
     item.status === 'cancelled' ||
     item.status === 'failed'
   )).length;
+
+  /*
+   * 点"清空"按钮必须永远有反应——之前 clearableCount === 0 时直接把按钮
+   * disabled，点上去跟没点一样，用户会以为按钮坏了。现在按钮永远可点，
+   * 没什么可清的时候用 toast 说明原因，而不是让它悄无声息地什么都不做。
+   */
+  const handleClearButtonClick = () => {
+    if (clearableCount === 0) {
+      triggerGlobalToast({
+        title: '没有可清空的记录',
+        content:
+          '目前没有"已经抵达 / 已收回 / 未能抵达"的历史票据——还在"等待抵达"的预约不会被这个按钮触碰。',
+      });
+      return;
+    }
+
+    setIsClearConfirmOpen(true);
+  };
 
   const handleClearHistory = async () => {
     if (isClearing) {
@@ -93,7 +112,8 @@ const ScheduledMessageArchive = ({
     setIsClearing(true);
 
     try {
-      await clearScheduledMessageArchiveHistory(chatId);
+      const clearedCount =
+        await clearScheduledMessageArchiveHistory(chatId);
 
       setRecords((previous) => (
         previous.filter((item) => (
@@ -102,17 +122,28 @@ const ScheduledMessageArchive = ({
           item.status !== 'failed'
         ))
       ));
+
+      triggerGlobalToast({
+        title: clearedCount > 0 ? '已清空' : '没有找到记录',
+        content:
+          clearedCount > 0
+            ? `已清空 ${clearedCount} 张历史票据。`
+            : '没有找到可以清空的历史票据。',
+      });
     } catch (error) {
       console.error(
         '[ScheduledMessageArchive] 清空历史预约记录失败：',
         error
       );
+      triggerGlobalToast({
+        title: '清空失败',
+        content: '请稍后再试。',
+      });
     } finally {
       setIsClearing(false);
       setIsClearConfirmOpen(false);
     }
   };
-
   const handleRetry = async (record) => {
     if (!record?.id || retryingRecordId) {
       return;
@@ -182,17 +213,15 @@ const ScheduledMessageArchive = ({
             </div>
 
             <div className="scheduled-archive-actions">
-              <button
+                           <button
                 type="button"
-                onClick={() => setIsClearConfirmOpen(true)}
-                className="scheduled-archive-clear"
+                onClick={handleClearButtonClick}
+                className={`scheduled-archive-clear${clearableCount === 0 ? ' is-empty' : ''}`}
                 title="清空已结束的历史记录"
                 aria-label="清空已结束的历史记录"
-                disabled={clearableCount === 0}
               >
                 <Eraser className="h-4 w-4" />
               </button>
-
               <button
                 type="button"
                 onClick={onClose}

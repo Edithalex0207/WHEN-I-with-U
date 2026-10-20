@@ -105,17 +105,21 @@
     color 0.2s ease;
 }
 
-.scheduled-archive-clear:hover:not(:disabled) {
+
+.scheduled-archive-clear:hover {
   background: var(--control-soft-hover);
   color: var(--text-main);
   transform: rotate(-4deg);
 }
 
-.scheduled-archive-clear:disabled {
-  opacity: 0.35;
-  pointer-events: none;
+/*
+ * 没什么可清的时候按钮仍然可点（点了会弹 toast 说明原因），
+ * 只是视觉上淡一点作为提示，不再用 disabled+pointer-events:none
+ * 把它变成点了没反应的死按钮。
+ */
+.scheduled-archive-clear.is-empty {
+  opacity: 0.45;
 }
-
 .scheduled-archive-paper {
   position: relative;
   flex: 1 1 auto;

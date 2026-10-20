@@ -295,7 +295,12 @@ const CompanionSchoolEventFlow = ({ companion, event, schoolRecord, onClose }) =
                 <div className="ev-collage-pics">
                   <div className={`ev-collage-pet is-${event.tone}`}>
                     {companion.avatarUrl ? (
-                      <img src={companion.avatarUrl} alt={companion.name} draggable={false} />
+                      <img
+                        src={companion.avatarUrl}
+                        alt={companion.name}
+                        draggable={false}
+                        crossOrigin="anonymous"
+                      />
                     ) : (
                       <PetFace size={64} />
                     )}

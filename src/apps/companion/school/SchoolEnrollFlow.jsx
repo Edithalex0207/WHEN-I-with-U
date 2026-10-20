@@ -293,7 +293,12 @@ const SchoolEnrollFlow = ({ companion, mode = 'enroll', schoolRecord = null, onD
                         style={{ transform: `rotate(${tilt}deg)` }}
                       >
                         {companion.avatarUrl ? (
-                          <img src={companion.avatarUrl} alt={companion.name} draggable={false} />
+                          <img
+                            src={companion.avatarUrl}
+                            alt={companion.name}
+                            draggable={false}
+                            crossOrigin="anonymous"
+                          />
                         ) : (
                           <PetFace size={120} />
                         )}
