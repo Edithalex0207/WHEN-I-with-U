@@ -1,3 +1,4 @@
+
 /*
  * "小伙伴"特殊事件目录——纯数据，不含任何 db 读写（逻辑在
  * companionEventService.js）。三种事件：
@@ -489,7 +490,9 @@ export const CHOICE_EVENTS = [
         outcomeText: (name) => `${name}走了好久远的那条路，意外看到一片开得正好的花丛，开心得又蹦又跳，一直拉着你说要再去看看。`,
         reward: { mood: 14, hearts: 1 },
       },
-        {
+    ],
+  },
+  {
     id: 'choice-cardboard-box',
     kind: EVENT_KINDS.CHOICE,
     title: '地上出现了一个空纸箱',
@@ -602,9 +605,6 @@ export const CHOICE_EVENTS = [
         outcomeText: (name) => `${name}立刻心领神会，挺直腰板坐得端端正正，小爪子并得整整齐齐，拍出了一张帅气的“证件照”。`,
         reward: { mood: 9, hearts: 1 },
       },
-    ],
-  },
-
     ],
   },
   {
