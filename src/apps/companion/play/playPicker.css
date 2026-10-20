@@ -1,0 +1,32 @@
+/* =========================================================
+ * playPicker.css — 「小游戏」入口的选择弹窗（接住掉落物 / 小伙伴弹珠）
+ * 前缀约定：pp-（不与 cp- / pg- / ms- 冲突）
+ * 颜色变量：直接复用 companionPage.css 里 .cp-root 的 --cp-*
+ * ========================================================= */
+
+.pp-card {
+  max-width: 340px; padding: 24px 20px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-radius: 32px; text-align: center;
+  display: flex; flex-direction: column; gap: 14px;
+  animation: pp-card-in 0.4s cubic-bezier(0.2, 1.7, 0.4, 1);
+}
+@keyframes pp-card-in { from { transform: translateY(16px) scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+.pp-card h4 { margin: 0; font-family: var(--cp-font-display); font-weight: 400; font-size: 19px; }
+
+.pp-options { display: flex; flex-direction: column; gap: 10px; }
+.pp-option {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 20px;
+  background: var(--cp-soft); border: 2px solid var(--cp-border); text-align: left;
+  transition: transform 0.25s cubic-bezier(0.3, 1.7, 0.5, 1), background 0.2s;
+}
+.pp-option:active { transform: scale(0.96); background: var(--cp-accent-soft); }
+.pp-option-ico { flex: none; width: 40px; height: 40px; }
+.pp-option-text { flex: 1; min-width: 0; }
+.pp-option-text b { display: block; font-family: var(--cp-font-display); font-weight: 400; font-size: 15.5px; }
+.pp-option-text small { display: block; font-size: 11px; color: var(--cp-sub); margin-top: 1px; line-height: 1.4; }
+
+.pp-close {
+  padding: 11px 0; border-radius: 18px; background: var(--cp-card); color: var(--cp-sub);
+  font-size: 13.5px; font-weight: 800; border: 2px solid var(--cp-border);
+}
+.pp-close:active { background: var(--cp-soft); }

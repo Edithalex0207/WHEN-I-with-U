@@ -5072,4 +5072,8 @@ db.version(96).stores({
   tripBoardPosts: '++id, createdAt',
 });
 
+db.version(97).stores({
+  marblePlays: '++id, companionId, dateStr, createdAt, [companionId+dateStr]',
+});
+
 export default db;

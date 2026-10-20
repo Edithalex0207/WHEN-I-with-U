@@ -50,6 +50,8 @@ import CompanionProfileIcon from './profile/CompanionProfileIcon';
 import CompanionHeartIcon from './CompanionHeartIcon';
 import CompanionFortuneModal from './fortune/CompanionFortuneModal';
 import CompanionCatchGameModal from './play/CompanionCatchGameModal';
+import CompanionPlayPickerModal from './play/CompanionPlayPickerModal';
+import CompanionMarblesModal from './marbles/CompanionMarblesModal';
 import CompanionBackpackModal from './backpack/CompanionBackpackModal';
    import CompanionDiaryBook from './diary/CompanionDiaryBook';
    import CompanionDiaryIcon from './diary/CompanionDiaryIcon';
@@ -257,7 +259,9 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [showHeartsInfo, setShowHeartsInfo] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showFortune, setShowFortune] = useState(false);
-  const [showCatchGame, setShowCatchGame] = useState(false);
+   const [showCatchGame, setShowCatchGame] = useState(false);
+  const [showPlayPicker, setShowPlayPicker] = useState(false);
+  const [showMarblesGame, setShowMarblesGame] = useState(false);
      const [showMoodCalendar, setShowMoodCalendar] = useState(false);
   const [showDailyQa, setShowDailyQa] = useState(false);
   const [showDiary, setShowDiary] = useState(false);
@@ -1344,11 +1348,11 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               </span>
               日签
             </button>
-            <button
+                        <button
               type="button"
-              onClick={() => setShowCatchGame(true)}
+              onClick={() => setShowPlayPicker(true)}
               className="cp-dock-btn"
-              aria-label="小游戏：接住掉落物"
+              aria-label="小游戏"
             >
               <span className="cp-dock-ico">
                 <CompanionGameIcon />
@@ -1581,6 +1585,14 @@ const CompanionPage = ({ chatId, character, onBack }) => {
         />
       )}
 
+      {showPlayPicker && (
+        <CompanionPlayPickerModal
+          onPickCatch={() => { setShowPlayPicker(false); setShowCatchGame(true); }}
+          onPickMarbles={() => { setShowPlayPicker(false); setShowMarblesGame(true); }}
+          onClose={() => setShowPlayPicker(false)}
+        />
+      )}
+
       {showCatchGame && (
         <CompanionCatchGameModal
           companionId={companion.id}
@@ -1591,6 +1603,19 @@ const CompanionPage = ({ chatId, character, onBack }) => {
             setLogs(await getRecentLogs(updatedCompanion.id));
           }}
           onClose={() => setShowCatchGame(false)}
+        />
+      )}
+
+      {showMarblesGame && (
+        <CompanionMarblesModal
+          companionId={companion.id}
+          companionAvatarUrl={companion.avatarUrl}
+          companionName={companion.name}
+          onRewardApplied={async (updatedCompanion) => {
+            setCompanion(updatedCompanion);
+            setLogs(await getRecentLogs(updatedCompanion.id));
+          }}
+          onClose={() => setShowMarblesGame(false)}
         />
       )}
 

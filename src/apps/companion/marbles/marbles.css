@@ -1,0 +1,154 @@
+/* =========================================================
+ * marbles.css — 「小伙伴弹珠」(祖玛式) 小游戏模态框
+ * 前缀约定：ms-（不与 cp- / pg- / fo- 冲突）
+ * 颜色变量：直接复用 companionPage.css 里 .cp-root 的 --cp-*
+ *   （本模态框始终渲染在 .cp-root 内部，继承这些变量）
+ * 视觉范式跟 catchGame.css（pg-）保持一致：白底圆角卡片 + 克制阴影。
+ * ========================================================= */
+
+.ms-root {
+  --ms-accent-deep: #6B4FC9; /* 比 --cp-accent 更偏紫，跟弹珠的糖果紫配色呼应 */
+  --ms-heart-deep: #D95F72;
+
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: min(900px, max(680px, calc(100dvh - 84px)));
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 34px;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: var(--cp-font-body);
+  box-shadow: 0 30px 60px -30px rgba(36, 65, 90, 0.5), 0 0 0 6px #fff;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  flex-direction: column;
+}
+.ms-root *, .ms-root *::before, .ms-root *::after { box-sizing: border-box; }
+:where(.ms-root) button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+.ms-root button:focus-visible { outline: 3px solid var(--cp-accent); outline-offset: 2px; }
+.ms-ic { width: 1em; height: 1em; flex: none; }
+
+/* ================= 顶栏 ================= */
+.ms-topbar { position: relative; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 14px 14px 0; flex: none; }
+.ms-round-btn {
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; flex: none;
+  background: var(--cp-card); border: 2px solid var(--cp-border); color: var(--cp-text); box-shadow: 0 6px 12px -6px var(--cp-shadow);
+  transition: transform 0.25s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+.ms-round-btn:active { transform: scale(0.82) rotate(-8deg); }
+.ms-title { flex: 1; text-align: center; }
+.ms-title b { display: block; font-family: var(--cp-font-display); font-weight: 400; font-size: 17px; line-height: 1.2; }
+.ms-title small { font-size: 10.5px; font-weight: 800; color: var(--cp-sub); }
+.ms-topbar-spacer { width: 38px; flex: none; }
+
+/* ================= 关卡选择 ================= */
+.ms-levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 14px 0; flex: none; }
+.ms-lv {
+  border: 2px solid var(--cp-border); background: var(--cp-card); color: var(--cp-text);
+  border-radius: 16px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0;
+}
+.ms-lv b { font-family: var(--cp-font-display); font-weight: 400; font-size: 15.5px; }
+.ms-lv small { font-size: 10px; color: var(--cp-sub); }
+.ms-lv.is-active { border-color: var(--ms-accent-deep); background: var(--cp-soft); }
+.ms-lv .ms-lv-check { width: 14px; height: 14px; color: #fff; background: var(--cp-mint-fg); border-radius: 50%; display: grid; place-items: center; margin-top: 2px; }
+.ms-lv .ms-lv-check .ms-ic { font-size: 9px; }
+
+/* ================= 棋盘 ================= */
+.ms-board-wrap { flex: 1; min-height: 0; padding: 10px 14px 0; display: flex; }
+.ms-board {
+  position: relative; flex: 1; border-radius: 24px; overflow: hidden;
+  border: 3px solid var(--cp-card); box-shadow: 0 10px 24px -10px var(--cp-shadow); background: #EAF3FF;
+}
+.ms-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+/* ================= 游戏内 HUD ================= */
+.ms-hud { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; padding: 10px 14px 0; flex: none; }
+.ms-stat { background: var(--cp-card); border: 2px solid var(--cp-border); border-radius: 16px; padding: 7px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ms-stat small { font-size: 10.5px; color: var(--cp-sub); font-weight: 800; }
+.ms-stat b { font-family: var(--cp-font-display); font-weight: 400; font-size: 18px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.ms-bar { height: 9px; border-radius: 99px; background: var(--cp-soft); overflow: hidden; margin-top: 5px; }
+.ms-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--cp-sky-fg), var(--ms-accent-deep)); transition: width 0.2s; }
+
+.ms-actions { display: flex; gap: 8px; padding: 10px 14px 0; flex: none; }
+.ms-btn-sm {
+  flex: 1; border: 2px solid var(--cp-border); background: var(--cp-card); color: var(--cp-text);
+  border-radius: 14px; padding: 9px 10px; font-size: 13px; font-weight: 700; text-align: center;
+}
+.ms-btn-sm:active { background: var(--cp-soft); }
+
+.ms-hint { margin: 8px 14px 0; text-align: center; font-size: 11px; font-weight: 700; color: var(--cp-sub); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+
+/* ================= 今日名额徽标 ================= */
+.ms-attempts { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--cp-sub); padding: 2px 14px 0; flex: none; }
+.ms-attempts .dots { display: flex; gap: 3px; }
+.ms-attempts .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cp-border); }
+.ms-attempts .dot.is-used { background: var(--cp-butter-fg); }
+.ms-attempts .ms-full-badge { display: inline-flex; align-items: center; gap: 3px; color: var(--cp-mint-fg); font-weight: 800; }
+
+/* ================= 开局前 / 结算 共用的覆盖层 ================= */
+.ms-overlay {
+  position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 0 20px;
+}
+.ms-backdrop { position: absolute; inset: 0; background: var(--cp-overlay); backdrop-filter: blur(2px); }
+.ms-panel {
+  position: relative; z-index: 1; width: 100%; max-width: 310px; border-radius: 28px; background: var(--cp-card); border: 2px solid var(--cp-border);
+  box-shadow: 0 30px 50px -22px rgba(36, 65, 90, 0.5); padding: 22px 20px calc(18px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+  transform: translateY(16px) scale(0.94); animation: ms-pop-in 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+@keyframes ms-pop-in { to { transform: none; } }
+.ms-panel h2, .ms-panel h3 { margin: 0; font-family: var(--cp-font-display); font-weight: 400; font-size: 21px; }
+.ms-panel p.desc { margin: 0; font-size: 12.5px; color: var(--cp-sub); line-height: 1.6; }
+.ms-tier-badge {
+  display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 18px;
+  background: linear-gradient(135deg, var(--ms-accent-deep), var(--ms-heart-deep)); color: #fff;
+  box-shadow: 0 10px 16px -8px var(--cp-shadow);
+}
+.ms-tier-badge .ms-ic { font-size: 26px; }
+
+.ms-reward-row { display: flex; gap: 8px; width: 100%; }
+.ms-reward-chip { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px; border-radius: 16px; background: var(--cp-soft); }
+.ms-reward-chip.mood { background: var(--cp-heart-soft); }
+.ms-reward-chip.satiety { background: var(--cp-butter-bg); }
+.ms-reward-chip.hearts { background: var(--cp-accent-soft); }
+.ms-reward-chip .ms-ic { font-size: 16px; }
+.ms-reward-chip.mood .ms-ic { color: var(--cp-heart); }
+.ms-reward-chip.satiety .ms-ic { color: var(--cp-butter-fg); }
+.ms-reward-chip.hearts .ms-ic { color: var(--cp-accent); }
+.ms-reward-chip b { font-family: var(--cp-font-display); font-weight: 400; font-size: 14px; }
+.ms-reward-chip small { font-size: 9px; font-weight: 800; color: var(--cp-sub); }
+
+.ms-full-clear-banner {
+  width: 100%; border-radius: 16px; padding: 10px 12px; background: linear-gradient(135deg, var(--cp-accent-soft), var(--cp-heart-soft));
+  display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: var(--ms-accent-deep); text-align: left;
+}
+.ms-full-clear-banner .ms-ic { font-size: 18px; flex: none; color: var(--cp-butter-fg); }
+
+.ms-no-reward { margin: 0; padding: 10px 12px; border-radius: 16px; background: var(--cp-soft); font-size: 11.5px; font-weight: 700; color: var(--cp-sub); line-height: 1.6; }
+
+.ms-panel-actions { display: flex; gap: 10px; width: 100%; }
+.ms-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 0; border-radius: 20px;
+  background: var(--cp-card); color: var(--cp-sky-fg); border: 2px solid var(--cp-sky-bg);
+  font-family: var(--cp-font-display); font-weight: 400; font-size: 15px; letter-spacing: 0.02em;
+  box-shadow: 0 8px 14px -10px var(--cp-shadow); transition: transform 0.25s cubic-bezier(0.3, 1.7, 0.5, 1), background 0.2s;
+}
+.ms-btn:active { transform: scale(0.92); background: var(--cp-sky-bg); }
+.ms-btn.main {
+  background: linear-gradient(135deg, var(--ms-accent-deep), var(--ms-heart-deep)); color: #fff; border-color: transparent;
+  text-shadow: 0 1px 2px rgba(36, 65, 90, 0.35); box-shadow: 0 10px 16px -8px var(--cp-shadow);
+}
+.ms-btn.main:active { background: var(--ms-accent-deep); }
+.ms-btn:disabled { opacity: 0.6; box-shadow: none; transform: none; }
+
+.ms-limit-note { margin: 0; font-size: 10.5px; font-weight: 700; color: var(--cp-muted); }
+
+@media (max-height: 780px) {
+  .ms-panel { gap: 8px; padding: 16px 18px calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .ms-panel h2, .ms-panel h3 { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms-root *, .ms-root *::before, .ms-root *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
