@@ -67,11 +67,11 @@ export const FOOD_TIERS = {
 export const SHOP_FOOD_ITEMS = [
    // ---- 普通 ----
   // 1-3 心心的小零食：效果小，图片还没有（url 留空会显示图标占位，等你出图后填上）
-  { id: 'food-mini-cookie', name: '小饼干', category: 'food', tier: FOOD_TIERS.COMMON, price: 1, effects: { satiety: 2 }, url: '' },
-  { id: 'food-candy-bean', name: '彩色糖豆', category: 'food', tier: FOOD_TIERS.COMMON, price: 1, effects: { mood: 2 }, url: '' },
-  { id: 'food-mini-bun', name: '迷你小面包', category: 'food', tier: FOOD_TIERS.COMMON, price: 2, effects: { satiety: 4 }, url: '' },
-  { id: 'food-milk-candy', name: '牛奶糖', category: 'food', tier: FOOD_TIERS.COMMON, price: 2, effects: { mood: 4 }, url: '' },
-  { id: 'food-crispy-rice', name: '脆米花', category: 'food', tier: FOOD_TIERS.COMMON, price: 3, effects: { satiety: 4, mood: 2 }, url: '' },
+    { id: 'food-mini-cookie', name: '小饼干', category: 'food', tier: FOOD_TIERS.COMMON, price: 1, effects: { satiety: 2 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261020/zyRc/1655X1913/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D4535530091087761017%26skey%3D%40crypt_5a237c93_101f52ecdb192e46ae0622900aaafe28%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'food-candy-bean', name: '彩色糖豆', category: 'food', tier: FOOD_TIERS.COMMON, price: 1, effects: { mood: 2 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261020/JS0E/2049X2004/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D5158955693255704355%26skey%3D%40crypt_5a237c93_101f52ecdb192e46ae0622900aaafe28%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'food-mini-bun', name: '迷你小面包', category: 'food', tier: FOOD_TIERS.COMMON, price: 2, effects: { satiety: 4 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261020/dqix/1576X2008/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D3420252726335069298%26skey%3D%40crypt_5a237c93_101f52ecdb192e46ae0622900aaafe28%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'food-milk-candy', name: '牛奶糖', category: 'food', tier: FOOD_TIERS.COMMON, price: 2, effects: { mood: 4 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261020/3KCb/1503X2032/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D1198040962711472558%26skey%3D%40crypt_5a237c93_101f52ecdb192e46ae0622900aaafe28%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
+  { id: 'food-crispy-rice', name: '脆米花', category: 'food', tier: FOOD_TIERS.COMMON, price: 3, effects: { satiety: 4, mood: 2 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261020/3KBW/1944X2020/_cgi-bin_mmwebwx-bin_webwxgetmsgimg__%26MsgID%3D2656739402102231244%26skey%3D%40crypt_5a237c93_101f52ecdb192e46ae0622900aaafe28%26mmweb_appid%3Dwx_webfilehelper.jpg/webp' },
   { id: 'food-rice-ball', name: '小饭团', category: 'food', tier: FOOD_TIERS.COMMON, price: 8, effects: { satiety: 15 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261006/kdb2/1292X1292/food_%282%29.png/webp' },
   { id: 'food-boiled-egg', name: '白水煮蛋', category: 'food', tier: FOOD_TIERS.COMMON, price: 6, effects: { satiety: 12 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261006/7jcJ/1257X1234/food_%283%29.png/webp' },
   { id: 'food-sweet-tofu', name: '甜豆花', category: 'food', tier: FOOD_TIERS.COMMON, price: 7, effects: { mood: 12 }, url: 'https://img.pagehost.cn/autoupload/amqnh/20261006/SZGx/1343X1230/food_%284%29.png/webp' },
