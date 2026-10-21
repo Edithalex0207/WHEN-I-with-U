@@ -176,8 +176,8 @@ const SweetStreetApp = ({ onBackHub, chatId }) => {
               <button
                 type="button"
                 className="ss-btn play"
-             onClick={() => (home?.activeWork ? showToast('TA还在打工，等回来再玩') : setPlayingShopId(shop.id))}
-              >
+onClick={() => setPlayingShopId(shop.id)}
+>
                 自己来做
               </button>
               <button

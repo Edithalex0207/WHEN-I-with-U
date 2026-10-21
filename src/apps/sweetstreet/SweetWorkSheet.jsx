@@ -34,7 +34,7 @@ const formatCountdown = (ms) => {
 };
 
 const FAIL_TEXT = {
-  busy: 'TA已经在打工了',
+  busy: '角色已经在打工了',
   tier: '这一档不存在',
   missing: '这份工已经结算过了',
 };
