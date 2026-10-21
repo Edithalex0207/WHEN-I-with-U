@@ -1,0 +1,121 @@
+/*
+ * sweetWork.css —— 「派TA去打工」面板样式。类名以 sw- 开头。
+ * 面板渲染在 .ss-root 里面，所以直接用 sweetStreet.css 里定义的 --ss-* 变量。
+ */
+
+.sw-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(122, 74, 58, 0.4);
+}
+
+.sw-sheet {
+  width: 100%;
+  max-width: 440px;
+  box-sizing: border-box;
+  padding: 22px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+  border-radius: 28px 28px 0 0;
+  background: var(--ss-cream, #FFF8F0);
+  border: 4px solid var(--ss-pink-soft, #FFD0DC);
+  border-bottom: none;
+  color: var(--ss-text, #7A4A3A);
+  font-family: var(--ss-font-body, system-ui, sans-serif);
+  text-align: center;
+  animation: sw-up 0.25s ease-out;
+}
+
+.sw-title {
+  margin: 0 0 6px;
+  font-family: var(--ss-font-display, inherit);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ss-pink-deep, #E8638A);
+}
+.sw-sub { margin: 0 0 14px; font-size: 14px; color: var(--ss-sub, #B98A7C); }
+.sw-note { margin: 12px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--ss-sub, #B98A7C); }
+.sw-error { margin: 12px 0 0; font-size: 13px; font-weight: 800; color: var(--ss-pink-deep, #E8638A); }
+
+.sw-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sw-tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 4px;
+  border-radius: 18px;
+  border: 2px solid var(--ss-pink-soft, #FFD0DC);
+  background: #fff;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--ss-pink-soft, #FFD0DC);
+}
+.sw-tier b { font-size: 17px; }
+.sw-tier span { font-size: 12px; color: var(--ss-sub, #B98A7C); font-weight: 700; }
+.sw-tier:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--ss-pink-soft, #FFD0DC); }
+.sw-tier:disabled { opacity: 0.5; cursor: default; }
+
+.sw-clock {
+  margin: 4px 0 10px;
+  font-family: var(--ss-font-display, inherit);
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ss-pink-deep, #E8638A);
+}
+.sw-bar { height: 12px; border-radius: 6px; background: var(--ss-pink-soft, #FFD0DC); overflow: hidden; }
+.sw-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #FFB3C6, var(--ss-pink-deep, #E8638A));
+  transition: width 1s linear;
+}
+
+.sw-report { margin: 8px 0 16px; font-size: 15px; line-height: 1.7; font-weight: 700; }
+.sw-got {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 8px 0 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #fff;
+  border: 2px dashed var(--ss-pink-soft, #FFD0DC);
+}
+.sw-got span { font-size: 15px; font-weight: 800; }
+.sw-got b { font-family: var(--ss-font-display, inherit); font-size: 26px; font-weight: 400; color: var(--ss-pink-deep, #E8638A); }
+
+.sw-btn {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 14px;
+  border-radius: 24px;
+  border: 2px solid var(--ss-pink-soft, #FFD0DC);
+  background: #fff;
+  color: var(--ss-pink-deep, #E8638A);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.sw-btn.primary { background: var(--ss-pink-deep, #E8638A); border-color: var(--ss-pink-deep, #E8638A); color: #fff; }
+.sw-btn.danger { background: var(--ss-yellow, #FFE6A8); border-color: var(--ss-yellow-deep, #F0C46A); color: var(--ss-yellow-text, #8A5A1E); }
+.sw-btn:disabled { opacity: 0.5; cursor: default; }
+
+.sw-close {
+  margin-top: 10px;
+  padding: 8px;
+  border: none;
+  background: none;
+  color: var(--ss-sub, #B98A7C);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@keyframes sw-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
