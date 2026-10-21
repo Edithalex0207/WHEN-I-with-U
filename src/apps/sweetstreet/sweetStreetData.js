@@ -17,7 +17,17 @@ export const SWEET_STREET_IMAGES = {
   // 页面顶部「甜品小街」标题处的招牌图（留空则用文字标题）
   streetSign: '',
   // 打工小日志为空时的小插图（留空则不显示插图）
-  emptyLogIllustration: '',
+    emptyLogIllustration: '',
+  // 前台背景（竖版，只有店内墙、门、窗、桌椅，不含柜台和人）
+  frontBackground: '',
+  // 前台柜台前景（透明 PNG，盖在画面下半部分，中间留位置给平板）
+  frontCounter: '',
+  // 后厨背景（竖版）
+  kitchenBackground: '',
+  // 烤箱（透明 PNG，正面，门是半透明玻璃窗）
+  oven: '',
+  // 奶油挤袋（透明 PNG）
+  pipingBag: '',
 };
 
 /*
@@ -46,6 +56,60 @@ export const SWEET_SHOPS = [
     signUrl: '',
   },
 ];
+
+/*
+ * 主动玩法用到的图片，key 是 sweetPlayData.js 里对应的 id。
+ * 留空 ('') 时用内置图形兜底。
+ */
+
+// 蛋糕本体：涂好奶油、顶部留空、不画装饰（装饰由代码按订单叠上去）
+export const SWEET_CAKE_IMAGES = {
+  strawberry: '',
+  matcha: '',
+  lemon: '',
+  choco: '',
+  blueberry: '',
+};
+
+// 材料图标
+export const SWEET_INGREDIENT_IMAGES = {
+  flour: '',
+  egg: '',
+  milk: '',
+  strawberryJam: '',
+  matchaPowder: '',
+  redBean: '',
+  lemon: '',
+  honey: '',
+  cocoa: '',
+  hazelnut: '',
+  cookieBase: '',
+  creamCheese: '',
+  sugar: '',
+  blueberry: '',
+};
+
+// 装饰图标
+export const SWEET_DECO_IMAGES = {
+  strawberry: '',
+  sprinkles: '',
+  redBean: '',
+  mintLeaf: '',
+  lemonSlice: '',
+  honeyDrop: '',
+  chocoChip: '',
+  hazelnutCrumb: '',
+  blueberry: '',
+  powderedSugar: '',
+};
+
+// 顾客贴图：每位顾客三个表情，缺哪个就自动退回 normal，都没有就用内置小人
+export const SWEET_CUSTOMER_IMAGES = {
+  customer1: { normal: '', happy: '', sad: '' },
+  customer2: { normal: '', happy: '', sad: '' },
+  customer3: { normal: '', happy: '', sad: '' },
+  customer4: { normal: '', happy: '', sad: '' },
+};
 
 export const SHOP_STAR_MIN = 1;
 export const SHOP_STAR_MAX = 5;
