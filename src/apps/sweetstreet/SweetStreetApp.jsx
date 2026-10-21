@@ -11,7 +11,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { loadSweetStreetHome } from './sweetStreetService';
 import { SWEET_SHOPS, SWEET_STREET_IMAGES } from './sweetStreetData';
-import './sweetStreet.css';
+   import SweetPlayApp from './SweetPlayApp';
+   import './sweetStreet.css';
 
 const CupcakeArt = () => (
   <svg viewBox="0 0 64 64" width="64" height="64" fill="none" aria-hidden="true">
@@ -53,7 +54,8 @@ const formatLogTime = (ts) => {
 const SweetStreetApp = ({ onBackHub, chatId }) => {
   const [home, setHome] = useState(null);
   const [status, setStatus] = useState('loading'); // loading | ready | no-companion | error
-  const [toast, setToast] = useState('');
+       const [toast, setToast] = useState('');
+     const [playingShopId, setPlayingShopId] = useState(null);
   const toastTimerRef = useRef(null);
 
   useEffect(() => {
@@ -92,7 +94,24 @@ const SweetStreetApp = ({ onBackHub, chatId }) => {
     toastTimerRef.current = setTimeout(() => setToast(''), 1800);
   }, []);
 
-  const hearts = home?.companion?.hearts ?? 0;
+      const hearts = home?.companion?.hearts ?? 0;
+
+     // 「自己来做」:整页换成玩法界面,玩完回来时首页的心心和星级已经是最新的
+     if (playingShopId && home?.companion) {
+       return (
+         <SweetPlayApp
+           companion={home.companion}
+           shopState={home.shopStates?.[playingShopId]}
+           shopId={playingShopId}
+           onClose={() => setPlayingShopId(null)}
+           onDataChange={({ companion, shopState }) => setHome((prev) => (prev ? {
+             ...prev,
+             companion,
+             shopStates: { ...prev.shopStates, [playingShopId]: shopState },
+           } : prev))}
+         />
+       );
+     }
   const bgStyle = SWEET_STREET_IMAGES.background
     ? { backgroundImage: `url(${SWEET_STREET_IMAGES.background})` }
     : undefined;
@@ -145,7 +164,7 @@ const SweetStreetApp = ({ onBackHub, chatId }) => {
               <button
                 type="button"
                 className="ss-btn play"
-                onClick={() => showToast('玩法下一片开放')}
+                onClick={() => setPlayingShopId(shop.id)}
               >
                 自己来做
               </button>
