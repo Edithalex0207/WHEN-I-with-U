@@ -13,7 +13,7 @@
 
 import db from '../../../db';
 
-const callFriendAi = async ({ systemPrompt, userLine, maxTokens = 400 }) => {
+export const callFriendAi = async ({ systemPrompt, userLine, maxTokens = 400 }) => {
   try {
     const apiSettings = await db.settings.get('apiConfig');
     const apiConfig = apiSettings?.value || {};

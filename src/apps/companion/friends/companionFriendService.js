@@ -24,8 +24,9 @@ import { EXTRA_NPC_ROSTER, pickRosterExamples } from './companionFriendRoster';
 import {
   generateFriendCandidates,
   generateFriendReplyText,
-  generateFriendInteractionStory,
 } from './companionFriendAiService';
+import { generateFriendStory } from './companionFriendStoryAiService';
+import { pickFallbackStory } from './companionFriendStoryData';
 
 // ---- 常量：全部写成常量方便以后调 ----
 export const PLAZA_SIZE = 4;
@@ -385,18 +386,9 @@ export const runFriendTick = async () => {
 
 const clamp100 = (value) => Math.max(0, Math.min(100, Math.round(value)));
 
-// 互动/串门的 AI 短文失败时的本地兜底（送礼反应走固定文案池，见下面，
-// 已跟用户确认不调 AI，省 token）。
-const TALK_FALLBACKS = [
-  '聊了好一会儿，彼此分享了今天的小事。',
-  '说了几句悄悄话，两个都笑了起来。',
-  '聊得很投机，约好了下次再聊。',
-];
-const VISIT_FALLBACKS = [
-  '一起在院子里玩了一会儿，很开心。',
-  '串门待了一阵，临走前还道了别。',
-  '去朋友家坐了坐，聊了会儿天才回来。',
-];
+// 互动/串门的 AI 长短文失败时的本地兜底，已搬到 companionFriendStoryData.js
+// 的 pickFallbackStory（每条 100 字以上）。送礼反应仍走下面的固定文案池，
+// 已跟用户确认不调 AI，省 token。
 const GIFT_REACTION_TEXTS = {
   food: ['眼睛一下子亮了，立刻拆开吃了起来。', '闻了闻，满意地眯起眼睛收下了。', '开心地抱着礼物转了个圈。'],
   clean: ['好奇地研究了一下，很喜欢这个礼物。', '用了用，整个人都精神了。', '捧在手里爱不释手。'],
@@ -459,11 +451,11 @@ export const interactWithFriend = async (companionId, friendId) => {
 
   let text = null;
   try {
-    text = await generateFriendInteractionStory({ companionName: companion.name, friend, mode: 'talk' });
+    text = await generateFriendStory({ companion, friend, mode: 'talk' });
   } catch (error) {
     console.warn('[CompanionFriend] AI 生成互动短文失败，退回本地兜底:', error);
   }
-  if (!text) text = pickRandom(TALK_FALLBACKS);
+  if (!text) text = pickFallbackStory('talk', { petName: companion.name, friendName: friend.name });
 
   return applyFriendSocialResult(companionId, friendId, {
     friendshipDelta: FRIENDSHIP_DELTA.talk,
@@ -483,11 +475,11 @@ export const visitFriend = async (companionId, friendId) => {
 
   let text = null;
   try {
-    text = await generateFriendInteractionStory({ companionName: companion.name, friend, mode: 'visit' });
+    text = await generateFriendStory({ companion, friend, mode: 'visit' });
   } catch (error) {
     console.warn('[CompanionFriend] AI 生成串门短文失败，退回本地兜底:', error);
   }
-  if (!text) text = pickRandom(VISIT_FALLBACKS);
+  if (!text) text = pickFallbackStory('visit', { petName: companion.name, friendName: friend.name });
 
   return applyFriendSocialResult(companionId, friendId, {
     friendshipDelta: FRIENDSHIP_DELTA.visit,
