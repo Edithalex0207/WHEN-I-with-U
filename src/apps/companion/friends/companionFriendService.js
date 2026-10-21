@@ -20,6 +20,7 @@
 import db from '../../../db';
 import { findShopItem } from '../companionShopData';
 import { pickRandomAvatar } from './companionFriendAvatars';
+import { EXTRA_NPC_ROSTER, pickRosterExamples } from './companionFriendRoster';
 import {
   generateFriendCandidates,
   generateFriendReplyText,
@@ -106,7 +107,7 @@ const buildFreshCandidates = async (count, excludeNames) => {
 
   let textPool = [];
   try {
-    textPool = await generateFriendCandidates(count, excludeNames);
+    textPool = await generateFriendCandidates(count, excludeNames, pickRosterExamples(3));
   } catch (error) {
     console.warn('[CompanionFriend] AI 生成候选失败，退回本地兜底池:', error);
   }
@@ -122,7 +123,7 @@ const buildFreshCandidates = async (count, excludeNames) => {
   }
 
   // 不够就从本地兜底池补齐，同样避开已用过的名字。
-  const fallbackShuffled = [...FALLBACK_NPC_POOL].sort(() => Math.random() - 0.5);
+  const fallbackShuffled = [...FALLBACK_NPC_POOL, ...EXTRA_NPC_ROSTER].sort(() => Math.random() - 0.5);
   for (const item of fallbackShuffled) {
     if (picked.length >= count) break;
     if (usedNames.has(item.name)) continue;

@@ -80,10 +80,15 @@ const extractJson = (text) => {
  * excludeNames：当前广场上已有的 + 已经是好友的名字，提示 AI 别重名；
  * 返回数组长度可能小于 count（AI 没给够就有几个用几个，调用方兜底补齐）。
  */
-export const generateFriendCandidates = async (count, excludeNames = []) => {
-  const systemPrompt = `你在帮一个"宠物社交广场"小程序生成虚构的 NPC 小伙伴资料，风格轻松可爱、像小动物一样说话，不涉及任何真实人物。
+
+export const generateFriendCandidates = async (count, excludeNames = [], styleExamples = []) => {
+  const exampleLines = (Array.isArray(styleExamples) ? styleExamples : [])
+    .filter((item) => item && item.name && item.k1 && item.k2 && item.declaration)
+    .map((item) => `${item.name}（${item.k1}、${item.k2}）："${item.declaration}"`);
+const systemPrompt = `你在帮一个"宠物社交广场"小程序生成虚构的 NPC 小伙伴资料，风格轻松可爱、像小动物一样说话，不涉及任何真实人物。
 每个 NPC 需要：name（2 个字的可爱名字）、k1 和 k2（两个各 2-4 字的性格标签，比如"爱吃""怕生""话多"）、declaration（第一人称的"交友宣言"，1-2 句话，20 字以内，要体现性格，不要用省略号堆砌）。
 ${excludeNames.length > 0 ? `这些名字已经用过，不要重复：${excludeNames.join('、')}。` : ''}
+${exampleLines.length > 0 ? `下面是几个风格参考，只学它们的口吻，名字、标签和宣言都不要照抄，要写出明显不同的新性格：\n${exampleLines.join('\n')}` : ''}
 只输出一个 JSON 数组，不要任何多余文字、不要代码块围栏，格式严格为：
 [{"name":"","k1":"","k2":"","declaration":""}, ...]`;
 

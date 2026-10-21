@@ -13,17 +13,17 @@
 
 export const SWEET_STREET_IMAGES = {
   // 整页背景图（留空则用页面自带的粉色渐变）
-  background: '',
+  background: 'https://img.pagehost.cn/autoupload/amqnh/20261021/06cq/1056X1408/gi2-e1792542172.png/webp',
   // 页面顶部「甜品小街」标题处的招牌图（留空则用文字标题）
   streetSign: '',
   // 打工小日志为空时的小插图（留空则不显示插图）
     emptyLogIllustration: '',
   // 前台背景（竖版，只有店内墙、门、窗、桌椅，不含柜台和人）
-  frontBackground: '',
+  frontBackground: 'https://img.pagehost.cn/autoupload/amqnh/20261021/dW3N/1086X1448/gi2-e1792544131.png/webp',
   // 前台柜台前景（透明 PNG，盖在画面下半部分，中间留位置给平板）
   frontCounter: '',
   // 后厨背景（竖版）
-  kitchenBackground: '',
+  kitchenBackground: 'https://img.pagehost.cn/autoupload/amqnh/20261021/VfWz/1086X1448/gi2-e1792553513.png/webp',
   // 烤箱（透明 PNG，正面，门是半透明玻璃窗）
   oven: '',
   // 奶油挤袋（透明 PNG）
@@ -64,29 +64,29 @@ export const SWEET_SHOPS = [
 
 // 蛋糕本体：涂好奶油、顶部留空、不画装饰（装饰由代码按订单叠上去）
 export const SWEET_CAKE_IMAGES = {
-  strawberry: '',
-  matcha: '',
-  lemon: '',
-  choco: '',
-  blueberry: '',
+  strawberry: 'https://img.pagehost.cn/autoupload/amqnh/20261021/15nr/1657X1810/cai_%281%29.jpg/webp',
+  matcha: 'https://img.pagehost.cn/autoupload/amqnh/20261021/6X5E/1863X1999/cai_%2819%29.jpg/webp',
+  lemon: 'https://img.pagehost.cn/autoupload/amqnh/20261021/15nr/1657X1810/cai_%281%29.jpg/webp',
+  choco: 'https://img.pagehost.cn/autoupload/amqnh/20261021/QU7N/1765X1826/cai_%2817%29.jpg/webp',
+  blueberry: 'https://img.pagehost.cn/autoupload/amqnh/20261021/15nr/1657X1810/cai_%281%29.jpg/webp',
 };
 
 // 材料图标
 export const SWEET_INGREDIENT_IMAGES = {
-  flour: '',
-  egg: '',
-  milk: '',
-  strawberryJam: '',
-  matchaPowder: '',
-  redBean: '',
-  lemon: '',
-  honey: '',
-  cocoa: '',
-  hazelnut: '',
-  cookieBase: '',
-  creamCheese: '',
-  sugar: '',
-  blueberry: '',
+  flour: 'https://img.pagehost.cn/autoupload/amqnh/20261021/77WB/1729X1998/cai_%286%29.jpg/webp',
+  egg: 'https://img.pagehost.cn/autoupload/amqnh/20261021/h7F4/1625X2049/cai_%287%29.jpg/webp',
+  milk: 'https://img.pagehost.cn/autoupload/amqnh/20261021/PicG/1539X2049/cai_%284%29.jpg/webp',
+  strawberryJam: 'https://img.pagehost.cn/autoupload/amqnh/20261021/57gf/1477X1764/cai_%285%29.jpg/webp',
+  matchaPowder: 'https://img.pagehost.cn/autoupload/amqnh/20261021/n6GE/1852X1986/cai_%283%29.jpg/webp',
+  redBean: 'https://img.pagehost.cn/autoupload/amqnh/20261021/6PRT/1623X1522/cai_%282%29.jpg/webp',
+  lemon: 'https://img.pagehost.cn/autoupload/amqnh/20261021/NZOs/2049X2043/cai_%2814%29.jpg/webp',
+  honey: 'https://img.pagehost.cn/autoupload/amqnh/20261021/Rf5R/2048X1740/cai_%2812%29.jpg/webp',
+  cocoa: 'https://img.pagehost.cn/autoupload/amqnh/20261021/3i3z/1941X1704/cai_%2811%29.jpg/webp',
+  hazelnut: 'https://img.pagehost.cn/autoupload/amqnh/20261021/Imy8/2046X1603/cai_%2810%29.jpg/webp',
+  cookieBase: 'https://img.pagehost.cn/autoupload/amqnh/20261021/mxUf/2046X1580/cai_%289%29.jpg/webp',
+  creamCheese: 'https://img.pagehost.cn/autoupload/amqnh/20261021/8VW6/1955X1647/shi_%282%29.jpg/webp',
+  sugar: 'https://img.pagehost.cn/autoupload/amqnh/20261021/6tQW/1770X2049/shi_%281%29.jpg/webp',
+  blueberry: 'https://img.pagehost.cn/autoupload/amqnh/20261021/pKit/1868X1581/cai_%288%29.jpg/webp',
 };
 
 // 装饰图标
@@ -105,10 +105,10 @@ export const SWEET_DECO_IMAGES = {
 
 // 顾客贴图：每位顾客三个表情，缺哪个就自动退回 normal，都没有就用内置小人
 export const SWEET_CUSTOMER_IMAGES = {
-  customer1: { normal: '', happy: '', sad: '' },
-  customer2: { normal: '', happy: '', sad: '' },
-  customer3: { normal: '', happy: '', sad: '' },
-  customer4: { normal: '', happy: '', sad: '' },
+  customer1: { normal: 'https://img.pagehost.cn/autoupload/amqnh/20261021/MSyG/1254X1254/gi2-e1792566489.png/webp', happy: '', sad: '' },
+  customer2: { normal: 'https://img.pagehost.cn/autoupload/amqnh/20261021/TPS2/1254X1254/gi2-e1792567118.png/webp', happy: '', sad: '' },
+  customer3: { normal: 'https://img.pagehost.cn/autoupload/amqnh/20261021/X3ak/1254X1254/gi2-e1792567480.png/webp', happy: '', sad: '' },
+  customer4: { normal: 'https://img.pagehost.cn/autoupload/amqnh/20261021/XDmE/1024X1024/gi2-e1792589423.png/webp', happy: '', sad: '' },
 };
 
 export const SHOP_STAR_MIN = 1;
