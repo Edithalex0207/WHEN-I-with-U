@@ -11,7 +11,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { loadSweetStreetHome } from './sweetStreetService';
 import { SWEET_SHOPS, SWEET_STREET_IMAGES } from './sweetStreetData';
-   import SweetPlayApp from './SweetPlayApp';
+      import SweetPlayApp from './SweetPlayApp';
+   import SweetWorkSheet from './SweetWorkSheet';
    import './sweetStreet.css';
 
 const CupcakeArt = () => (
@@ -56,7 +57,18 @@ const SweetStreetApp = ({ onBackHub, chatId }) => {
   const [status, setStatus] = useState('loading'); // loading | ready | no-companion | error
        const [toast, setToast] = useState('');
      const [playingShopId, setPlayingShopId] = useState(null);
-  const toastTimerRef = useRef(null);
+     const [workOpen, setWorkOpen] = useState(false);
+
+     // 打工开工 / 领取之后重新读一遍首页数据
+     const reloadHome = useCallback(async () => {
+       try {
+         const data = await loadSweetStreetHome(chatId);
+         if (data) setHome(data);
+       } catch (error) {
+         console.warn('[SweetStreet] 重新读取失败:', error);
+       }
+     }, [chatId]);
+       const toastTimerRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,14 +176,14 @@ const SweetStreetApp = ({ onBackHub, chatId }) => {
               <button
                 type="button"
                 className="ss-btn play"
-                onClick={() => setPlayingShopId(shop.id)}
+             onClick={() => (home?.activeWork ? showToast('TA还在打工，等回来再玩') : setPlayingShopId(shop.id))}
               >
                 自己来做
               </button>
               <button
                 type="button"
                 className="ss-btn work"
-                onClick={() => showToast('打工下一片开放')}
+                 onClick={() => setWorkOpen(true)}
               >
                 派TA去打工
               </button>
@@ -259,6 +271,17 @@ const SweetStreetApp = ({ onBackHub, chatId }) => {
         )}
 
         <div className={`ss-toast ${toast ? 'is-on' : ''}`} role="status">{toast}</div>
+
+        {workOpen && home?.companion && (
+          <SweetWorkSheet
+            companion={home.companion}
+            chatId={chatId}
+            shopStates={home.shopStates}
+            activeWork={home.activeWork}
+            onChanged={reloadHome}
+            onClose={() => setWorkOpen(false)}
+          />
+        )}
       </div>
     </div>
   );
