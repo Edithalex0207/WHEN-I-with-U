@@ -1,0 +1,227 @@
+/*
+ * sweetStreet.css —— 「甜品小街」样式（粉色奶油版）。
+ * 所有类名都以 ss- 开头，颜色变量只作用在 .ss-root 里，不影响全局主题，也不跟随暗色模式。
+ */
+@import url("https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Nunito:wght@600;800&display=swap");
+
+.ss-root {
+  --ss-pink: #FF9DB5;
+  --ss-pink-deep: #E8638A;
+  --ss-pink-soft: #FFD0DC;
+  --ss-cream: #FFF8F0;
+  --ss-text: #7A4A3A;
+  --ss-sub: #B98A7C;
+  --ss-muted: #C9A99A;
+  --ss-yellow: #FFE6A8;
+  --ss-yellow-deep: #F0C46A;
+  --ss-yellow-text: #8A5A1E;
+  --ss-green: #6FBF8F;
+  --ss-font-display: "ZCOOL KuaiLe", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --ss-font-body: "Nunito", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(#FFE3EA 0%, #FFF1E8 38%, #FFF8F0 100%) center / cover no-repeat;
+  color: var(--ss-text);
+  font-family: var(--ss-font-body);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 内容列：手机宽度居中，宽屏不会撑开 */
+.ss-col {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: calc(84px + env(safe-area-inset-top, 0px)) 20px calc(40px + env(safe-area-inset-bottom, 0px));
+}
+
+/* 悬浮返回钮 / 心心 —— 相对内容列定位，宽屏下不会跑到屏幕边缘 */
+.ss-back,
+.ss-hearts {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top, 0px));
+  z-index: 5;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(232, 99, 138, 0.22);
+}
+.ss-back {
+  left: 18px;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ss-pink-deep);
+  cursor: pointer;
+}
+.ss-hearts {
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 8px 14px 8px 10px;
+}
+.ss-hearts b { font-size: 15px; color: var(--ss-pink-deep); }
+
+.ss-title {
+  text-align: center;
+  margin-bottom: 26px;
+}
+.ss-title h1 {
+  margin: 0;
+  font-family: var(--ss-font-display);
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--ss-pink-deep);
+  text-shadow: 0 3px 0 #fff;
+}
+.ss-title img { max-width: 70%; height: auto; }
+.ss-title p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ss-sub);
+}
+
+.ss-note {
+  padding: 28px 12px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ss-sub);
+  line-height: 1.6;
+}
+
+/* ---------- 营业中的店 ---------- */
+.ss-shop {
+  background: #fff;
+  border: 2.5px solid var(--ss-pink-soft);
+  border-radius: 30px;
+  box-shadow: 0 12px 26px rgba(232, 99, 138, 0.18);
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.ss-shop-sign-img { display: block; width: 100%; height: auto; }
+.ss-awning,
+.ss-awning-fringe { display: flex; }
+.ss-awning { height: 30px; }
+.ss-awning i { flex: 1; }
+.ss-awning i.a { background: var(--ss-pink); }
+.ss-awning i.b { background: #fff; }
+.ss-awning-fringe { height: 12px; margin-top: -1px; }
+.ss-awning-fringe i { flex: 1; border-radius: 0 0 999px 999px; }
+.ss-awning-fringe i.a { background: var(--ss-pink); }
+.ss-awning-fringe i.b { background: var(--ss-pink-soft); }
+
+.ss-shop-body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+.ss-shop-head { display: flex; align-items: center; gap: 14px; }
+.ss-shop-pic { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.ss-shop-pic.soon { width: 56px; height: 56px; opacity: 0.85; }
+.ss-shop-info { flex: 1; min-width: 0; }
+.ss-shop-info p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--ss-sub); }
+.ss-shop-name { display: flex; align-items: center; gap: 8px; }
+.ss-shop-name span {
+  font-family: var(--ss-font-display);
+  font-size: 22px;
+  color: var(--ss-pink-deep);
+}
+.ss-shop-name.soon span { font-size: 19px; color: var(--ss-sub); }
+.ss-tag {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.ss-tag.open { color: #fff; background: var(--ss-green); }
+.ss-tag.soon { color: var(--ss-sub); background: #FBF0E2; }
+.ss-star { display: block; margin-top: 4px; font-size: 13px; letter-spacing: 2px; color: #F0B24A; }
+
+.ss-actions { display: flex; gap: 10px; }
+.ss-btn {
+  flex: 1;
+  border: none;
+  border-radius: 18px;
+  padding: 12px 8px;
+  cursor: pointer;
+  font-family: var(--ss-font-display);
+  font-size: 16px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.ss-btn.play { background: var(--ss-pink); color: #fff; box-shadow: 0 5px 0 var(--ss-pink-deep); }
+.ss-btn.work { background: var(--ss-yellow); color: var(--ss-yellow-text); box-shadow: 0 5px 0 var(--ss-yellow-deep); }
+.ss-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12); }
+
+/* ---------- 筹备中的店 ---------- */
+.ss-shop-soon {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2.5px dashed #E8C9A0;
+  border-radius: 26px;
+  padding: 16px 20px;
+  margin-bottom: 22px;
+}
+
+/* ---------- 打工小日志 ---------- */
+.ss-log {
+  background: #fff;
+  border-radius: 22px;
+  padding: 14px 18px;
+  box-shadow: 0 6px 16px rgba(232, 99, 138, 0.1);
+}
+.ss-log h2 {
+  margin: 0 0 6px;
+  font-family: var(--ss-font-display);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ss-pink-deep);
+}
+.ss-log-empty { font-size: 13px; color: var(--ss-muted); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.ss-log-empty img { max-width: 100%; height: auto; }
+.ss-log ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ss-log li {
+  position: relative;
+  padding: 10px 52px 10px 12px;
+  border-radius: 14px;
+  background: var(--ss-cream);
+}
+.ss-log li small { display: block; font-size: 11px; color: var(--ss-muted); }
+.ss-log li p { margin: 2px 0 0; font-size: 13px; line-height: 1.5; }
+.ss-log li b {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: var(--ss-pink-deep);
+}
+
+/* ---------- 提示条 ---------- */
+.ss-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 12px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--ss-text);
+  color: #fff;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 9;
+}
+.ss-toast.is-on { opacity: 0.95; transform: translate(-50%, 0); }
