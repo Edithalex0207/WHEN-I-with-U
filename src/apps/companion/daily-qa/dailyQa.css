@@ -71,6 +71,7 @@
 /* 历史 tab */
 .qa-history-note { margin: 0 0 10px; font-size: 11px; line-height: 1.6; color: var(--cp-muted); text-align: center; }
 .qa-clear-link { color: var(--cp-accent); font-weight: 800; }
+.qa-delete-link { color: var(--cp-muted); font-weight: 800; text-decoration: underline; }
 
 .qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .qa-day-card {

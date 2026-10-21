@@ -381,6 +381,13 @@ const ScheduledMessageArchive = ({
         </section>
       </div>
 
+      {/*
+        存档面板遮罩层 z-index 是 80，而共用的 ConfirmModal 固定是 z-50，
+        直接渲染会被压在面板后面，看起来像"点了没反应"。这里用一个带
+        position + z-index 的容器把两个确认框整体抬到面板之上，
+        不改共用组件，也不改遮罩层级。
+      */}
+      <div style={{ position: 'relative', zIndex: 90 }}>
       <ConfirmModal
         isOpen={Boolean(deletingRecord)}
         title="删除这张时间票据？"
@@ -400,6 +407,7 @@ const ScheduledMessageArchive = ({
         onConfirm={handleClearHistory}
         onCancel={() => setIsClearConfirmOpen(false)}
       />
+      </div>
     </>
   );
 };

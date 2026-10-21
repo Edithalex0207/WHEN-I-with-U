@@ -87,6 +87,23 @@ export const getHistory = async (companionId) => {
 };
 
 /*
+ * 删除历史 tab 里指定某一天的问答。今天这一条不允许删除（只能重roll）：
+ * 删掉今天的记录会让下次打开弹窗时重新出一对新题，用户已经提交的回答
+ * 也会一起丢失，所以这里直接拒绝，作为 UI 之外的兜底校验。
+ * 返回 true 表示确实删掉了一条记录。
+ */
+export const deleteRecordByDate = async (companionId, dateStr) => {
+  if (!companionId || !dateStr) return false;
+  if (dateStr === getTodayDateStr()) return false;
+
+  const existing = await getRecord(companionId, dateStr);
+  if (!existing) return false;
+
+  await db.companionDailyQA.delete(existing.id);
+  return true;
+};
+
+/*
  * 历史 tab 的"现在清空"：保留今天这一条还在进行中的问答，只清掉更早的。
  * 这样不会误删用户今天还没答完的东西。
  */

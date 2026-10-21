@@ -28,6 +28,7 @@ import {
   submitUserAnswer,
   getHistory,
   clearHistory,
+  deleteRecordByDate,
   getTodayDateStr,
 } from './companionDailyQaService';
 import './dailyQa.css';
@@ -86,6 +87,8 @@ const CompanionDailyQaModal = ({ chatId, character, companion, onClose }) => {
   const [openedDate, setOpenedDate] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [deleteDate, setDeleteDate] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const buildCtx = async () => {
     const chat = await db.chats.get(chatId);
@@ -166,6 +169,19 @@ const CompanionDailyQaModal = ({ chatId, character, companion, onClose }) => {
     } finally {
       setClearing(false);
       setShowClearConfirm(false);
+    }
+  };
+
+  const handleDeleteDay = async () => {
+    if (deleting || !deleteDate) return;
+    setDeleting(true);
+    try {
+      await deleteRecordByDate(companion.id, deleteDate);
+      setOpenedDate(null);
+      await loadHistory();
+    } finally {
+      setDeleting(false);
+      setDeleteDate(null);
     }
   };
 
@@ -303,6 +319,18 @@ const CompanionDailyQaModal = ({ chatId, character, companion, onClose }) => {
                     </p>
                   </div>
 
+                  {openedRecord.date !== todayStr && (
+                    <p className="qa-history-note">
+                      <button
+                        type="button"
+                        className="qa-delete-link"
+                        onClick={() => setDeleteDate(openedRecord.date)}
+                      >
+                        删除这一天的问答
+                      </button>
+                    </p>
+                  )}
+
                   <button type="button" className="cp-close-link" onClick={() => setOpenedDate(null)}>
                     合上，回到卡盒
                   </button>
@@ -363,6 +391,29 @@ const CompanionDailyQaModal = ({ chatId, character, companion, onClose }) => {
                 </button>
                 <button type="button" className="cp-btn main" disabled={clearing} onClick={handleClearHistory}>
                   {clearing ? '清空中…' : '清空'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {deleteDate && (
+          <div className="cp-confirm" role="dialog" aria-modal="true" aria-label="确认删除这一天的问答">
+            <div
+              className="cp-confirm-dim"
+              onClick={() => { if (!deleting) setDeleteDate(null); }}
+            />
+            <div className="cp-confirm-card">
+              <h4>删除这一天的问答？</h4>
+              <p className="cp-confirm-text">
+                {formatMonthDay(deleteDate)} 的问题和回答都会删除，不能恢复
+              </p>
+              <div className="cp-btn-row">
+                <button type="button" className="cp-btn" disabled={deleting} onClick={() => setDeleteDate(null)}>
+                  先不删
+                </button>
+                <button type="button" className="cp-btn main" disabled={deleting} onClick={handleDeleteDay}>
+                  {deleting ? '删除中…' : '删除'}
                 </button>
               </div>
             </div>
