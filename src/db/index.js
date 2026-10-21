@@ -5079,4 +5079,10 @@ db.version(97).stores({
 db.version(98).stores({
   wishPlays: '++id, companionId, dateStr, createdAt, [companionId+dateStr]',
 });
+
+db.version(99).stores({
+  sweetShopStates: '++id, companionId, shopId, [companionId+shopId], updatedAt',
+  sweetWorkSessions: '++id, companionId, chatId, status, startedAt, [companionId+status]',
+});
+
 export default db;

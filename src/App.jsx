@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { liveQuery } from 'dexie';
 import { Settings as SettingsIcon } from 'lucide-react';
-import { lazyWithRetry } from './utils/lazyWithRetry';
 
+import { lazyWithRetry } from './utils/lazyWithRetry';
+import { OPEN_SWEET_STREET_EVENT } from './apps/sweetstreet/openSweetStreet';
 import ErrorBoundary from './components/ErrorBoundary';
 import Preloader from './components/Preloader';
 import PageLoadingBar from './components/PageLoadingBar';
@@ -139,6 +140,7 @@ const SharedWorldApp = lazyWithRetry(() => import('./apps/shared-world/SharedWor
 const RhythmApp = lazyWithRetry(() => import('./apps/rhythm/RhythmApp'), 'RhythmApp');
 const WorkflowApp = lazyWithRetry(() => import('./apps/workflows/WorkflowApp'), 'WorkflowApp');
 const TextGameHallApp = lazyWithRetry(() => import('./apps/textgames/TextGameHallApp'), 'TextGameHallApp');
+const SweetStreetApp = lazyWithRetry(() => import('./apps/sweetstreet/SweetStreetApp'), 'SweetStreetApp');
 const TripHomeApp = lazyWithRetry(() => import('./apps/tripHome/TripApp'), 'TripHomeApp');
 const FlightChessApp = lazyWithRetry(() => import('./apps/flightchess/FlightChessApp'), 'FlightChessApp');
 
@@ -233,7 +235,8 @@ const REGISTERED_APPS = [
   'newspaper',
   'margin-notes',
   'workflows',
-  'textgames',
+    'textgames',
+  'sweetstreet',
   'tripHome',
   'flightchess',
 ];
@@ -252,9 +255,9 @@ export const App = () => {
   const [activeGlassStyle, setActiveGlassStyle] = useState('frosted');
 const [showTitle, setShowTitle] = useState(true);
 const [hubBackground, setHubBackground] = useState('');
-
   const [currentApp, setCurrentApp] = useState('hub');
-  const [isInsideChatRoom, setIsInsideChatRoom] = useState(false);
+  const [sweetStreetChatId, setSweetStreetChatId] = useState(null);
+const [isInsideChatRoom, setIsInsideChatRoom] = useState(false);
 
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [hasCheckedManual, setHasCheckedManual] = useState(false);
@@ -869,8 +872,20 @@ const [hubBackground, setHubBackground] = useState('');
     });
   }, []);
 
+  // 小伙伴页(挂在聊天室里)通过事件跳到「甜品小街」，并告诉我们是哪个聊天窗来的
+  useEffect(() => {
+    const handleOpenSweetStreet = (event) => {
+      setSweetStreetChatId(event?.detail?.chatId ?? null);
+      openApp('sweetstreet');
+    };
+    window.addEventListener(OPEN_SWEET_STREET_EVENT, handleOpenSweetStreet);
+    return () => {
+      window.removeEventListener(OPEN_SWEET_STREET_EVENT, handleOpenSweetStreet);
+    };
+  }, [openApp]);
+
   const handleOpenManual = useCallback(() => {
-    setIsManualOpen(true);
+  setIsManualOpen(true);
   }, []);
 
   const handleCloseManual = useCallback(async () => {
@@ -1411,6 +1426,17 @@ const isTextGameHallApp = currentApp === 'textgames';
           <ErrorBoundary>
             <React.Suspense fallback={<AppLoadingFallback />}>
               <TextGameHallApp
+                onBackHub={() => openApp('hub')}
+              />
+            </React.Suspense>
+          </ErrorBoundary>
+        )}
+
+                {currentApp === 'sweetstreet' && (
+          <ErrorBoundary>
+            <React.Suspense fallback={<AppLoadingFallback />}>
+              <SweetStreetApp
+                chatId={sweetStreetChatId}
                 onBackHub={() => openApp('hub')}
               />
             </React.Suspense>

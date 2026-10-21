@@ -67,6 +67,8 @@ import CompanionClawMachine from './claw/CompanionClawMachine';
 import CompanionClawIcon from './claw/CompanionClawIcon';
 import CompanionSchoolModal from './school/CompanionSchoolModal';
 import CompanionSchoolIcon from './school/CompanionSchoolIcon';
+import SweetStreetDockIcon from '../sweetstreet/SweetStreetDockIcon';
+import { openSweetStreet } from '../sweetstreet/openSweetStreet';
 import { getSchoolStatus } from './school/companionSchoolService';
 import CompanionTasksModal from './tasks/CompanionTasksModal';
 import CompanionTasksIcon from './tasks/CompanionTasksIcon';
@@ -1430,6 +1432,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
                 {schoolDotOn && <b className="sh-dot" />}
               </span>
               上学
+            </button>
+            <button
+              type="button"
+              onClick={() => openSweetStreet(chatId)}
+              className="cp-dock-btn"
+              aria-label="甜品小街"
+            >
+              <span className="cp-dock-ico">
+                <SweetStreetDockIcon />
+              </span>
+              小街
             </button>
           </div>
         </div>
