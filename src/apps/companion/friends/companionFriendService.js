@@ -26,6 +26,7 @@ import {
   generateFriendReplyText,
 } from './companionFriendAiService';
 import { generateFriendStory } from './companionFriendStoryAiService';
+import { hasDecidingInbox, processInboxDecisions } from './companionFriendInboxService';
 import { pickFallbackStory } from './companionFriendStoryData';
 
 // ---- 常量：全部写成常量方便以后调 ----
@@ -375,6 +376,10 @@ export const runFriendTick = async () => {
       const hasPending = (companion.friendPlaza || []).some((c) => c.status === 'pending');
       if (hasPending) {
         await processCompanionFriendRequests(companion.id);
+      }
+      // 用户在信箱里"交给小伙伴决定"的信，到点后顺路处理（见 companionFriendInboxService.js）。
+      if (hasDecidingInbox(companion)) {
+        await processInboxDecisions(companion.id);
       }
     }
   } catch (error) {

@@ -1,0 +1,185 @@
+/*
+ * 好友广场"收到的信"（信箱入口 + 收件箱页）样式，视觉参考 v2 原样迁过来。
+ * 颜色走 --cp-* 变量，软木板的暖米色是本文件自己的 --cfi-* 变量，只作用在
+ * .cfi-root 里，不影响别处。类名全部带 cfi- 前缀；.tag.k1 / .tag.k2 复用
+ * companionFriendCard.css 里已有的两个标签样式。
+ */
+
+/* ===== 广场里的信箱入口 ===== */
+.cfi-nook {
+  position: relative; display: flex; align-items: flex-end; gap: 10px; margin: 6px 2px 0; padding: 0 4px;
+  border: none; background: none; text-align: left; width: calc(100% - 4px); color: var(--cp-text);
+}
+.cfi-grass { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; border-radius: 14px; background: linear-gradient(#D4F1C4, #B2E3AA); z-index: 0; }
+.cfi-box { position: relative; z-index: 1; width: 86px; height: 86px; flex: none; margin-bottom: 4px; transform-origin: 30% 90%; }
+.cfi-box-body { fill: #8FC3EE; stroke: #6FAEE3; stroke-width: 2; }
+.cfi-nook.has .cfi-box-body { fill: #FF86A0; stroke: #E86C88; }
+.cfi-flag { transform-box: fill-box; transform-origin: 0% 100%; transform: rotate(60deg); }
+.cfi-nook.has .cfi-flag { transform: rotate(0); animation: cfi-wave 1.6s ease-in-out infinite; }
+.cfi-nook.has .cfi-box { animation: cfi-bob 2.4s ease-in-out infinite; }
+.cfi-nook-text { position: relative; z-index: 1; flex: 1; min-width: 0; padding-bottom: 26px; }
+.cfi-bubble-hint {
+  position: relative; display: inline-block; max-width: 100%; background: var(--cp-card); border: 1.5px solid var(--cp-border);
+  border-radius: 16px 16px 16px 4px; padding: 7px 12px; box-shadow: 0 6px 12px -8px var(--cp-shadow);
+}
+.cfi-bubble-hint b { display: block; font-family: var(--cp-font-display); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cfi-bubble-hint span { display: block; font-size: 10.5px; color: var(--cp-sub); margin-top: 1px; }
+.cfi-nook.has .cfi-bubble-hint { background: var(--cp-heart-soft); border-color: #FFD3DC; }
+.cfi-nook.has .cfi-bubble-hint span { color: #D0607B; }
+.cfi-count-pop {
+  position: absolute; z-index: 2; left: 62px; top: -2px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--cp-heart); color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: center;
+  border: 2px solid var(--cp-bg); animation: cfi-pop 1.8s ease-in-out infinite;
+}
+
+/* ===== 收件箱页 ===== */
+.cfi-root {
+  --cfi-board: #F6E7CF; --cfi-board-dot: #E9D4B0; --cfi-board-edge: #E2C79B;
+  display: flex; flex-direction: column; height: min(600px, calc(100vh - 80px)); min-height: 0; color: var(--cp-text);
+}
+.cfi-sub-head { display: flex; align-items: center; gap: 8px; margin: 0 30px 10px 0; flex: none; }
+.cfi-back {
+  flex: none; width: 30px; height: 30px; border: none; border-radius: 50%; background: var(--cp-card); color: var(--cp-sub);
+  box-shadow: 0 4px 10px -4px var(--cp-shadow); display: grid; place-items: center;
+}
+.cfi-back svg { width: 16px; height: 16px; }
+.cfi-sub-head h4 { margin: 0; font-family: var(--cp-font-display); font-size: 15px; white-space: nowrap; }
+.cfi-sub-head p { margin: 1px 0 0; font-size: 10.5px; color: var(--cp-muted); white-space: nowrap; }
+
+.cfi-folders { display: flex; gap: 4px; padding-left: 10px; flex: none; position: relative; z-index: 1; margin-bottom: -2px; }
+.cfi-folders button {
+  border: 1.5px solid var(--cfi-board-edge); border-bottom: none; background: #EBD7B4; color: #9A7B45; font-size: 12px; font-weight: 800;
+  padding: 7px 16px 8px; border-radius: 14px 14px 0 0; white-space: nowrap;
+}
+.cfi-folders button.on { background: var(--cfi-board); color: #7A5A2A; padding-bottom: 10px; }
+.cfi-folders button em {
+  font-style: normal; margin-left: 5px; display: inline-grid; place-items: center; min-width: 17px; height: 17px; border-radius: 999px;
+  background: var(--cp-heart); color: #fff; font-size: 10.5px; padding: 0 4px;
+}
+.cfi-folders button:not(.on) em { background: #C9AE80; }
+
+.cfi-board {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; border: 1.5px solid var(--cfi-board-edge);
+  border-radius: 18px; background-color: var(--cfi-board);
+  background-image: radial-gradient(var(--cfi-board-dot) 1.4px, transparent 1.6px); background-size: 16px 16px; padding: 26px 16px 24px;
+}
+.cfi-stack { display: grid; gap: 34px; }
+.cfi-empty { text-align: center; font-size: 12px; color: #A98A55; padding: 60px 8px; line-height: 1.9; }
+
+/* 一封信（便利贴）*/
+.cfi-letter {
+  position: relative; margin: 0 4px; padding: 30px 14px 14px; background: #FFFDF6; border-radius: 6px 6px 14px 6px;
+  box-shadow: 0 10px 14px -10px rgba(120, 80, 20, .45), 0 1px 0 rgba(255, 255, 255, .9) inset; transform: rotate(-1.4deg);
+  animation: cfi-letter-in .4s cubic-bezier(.3, 1.3, .5, 1) both;
+}
+.cfi-letter:nth-child(even) { transform: rotate(1.2deg); background: #F4FAFF; margin-left: 14px; margin-right: 0; }
+.cfi-letter::after {
+  content: ""; position: absolute; right: 0; bottom: 0; width: 22px; height: 22px;
+  background: linear-gradient(135deg, transparent 50%, rgba(120, 80, 20, .12) 50%); border-radius: 0 0 14px 0;
+}
+.cfi-tape {
+  position: absolute; top: -9px; left: 50%; width: 64px; height: 18px; margin-left: -32px; background: rgba(255, 214, 120, .78);
+  transform: rotate(-3deg); box-shadow: 0 2px 3px rgba(0, 0, 0, .08); z-index: 2;
+}
+.cfi-tape::before, .cfi-tape::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 5px; background: repeating-linear-gradient(135deg, transparent 0 3px, rgba(255, 255, 255, .55) 3px 5px);
+}
+.cfi-tape::before { left: 0; }
+.cfi-tape::after { right: 0; }
+.cfi-letter:nth-child(even) .cfi-tape { background: rgba(255, 168, 190, .7); transform: rotate(4deg); }
+
+.cfi-sender { display: flex; align-items: flex-end; gap: 10px; margin-top: -2px; }
+.cfi-av-pop {
+  position: relative; flex: none; width: 66px; height: 66px; margin: -34px 0 0 -8px; border-radius: 50%; border: 4px solid #fff;
+  box-shadow: 0 8px 12px -6px rgba(36, 65, 90, .4); overflow: hidden; background: #fff; transform: rotate(-4deg);
+}
+.cfi-av-pop .cf-avatar, .cfi-photo-av .cf-avatar { width: 100%; height: 100%; border: none; box-shadow: none; border-radius: 0; }
+.cfi-who { flex: 1; min-width: 0; padding-bottom: 2px; }
+.cfi-nm { margin: 0; font-family: var(--cp-font-display); font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cfi-tags { display: flex; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
+.cfi-tags .tag { font-size: 10px; padding: 2px 9px; }
+.cfi-postmark {
+  flex: none; align-self: flex-start; width: 52px; height: 52px; border-radius: 50%; border: 2px dashed #C9AE80; color: #B08F58;
+  display: grid; place-items: center; text-align: center; font-size: 9px; font-weight: 800; line-height: 1.25; transform: rotate(12deg); margin-top: -18px;
+}
+
+.cfi-says { position: relative; margin: 14px 4px 0 18px; padding: 10px 13px; border-radius: 6px 18px 18px 18px; background: var(--cp-soft); font-size: 12.5px; line-height: 1.8; }
+.cfi-says::before {
+  content: ""; position: absolute; left: -9px; top: 0; width: 0; height: 0; border: 9px solid transparent; border-left: 0; border-bottom: 0;
+  border-top-color: var(--cp-soft); border-right-color: var(--cp-soft);
+}
+.cfi-letter:nth-child(even) .cfi-says { background: #FFF1F4; }
+.cfi-letter:nth-child(even) .cfi-says::before { border-top-color: #FFF1F4; border-right-color: #FFF1F4; }
+
+/* 印章按钮 */
+.cfi-decide { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-bottom: 14px; }
+.cfi-ask-pet {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: none; background: var(--cp-butter-bg);
+  border-radius: 999px 999px 999px 8px; padding: 5px 12px 5px 6px; color: var(--cp-butter-fg); font-size: 12px; font-weight: 800; text-align: left;
+}
+.cfi-ask-pet span { white-space: nowrap; }
+.cfi-ask-pet small { display: block; font-size: 9.5px; font-weight: 700; color: #B8941E; margin-top: 1px; }
+.cfi-mini-av { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; overflow: hidden; background: #fff; }
+.cfi-mini-av img, .cfi-mini-av svg, .cfi-pet-sit img, .cfi-pet-sit svg { width: 100%; height: 100%; display: block; object-fit: cover; }
+.cfi-stampbtn {
+  flex: none; width: 52px; height: 52px; border-radius: 50%; border: none; display: grid; place-items: center; color: #fff; position: relative;
+  transition: transform .12s;
+}
+.cfi-stampbtn svg { width: 24px; height: 24px; }
+.cfi-stampbtn::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, .7); }
+.cfi-stampbtn.yes { background: var(--cp-mint-fg); box-shadow: 0 5px 0 #1C7560; transform: rotate(-6deg); }
+.cfi-stampbtn.no { background: #B9C8D6; box-shadow: 0 5px 0 #98AABB; transform: rotate(5deg); }
+.cfi-stampbtn:active { transform: translateY(4px) rotate(0); box-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
+.cfi-stampbtn small { position: absolute; bottom: -17px; left: 50%; transform: translateX(-50%); color: var(--cp-sub); font-size: 9.5px; font-weight: 800; white-space: nowrap; }
+.cfi-ask-pet:disabled, .cfi-stampbtn:disabled { opacity: .55; }
+
+/* 交给小伙伴：想一想 */
+.cfi-pondering { position: relative; margin-top: 16px; display: flex; align-items: flex-end; gap: 6px; padding: 4px 4px 2px; }
+.cfi-pet-sit {
+  flex: none; width: 58px; height: 58px; border-radius: 50%; border: 3px solid #fff; overflow: hidden;
+  box-shadow: 0 6px 10px -6px rgba(36, 65, 90, .4); background: #fff; animation: cfi-bob 2.2s ease-in-out infinite;
+}
+.cfi-dots-bubble { position: relative; background: #fff; border: 1.5px solid #E7D9BC; border-radius: 18px; padding: 9px 14px 8px; margin-bottom: 18px; margin-left: 8px; }
+.cfi-dots-bubble::after { content: ""; position: absolute; left: -7px; bottom: -6px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1.5px solid #E7D9BC; }
+.cfi-dots-bubble::before { content: ""; position: absolute; left: -15px; bottom: -14px; width: 6px; height: 6px; border-radius: 50%; background: #fff; border: 1.5px solid #E7D9BC; }
+.cfi-dots { display: flex; gap: 5px; align-items: center; height: 12px; }
+.cfi-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--cp-butter-fg); animation: cfi-dot 1.2s ease-in-out infinite; }
+.cfi-dots i:nth-child(2) { animation-delay: .18s; }
+.cfi-dots i:nth-child(3) { animation-delay: .36s; }
+.cfi-pond-txt { font-size: 10.5px; color: #A98410; font-weight: 700; white-space: nowrap; margin-bottom: 22px; }
+.cfi-paws { display: flex; gap: 6px; margin: 2px 0 0 70px; opacity: .5; }
+.cfi-paws svg { width: 12px; height: 12px; color: #C9AE80; }
+.cfi-paws svg:nth-child(2), .cfi-paws svg:nth-child(4) { transform: translateY(-3px); }
+
+/* ===== 旧信：拍立得贴纸墙 ===== */
+.cfi-wall { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 14px; padding: 6px 0; }
+.cfi-polaroid {
+  position: relative; background: #fff; padding: 9px 9px 10px; border-radius: 4px; box-shadow: 0 10px 14px -10px rgba(120, 80, 20, .5);
+  transform: rotate(-2deg); animation: cfi-letter-in .4s cubic-bezier(.3, 1.3, .5, 1) both;
+}
+.cfi-polaroid:nth-child(even) { transform: rotate(2.2deg); margin-top: 14px; }
+.cfi-polaroid:nth-child(3n) { transform: rotate(1.4deg); }
+.cfi-polaroid .cfi-tape { width: 44px; height: 14px; margin-left: -22px; top: -8px; }
+.cfi-photo { position: relative; height: 92px; border-radius: 3px; display: grid; place-items: center; overflow: hidden; }
+.cfi-photo-av { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff; overflow: hidden; background: #fff; }
+.cfi-cap { margin: 8px 0 0; font-family: var(--cp-font-display); font-size: 13.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cfi-cap-sub { margin: 1px 0 0; text-align: center; font-size: 10px; color: var(--cp-muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cfi-sticker {
+  position: absolute; z-index: 3; right: -8px; top: 70px; padding: 3px 9px; border-radius: 999px; font-family: var(--cp-font-display); font-size: 11.5px;
+  color: #fff; transform: rotate(-10deg); white-space: nowrap; box-shadow: 0 4px 8px -4px rgba(0, 0, 0, .35);
+}
+.cfi-sticker.ok { background: var(--cp-mint-fg); }
+.cfi-sticker.no { background: #9DB0C2; }
+.cfi-sticker.pet-ok { background: var(--cp-heart); }
+.cfi-sticker.pet-no { background: #9DB0C2; }
+.cfi-reply-tag { margin-top: 8px; padding: 6px 8px; border-radius: 10px; font-size: 10.5px; line-height: 1.6; color: var(--cp-sub); background: var(--cp-soft); }
+.cfi-reply-tag.ok { background: var(--cp-mint-bg); color: #1C6B57; }
+
+@keyframes cfi-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes cfi-wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-14deg); } }
+@keyframes cfi-pop { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes cfi-dot { 0%, 80%, 100% { transform: translateY(0); opacity: .45; } 40% { transform: translateY(-4px); opacity: 1; } }
+@keyframes cfi-letter-in { from { opacity: 0; margin-top: 10px; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .cfi-box, .cfi-flag, .cfi-count-pop, .cfi-pet-sit, .cfi-dots i, .cfi-letter, .cfi-polaroid { animation: none !important; }
+}

@@ -12,6 +12,9 @@ import {
 import CompanionFriendCard from './CompanionFriendCard';
 import CompanionFriendNoteModal from './CompanionFriendNoteModal';
 import CompanionFriendMineCard from './CompanionFriendMineCard';
+import CompanionFriendInboxEntry from './CompanionFriendInboxEntry';
+import CompanionFriendInboxPage from './CompanionFriendInboxPage';
+import { rollInboxArrival } from './companionFriendInboxService';
 import './companionFriendPage.css';
 import './companionFriendCard.css';
 
@@ -28,6 +31,7 @@ import './companionFriendCard.css';
  */
 const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) => {
   const [tab, setTab] = useState('plaza');
+  const [view, setView] = useState('main'); // 'main' | 'inbox'（收到的信）
   const [loading, setLoading] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [noteTarget, setNoteTarget] = useState(null); // { candidate, mode }
@@ -50,6 +54,22 @@ const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) =
       .then(() => { if (!cancelled) return onRefresh?.(); })
       .catch((error) => { if (!cancelled) setFeedback(error.message || '广场加载失败，请再试一次。'); })
       .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companion?.id]);
+
+  // 打开好友广场时抽一次：有概率收到一封新信（规则和上限见
+  // companionFriendInboxService.js，这里只负责触发和提示）。
+  useEffect(() => {
+    if (!companion) return undefined;
+    let cancelled = false;
+    rollInboxArrival(companion.id)
+      .then(async (request) => {
+        if (cancelled || !request) return;
+        await onRefresh?.();
+        showFeedback('信箱里来了一封新信');
+      })
+      .catch(() => {});
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companion?.id]);
@@ -113,6 +133,16 @@ const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) =
       <div className="cp-backdrop" onClick={onClose} />
 
       <div className="cfp-stage">
+        {view === 'inbox' ? (
+          <CompanionFriendInboxPage
+            companion={companion}
+            onBack={() => setView('main')}
+            onClose={onClose}
+            onRefresh={onRefresh}
+            onFeedback={showFeedback}
+          />
+        ) : (
+          <>
         <button type="button" className="cfp-close" onClick={onClose} aria-label="关闭好友页">×</button>
 
         <div className="cfp-tabs">
@@ -158,6 +188,8 @@ const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) =
                 ))}
               </div>
             )}
+
+            <CompanionFriendInboxEntry companion={companion} onOpen={() => setView('inbox')} />
           </div>
         )}
 
@@ -181,6 +213,8 @@ const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) =
               </div>
             )}
           </div>
+        )}
+          </>
         )}
 
         {feedback && <div className="cfp-toast">{feedback}</div>}
