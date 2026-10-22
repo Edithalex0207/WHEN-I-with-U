@@ -120,33 +120,63 @@ export const RECESS_SCENES = {
 export const RECESS_CLASSMATES = [
   {
     id: 'mate-01', name: '小满', species: '兔子', tone: 'heart',
-    trait: '好胜心强，输了会鼓起腮帮子，但三秒就忘',
-    stickers: { normal: '', happy: '', sad: '', wink: '' },
+    trait: '好胜心强，输了会鼓起腮帮子,但三秒就忘',
+    stickers: {
+      normal: 'https://img.pagehost.cn/autoupload/amqnh/20261022/QQLZ/1959X1657/classmate_%2811%29.jpg/webp',
+      happy:  'https://img.pagehost.cn/autoupload/amqnh/20261022/2cEM/2002X1644/classmate_%2815%29.jpg/webp',
+      sad:    'https://img.pagehost.cn/autoupload/amqnh/20261022/ZRwx/2015X1686/classmate_%2810%29.jpg/webp',
+      wink:   'https://img.pagehost.cn/autoupload/amqnh/20261022/FTZ7/2006X1634/classmate_%2812%29.jpg/webp',
+    },
   },
-  {
+    {
     id: 'mate-02', name: '团团', species: '小熊', tone: 'butter',
     trait: '慢半拍，爱吃，总在课间偷偷掏零食',
-    stickers: { normal: '', happy: '', sad: '', wink: '' },
+    stickers: {
+      normal: 'https://img.pagehost.cn/autoupload/amqnh/20261022/jtLy/1650X1816/classmate_%2817%29.jpg/webp',
+      happy:  'https://img.pagehost.cn/autoupload/amqnh/20261022/5Kun/1992X1671/classmate_%2818%29.jpg/webp',
+      sad:    'https://img.pagehost.cn/autoupload/amqnh/20261022/3hY3/1655X1643/classmate_%2823%29.jpg/webp',
+      wink:   'https://img.pagehost.cn/autoupload/amqnh/20261022/jejt/1685X1654/classmate_%2822%29.jpg/webp',
+    },
   },
   {
     id: 'mate-03', name: '糯米', species: '小猫', tone: 'lavender',
     trait: '害羞安静，开心的时候尾巴会翘起来',
-    stickers: { normal: '', happy: '', sad: '', wink: '' },
+    stickers: {
+      normal: 'https://img.pagehost.cn/autoupload/amqnh/20261022/npEX/1653X1719/classmate_%2824%29.jpg/webp',
+      happy:  'https://img.pagehost.cn/autoupload/amqnh/20261022/eXUK/1796X1869/classmate_%2821%29.jpg/webp',
+      sad:    'https://img.pagehost.cn/autoupload/amqnh/20261022/wRgV/1625X1701/classmate_%2819%29.jpg/webp',
+      wink:   'https://img.pagehost.cn/autoupload/amqnh/20261022/fhED/1629X1736/classmate_%2820%29.jpg/webp',
+    },
   },
   {
     id: 'mate-04', name: '嘎嘎', species: '小鸭', tone: 'sky',
     trait: '话多，爱讲冷笑话，自己先笑场',
-    stickers: { normal: '', happy: '', sad: '', wink: '' },
+    stickers: {
+      normal: 'https://img.pagehost.cn/autoupload/amqnh/20261022/k7ga/1436X1910/classmate_%283%29.jpg/webp',
+      happy:  'https://img.pagehost.cn/autoupload/amqnh/20261022/eW4i/1739X1907/classmate_%281%29.jpg/webp',
+      sad:    'https://img.pagehost.cn/autoupload/amqnh/20261022/yHWf/1401X1870/classmate_%2816%29.jpg/webp',
+      wink:   'https://img.pagehost.cn/autoupload/amqnh/20261022/Vs3o/1503X1887/classmate_%2814%29.jpg/webp',
+    },
   },
   {
     id: 'mate-05', name: '豆包', species: '小狗', tone: 'mint',
     trait: '热心肠，跑得快，下课铃一响就冲出去',
-    stickers: { normal: '', happy: '', sad: '', wink: '' },
+    stickers: {
+      normal: 'https://img.pagehost.cn/autoupload/amqnh/20261022/peg7/1857X1933/classmate_%282%29.jpg/webp',
+      happy:  'https://img.pagehost.cn/autoupload/amqnh/20261022/Qbjj/1727X1974/classmate_%289%29.jpg/webp',
+      sad:    'https://img.pagehost.cn/autoupload/amqnh/20261022/FVHs/1917X2004/classmate_%288%29.jpg/webp',
+      wink:   'https://img.pagehost.cn/autoupload/amqnh/20261022/H596/1875X1751/classmate_%286%29.jpg/webp',
+    },
   },
   {
     id: 'mate-06', name: '阿福', species: '小狐狸', tone: 'heart',
     trait: '鬼点子多，爱出谜语，嘴上不肯认输',
-    stickers: { normal: '', happy: '', sad: '', wink: '' },
+    stickers: {
+      normal: 'https://img.pagehost.cn/autoupload/amqnh/20261022/Jgkv/1665X1769/classmate_%287%29.jpg/webp',
+      happy:  'https://img.pagehost.cn/autoupload/amqnh/20261022/amhc/1373X1810/classmate_%285%29.jpg/webp',
+      sad:    'https://img.pagehost.cn/autoupload/amqnh/20261022/cAI8/1974X1710/classmate_%284%29.jpg/webp',
+      wink:   'https://img.pagehost.cn/autoupload/amqnh/20261022/Fk8P/1472X1799/classmate_%2813%29.jpg/webp',
+    },
   },
 ];
 
