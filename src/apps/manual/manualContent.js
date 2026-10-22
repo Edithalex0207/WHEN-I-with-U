@@ -199,6 +199,14 @@ export const MANUAL_SECTIONS = [
           { type: 'p', text: '如果喜欢这个项目，也请老师们给我吃吃 repo 叭！' },
           {
             type: 'note',
+            text: '网站内绝大部分图片素材均为 AI 生成，仅用于营造氛围与辅助体验，不代表任何真实人物、真实作品或特定版权方。',
+          },
+          {
+            type: 'p',
+            text: '内置表情包均来自网络搜索与素材网站下载，作者本人并不拥有这些表情包的版权。如果您是版权方且认为存在侵权，或者发现某张图片与您拥有版权的作品高度相似，请通过上文方式联系我，确认后会第一时间下架或替换。本项目完全非商业化，不会将这些素材用于任何商业用途。',
+          },
+          {
+            type: 'note',
             text: '注意：您需要先去设置页面配置您的 API Key，才可以正常使用该网站。',
           },
           {
@@ -232,6 +240,14 @@ export const MANUAL_SECTIONS = [
           { type: 'p', text: 'If you like this project, a repo star would mean a lot.' },
           {
             type: 'note',
+            text: "The vast majority of images on this site are AI-generated, used purely for atmosphere and ambience — they don't represent any real person, real artwork, or specific copyright holder.",
+          },
+          {
+            type: 'p',
+            text: "The built-in stickers were all sourced from web searches and asset/material sites — I don't hold copyright to them. If you're a rights holder and believe there's an infringement, or you spot an image that closely resembles work you own the copyright to, please reach out through the contact info above and I'll take it down or replace it as soon as it's confirmed. This project is entirely non-commercial and none of this material is used for any commercial purpose.",
+          },
+          {
+            type: 'note',
             text: "Note: you'll need to configure your API Key on the settings page before the site will work properly.",
           },
           {
@@ -263,6 +279,14 @@ export const MANUAL_SECTIONS = [
           { type: 'note', text: '가입 심사는 성인/여성 기준으로 진행됩니다.' },
           { type: 'p', text: 'WHEN I with U 사용에 관해 궁금한 점이 있으면 직접 DM 주셔도 됩니다.' },
           { type: 'p', text: '이 프로젝트가 마음에 드셨다면 레포(스타)도 부탁드립니다.' },
+          {
+            type: 'note',
+            text: '사이트 내 대부분의 이미지는 AI로 생성된 것으로, 분위기 연출과 체험 보조용일 뿐 실제 인물이나 실제 작품, 특정 저작권자를 나타내지 않습니다.',
+          },
+          {
+            type: 'p',
+            text: '기본 제공 스티커(이모티콘)는 모두 웹 검색과 소재 사이트에서 다운로드한 것으로, 작성자 본인은 해당 스티커의 저작권을 보유하고 있지 않습니다. 저작권자이시며 침해라고 판단되거나, 본인이 저작권을 가진 작품과 매우 유사한 이미지를 발견하신 경우 위의 연락처로 알려주시면 확인 후 즉시 내리거나 교체하겠습니다. 이 프로젝트는 전적으로 비상업적이며, 이 소재들은 어떠한 상업적 용도로도 사용되지 않습니다.',
+          },
           {
             type: 'note',
             text: '주의: 사이트를 정상적으로 사용하려면 먼저 설정 페이지에서 API Key를 구성해야 합니다.',
@@ -793,7 +817,18 @@ export const MANUAL_SECTIONS = [
         title: '你的记录，留在自己的设备里',
         body: [
           { type: 'p', text: 'WHEN I with U 使用浏览器本地数据库保存角色、消息、影像和其他生活记录。' },
-          { type: 'p', text: '这些内容不会因为打开另一个页面而自动上传到某个公共账户。只有在使用你配置的 AI 服务时，相关请求内容才会发送到对应的 API 服务。' },
+          {
+            type: 'p',
+            text: 'WHEN I with U 没有任何统一的服务器中转或跨域代理。所有 AI 对话请求，都是您的浏览器直接使用您自己配置的 API Key 和 Base URL，发送到您自己选择的 AI 服务商，不会经过本项目的任何服务器。',
+          },
+          {
+            type: 'note',
+            text: '正因为没有统一中转，部分依赖外部服务（例如语音通话所需的 MiniMax）需要您自己部署跨域 Worker 才能使用——这是出于保护用户隐私、避免数据集中存储的设计选择，而不是功能缺失。',
+          },
+          {
+            type: 'p',
+            text: '这些内容不会因为打开另一个页面而自动上传到某个公共账户。只有在使用你配置的 AI 服务时，相关请求内容才会发送到对应的 API 服务。您的角色资料、聊天记录、日记、相册等所有数据，都只保存在您本设备浏览器的本地数据库中，作者本人也无法通过任何手段读取、下载或接触到您的具体内容。',
+          },
           { type: 'p', text: '如果你清除浏览器站点数据，或者卸载应用而没有提前备份，本地记录可能会丢失。因此，重要内容建议定期导出备份。' },
           { type: 'note', text: '导入备份会覆盖当前设备上的本地记录。执行前请确认文件来源，并在必要时先导出当前数据。' },
         ],
@@ -804,7 +839,18 @@ export const MANUAL_SECTIONS = [
         title: 'Your records stay on your own device',
         body: [
           { type: 'p', text: "WHEN I with U saves characters, messages, images, and other life records in your browser's local database." },
-          { type: 'p', text: "This content doesn't get uploaded to any public account just by opening another page. Only when you use the AI service you've configured does the relevant request content get sent to that API." },
+          {
+            type: 'p',
+            text: "WHEN I with U has no unified relay server or cross-origin proxy of any kind. Every AI conversation request goes straight from your browser, using the API Key and Base URL you configured yourself, to the AI provider you chose — none of it passes through any server belonging to this project.",
+          },
+          {
+            type: 'note',
+            text: "Precisely because there's no central relay, some features that depend on outside services (voice calls via MiniMax, for example) require you to deploy your own CORS worker — that's a deliberate design choice to protect user privacy and avoid centralizing data, not a missing feature.",
+          },
+          {
+            type: 'p',
+            text: "This content doesn't get uploaded to any public account just by opening another page. Only when you use the AI service you've configured does the relevant request content get sent to that API. Your character profiles, chat history, diary entries, photo albums, and all other data are only ever saved in your own device's local browser database — I, the author, also have no way to read, download, or access your specific content through any means.",
+          },
           { type: 'p', text: 'If you clear your browser\'s site data, or uninstall the app without backing up first, local records may be lost. For anything important, export a backup regularly.' },
           { type: 'note', text: "Importing a backup overwrites the local records currently on this device. Confirm the file's source first, and export your current data beforehand if needed." },
         ],
@@ -815,7 +861,18 @@ export const MANUAL_SECTIONS = [
         title: '당신의 기록은 이 기기에만 남습니다',
         body: [
           { type: 'p', text: 'WHEN I with U는 캐릭터, 메시지, 이미지 등 생활 기록을 브라우저의 로컬 데이터베이스에 저장합니다.' },
-          { type: 'p', text: '다른 페이지를 열었다고 해서 이 내용이 어떤 공개 계정으로 자동 업로드되지는 않습니다. 당신이 설정한 AI 서비스를 사용할 때만 관련 요청 내용이 해당 API로 전송됩니다.' },
+          {
+            type: 'p',
+            text: 'WHEN I with U에는 통합 중계 서버나 크로스 오리진 프록시가 전혀 없습니다. 모든 AI 대화 요청은 사용자가 직접 설정한 API Key와 Base URL을 사용해 브라우저에서 바로 사용자가 선택한 AI 제공사로 전송되며, 이 프로젝트의 서버를 거치지 않습니다.',
+          },
+          {
+            type: 'note',
+            text: '통합 중계가 없기 때문에, 외부 서비스에 의존하는 일부 기능(예: 음성 통화에 필요한 MiniMax)은 사용자가 직접 CORS 워커를 배포해야 사용할 수 있습니다 — 이는 기능 누락이 아니라 사용자의 개인정보를 보호하고 데이터 집중 저장을 피하기 위한 의도적인 설계입니다.',
+          },
+          {
+            type: 'p',
+            text: '다른 페이지를 열었다고 해서 이 내용이 어떤 공개 계정으로 자동 업로드되지는 않습니다. 당신이 설정한 AI 서비스를 사용할 때만 관련 요청 내용이 해당 API로 전송됩니다. 캐릭터 프로필, 채팅 기록, 일기, 앨범 등 모든 데이터는 오직 당신 기기의 브라우저 로컬 데이터베이스에만 저장되며, 작성자 본인 역시 어떠한 방법으로도 당신의 구체적인 내용을 읽거나 다운로드하거나 접근할 수 없습니다.',
+          },
           { type: 'p', text: '브라우저 사이트 데이터를 지우거나 백업 없이 앱을 삭제하면 로컬 기록을 잃을 수 있습니다. 중요한 내용은 정기적으로 백업을 내보내는 것을 권장합니다.' },
           { type: 'note', text: '백업을 가져오면 이 기기에 있는 현재 로컬 기록을 덮어씁니다. 실행 전에 파일의 출처를 확인하고, 필요하다면 먼저 현재 데이터를 내보내세요.' },
         ],
