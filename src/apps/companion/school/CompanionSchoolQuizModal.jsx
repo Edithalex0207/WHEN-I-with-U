@@ -16,11 +16,13 @@
  * 题目来源出错（比如题库是空的、次数突然用完）时显示一句提示 + 关闭按钮，
  * 不堆复杂的重试逻辑。
  *
- * 【校园小事】结算成功后顺带调一次 rollCampusActivity（见
- * companionSchoolActivityService.js）：有概率弹一件小事，命中就在结算页
- * 多显示一张"校园小事"卡片（+ 一点点心情）。这个 roll 是异步的、独立于
- * finishQuizSet，失败/没中都不影响已经显示的做题结果，所以这里对它的结果
- * 不做任何 try 之外的处理。
+ * 【校园小事】结算成功后顺带调一次 rollCampusBreak（见
+ * companionSchoolRecessService.js）：有概率弹一件小事，命中后有一部分是
+ * 原来的固定小事（结算页多显示一张"校园小事"卡片 + 一点点心情），另一部分
+ * 是"可互动课间事件"（结算页多显示一条"课间有小事"横幅，点了才打开
+ * CompanionSchoolRecessModal，玩完才加心情；不点或中途关掉算放弃，什么
+ * 都不留）。这个 roll 是异步的、独立于 finishQuizSet，失败/没中都不影响
+ * 已经显示的做题结果，所以这里对它的结果不做任何 try 之外的处理。
  *
  * Props:
  *   companion      object    —— 当前小伙伴
@@ -39,10 +41,12 @@ import './schoolCards.css';
 
 import { SET_REWARD, findSubject } from './companionSchoolData';
 import { startQuizSet, finishQuizSet } from './companionSchoolQuizService';
-import { rollCampusActivity } from './companionSchoolActivityService';
+import { rollCampusBreak } from './companionSchoolRecessService';
 import { rollCollectibleCard } from './companionSchoolCardService';
 import { CARD_RARITY_LABELS } from './companionSchoolCardCatalog';
 import CompanionSchoolCardStoryModal from './CompanionSchoolCardStoryModal';
+import CompanionSchoolRecessEntry from './CompanionSchoolRecessEntry';
+import CompanionSchoolRecessModal from './CompanionSchoolRecessModal';
 import { CloseGlyph, CheckGlyph, StarGlyph, PetFace, CardArt } from './SchoolArt';
 
 const CHEER_RIGHT = ['答对啦！你好厉害', '哇，答对了！', '太棒啦，这题对了！', '好厉害，一下就对了！'];
@@ -60,7 +64,10 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
   const [cheer, setCheer] = useState('');
   const [played, setPlayed] = useState([]); // [{ question, picked }]
   const [result, setResult] = useState(null); // finishQuizSet 的返回值
-  const [activity, setActivity] = useState(null); // rollCampusActivity 的返回值，没中是 null
+  const [activity, setActivity] = useState(null); // 固定小事（rollCampusBreak 的 activity），没中是 null
+  const [recess, setRecess] = useState(null); // 待玩的可互动课间事件（rollCampusBreak 的 recess），没中是 null
+  const [recessOpen, setRecessOpen] = useState(false); // 课间事件小窗是否打开
+  const [recessDone, setRecessDone] = useState(null); // 玩完并落库后的结果 { text, moodDelta }
   const [cardDrop, setCardDrop] = useState(null); // rollCollectibleCard 的返回值，没中是 null
   const [storyOpen, setStoryOpen] = useState(false); // 抽到新卡时弹小故事
   const [resultLine] = useState(() => pickRandom(RESULT_LINES));
@@ -113,11 +120,17 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
       onFinished?.(res);
       // 顺带 roll 一次"校园小事"和一次"收藏卡"，两次独立，互不影响；
       // 没中/出错都不影响已经结算好的做题结果，所以结果不满意也不重试。
-      rollCampusActivity(companion.id, {
+      rollCampusBreak(companion.id, {
         classId: res.status?.record?.classId,
         teacherId: res.status?.record?.teacherId,
         companionName: companion.name,
-      }).then(setActivity).catch(() => setActivity(null));
+      }).then((brk) => {
+        setActivity(brk?.activity || null);
+        setRecess(brk?.recess || null);
+      }).catch(() => {
+        setActivity(null);
+        setRecess(null);
+      });
             rollCollectibleCard(companion.id)
         .then((drop) => {
           setCardDrop(drop);
@@ -229,6 +242,23 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
               </div>
             )}
 
+            {recess && !recessDone && (
+              <CompanionSchoolRecessEntry event={recess} onOpen={() => setRecessOpen(true)} />
+            )}
+
+            {recessDone && (
+              <div className="qz-activity sd-tone-lavender">
+                <span className="qz-activity-ico"><StarGlyph size={16} /></span>
+                <div>
+                  <h6>课间小事</h6>
+                  <p>
+                    {recessDone.text}
+                    {recessDone.moodDelta > 0 && <b> +{recessDone.moodDelta} 心情</b>}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {cardDrop && (
               <div className={`qz-card-drop sd-tone-${cardDrop.card.rarity === 'hidden' ? 'lavender' : cardDrop.card.rarity === 'rare' ? 'heart' : 'sky'}`}>
                 <CardArt card={cardDrop.card} size={52} />
@@ -257,6 +287,14 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
             drop={cardDrop}
             companionName={companion.name}
             onClose={() => setStoryOpen(false)}
+          />
+        )}
+        {recessOpen && recess && !recessDone && (
+          <CompanionSchoolRecessModal
+            companion={companion}
+            event={recess}
+            onClose={() => setRecessOpen(false)}
+            onSettled={(settled) => setRecessDone({ text: settled.text, moodDelta: settled.moodDelta })}
           />
         )}
       </div>
