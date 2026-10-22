@@ -12,7 +12,7 @@ import KeepAliveIndicator from './components/KeepAliveIndicator';
 import HouseManualModal from './components/manual/HouseManualModal';
 import FullscreenEffectLayer from './apps/messages/screenEffects/FullscreenEffectLayer';
 import { GLOBAL_SCREEN_EFFECT_SCOPE } from './apps/messages/screenEffects/screenEffectPresets';
-import { maybeTriggerStartupFocusText } from './apps/messages/screenEffects/startupFocusTextService';
+import { maybeTriggerStartupFocusText } from './apps/messages/screenEffects/birthdayService';
 
 import HubHeader from './apps/hub/HubHeader';
 import QuickBoard from './apps/hub/QuickBoard';

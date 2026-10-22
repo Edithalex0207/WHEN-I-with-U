@@ -29,6 +29,8 @@ import {
   getPresetById,
 } from './screenEffectPresets';
 import { getBackdropPref } from './screenEffectPrefs';
+import BirthdayScene from './BirthdayScene';
+import { getBirthdayDurationMs } from './birthdayLayout';
 import './screenEffects.css';
 
 const rand = (min, max) => min + Math.random() * (max - min);
@@ -322,6 +324,29 @@ const FullscreenEffectLayer = ({ chatId = null, preview = false, global = false 
         return;
       }
 
+           // 生日全屏文字：自带固定配色的星夜画面，不走预设名单，也不读底色偏好。
+      if (detail.kind === 'birthday') {
+        if (!Array.isArray(detail.lines) || detail.lines.length === 0) return;
+
+        const birthdayToken = playTokenRef.current + 1;
+        playTokenRef.current = birthdayToken;
+
+        clearTimers();
+        setLeaving(false);
+        setPlaying({
+          key: `${Date.now()}-${birthdayToken}`,
+          isBirthday: true,
+          lines: detail.lines,
+          dateLabel: String(detail.dateLabel || ''),
+        });
+
+        fadeTimerRef.current = window.setTimeout(
+          startLeaving,
+          getBirthdayDurationMs(detail.lines),
+        );
+        return;
+      }
+
       const isFocus = detail.kind === 'focus';
       const presetId = isFocus ? FOCUS_PRESET.id : detail.presetId;
       const preset = getPresetById(presetId);
@@ -368,6 +393,31 @@ const FullscreenEffectLayer = ({ chatId = null, preview = false, global = false 
   }, [chatId, preview, clearTimers, startLeaving]);
 
   if (!playing) return null;
+
+  if (playing.isBirthday) {
+    const birthdayClassName = [
+      'sfx-root',
+      preview ? 'sfx-root--preview' : '',
+      global ? 'sfx-root--global' : '',
+      leaving ? 'sfx-out' : '',
+    ].filter(Boolean).join(' ');
+
+    const birthdayNode = (
+      <div
+        key={playing.key}
+        className={birthdayClassName}
+        style={{ pointerEvents: leaving ? 'none' : 'auto' }}
+        onClick={startLeaving}
+        role="presentation"
+      >
+        <BirthdayScene lines={playing.lines} dateLabel={playing.dateLabel} />
+      </div>
+    );
+
+    return (preview || global) && typeof document !== 'undefined'
+      ? createPortal(birthdayNode, document.body)
+      : birthdayNode;
+  }
 
   const { preset, backdrop, isFocus, presetId, particles, layout, caption } = playing;
 
