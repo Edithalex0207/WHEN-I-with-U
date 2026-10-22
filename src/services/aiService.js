@@ -174,6 +174,20 @@ const listeners = new Set();
 const summaryStatusListeners = new Set();
 
 const activeAiRequests = new Set();
+// chatId -> AbortController：目前只给 triggerAiResponse（聊天室"回应"按钮）这条
+// 主路径用，让用户能在 AI 还没回完之前点"打住"中止这次请求。reroll 等其它调用
+// 路径暂不接入，继续沿用原来的 activeAiRequests 单纯占用判断。
+const activeAiAbortControllers = new Map();
+
+// 供 ChatRoom "打住" 按钮调用：找到这个聊天窗正在进行中的请求并中止它。
+// 中止后 triggerAiResponse 自己的 finally 会负责清理 activeAiRequests /
+// activeAiAbortControllers 并发出 AI_TYPING_END，这里不用重复做。
+export const cancelAiResponse = (chatId) => {
+  const controller = activeAiAbortControllers.get(chatId);
+  if (!controller) return false;
+  controller.abort();
+  return true;
+};
 // ==========================================
 // 🤖 SettingsPage 联动：主动消息 / 主动日记调度器
 // ==========================================
@@ -859,6 +873,8 @@ export const chat = generateResponse;
 // 暂不触发，因为换端点大概率也是同样的模型/参数问题，意义不大。
 const isFallbackWorthyError = (result) => {
   if (!result?.error) return false;
+  // 用户主动"打住"：不是网络问题，不该去尝试备用 API。
+  if (result.code === 'ABORTED') return false;
   if (result.code === 'NETWORK_ERROR' || result.code === 'CONFIG_MISSING') {
     return true;
   }
@@ -866,7 +882,7 @@ const isFallbackWorthyError = (result) => {
 };
 
 // 真正打一次请求（不管是主 API 还是备用 API，都走这同一份逻辑）。
-const attemptAiCompletionOnce = async ({ apiConfig, systemPrompt, messages, tools }) => {
+const attemptAiCompletionOnce = async ({ apiConfig, systemPrompt, messages, tools, signal }) => {
   if (!apiConfig?.baseUrl || !apiConfig?.apiKey) {
     return {
       error: true,
@@ -902,6 +918,7 @@ const attemptAiCompletionOnce = async ({ apiConfig, systemPrompt, messages, tool
         Authorization: `Bearer ${apiConfig.apiKey}`,
       },
       body: JSON.stringify(requestBody),
+      signal,
     });
 
     if (!response.ok) {
@@ -958,6 +975,14 @@ const attemptAiCompletionOnce = async ({ apiConfig, systemPrompt, messages, tool
       usage: data?.usage || null,
     };
   } catch (error) {
+    if (error?.name === 'AbortError') {
+      return {
+        error: true,
+        code: 'ABORTED',
+        message: '已取消本次回应',
+      };
+    }
+
     return {
       error: true,
       code: 'NETWORK_ERROR',
@@ -971,6 +996,7 @@ const attemptAiCompletionOnce = async ({ apiConfig, systemPrompt, messages, tool
   messages = [],
   apiConfig: configOverride = null,
   tools = [],
+  signal,
 }) => {
   const apiSettings = configOverride
     ? null
@@ -983,6 +1009,7 @@ const attemptAiCompletionOnce = async ({ apiConfig, systemPrompt, messages, tool
     systemPrompt,
     messages,
     tools,
+    signal,
   });
 
   if (!primaryResult.error || !isFallbackWorthyError(primaryResult)) {
@@ -1011,6 +1038,7 @@ const attemptAiCompletionOnce = async ({ apiConfig, systemPrompt, messages, tool
     systemPrompt,
     messages,
     tools,
+    signal,
   });
 
   if (!backupResult.error) {
@@ -1038,6 +1066,7 @@ export const fetchAiCompletionWithTools = async ({
   tools = [],
   chatId = null,
   characterId = null,
+  signal,
 } = {}) => {
   const startedAt = Date.now();
   const rawResult = await performFetchAiCompletionWithTools({
@@ -1045,6 +1074,7 @@ export const fetchAiCompletionWithTools = async ({
     messages,
     apiConfig: configOverride,
     tools,
+    signal,
   });
 
   // usedApiConfig 带着完整的 apiKey，只在这里用来记日志（只取 model/baseUrl），
@@ -2540,6 +2570,8 @@ export const triggerAiResponse = async (chatId, options = {}) => {
   }
 
   activeAiRequests.add(chatId);
+  const abortController = new AbortController();
+  activeAiAbortControllers.set(chatId, abortController);
   notifyListeners({ type: 'AI_TYPING_START', chatId });
 
   try {
@@ -2712,7 +2744,7 @@ const result = await runAiToolOrchestrator({
   chatId,
   characterId: character.id,
   requestAiCompletion: (args) =>
-    fetchAiCompletionWithTools({ ...args, chatId, characterId: character.id }),
+    fetchAiCompletionWithTools({ ...args, chatId, characterId: character.id, signal: abortController.signal }),
   requestToolApproval: requestMcpToolApproval,
     mcpTraceSession,
 });
@@ -2724,6 +2756,13 @@ const result = await runAiToolOrchestrator({
     let preview = '';
 
     if (result.error) {
+      if (result.code === 'ABORTED') {
+        // 用户主动点了"打住"：不留下任何消息痕迹，直接结束这次回应，
+        // finally 会负责清理 activeAiRequests / activeAiAbortControllers
+        // 并发出 AI_TYPING_END 让按钮恢复原状。
+        return;
+      }
+
       const errorMessageId = await saveAiErrorMessage(chatId, character, result);
 
       messageIds = [errorMessageId];
@@ -3331,6 +3370,7 @@ if (!result.error) {
     });
   } finally {
     activeAiRequests.delete(chatId);
+    activeAiAbortControllers.delete(chatId);
     notifyListeners({ type: 'AI_TYPING_END', chatId });
   }
 };
@@ -4070,6 +4110,7 @@ export default {
   subscribeAiEvents,
   subscribeSummaryStatus,
   triggerAiResponse,
+  cancelAiResponse,
   rerollAiResponse,
   generateCharacterHomeBoardMessage,
   generateCompanionReplyForDiary,

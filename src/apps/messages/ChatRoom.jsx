@@ -32,6 +32,7 @@ Phone,
   Package,
   Stamp,
   Mic,
+  Hand,
 } from 'lucide-react';
 
 import {
@@ -46,6 +47,7 @@ import { clearPhotoMessageMedia } from './chatMediaCleanupService';
 import { releasePhotoObjectUrl } from './components/cards/PhotoCard';
 import {
   triggerAiResponse,
+  cancelAiResponse,
   rerollAiResponse,
   subscribeAiEvents,
   playMessageSound,
@@ -1625,6 +1627,14 @@ useLayoutEffect(() => {
   handleTriggerAi();
 };
 
+// "打住"：AI 还没回完时，点同一个按钮改成中止这次请求。非流式输出，
+// 中止=这次回应整条作废，不会留下任何半截消息；isAiTyping 会在
+// aiService 那边的 finally 里自然变回 false，不用在这里手动设状态。
+const handleCancelAiResponse = () => {
+  if (!isAiTyping) return;
+  cancelAiResponse(chatId);
+};
+
 
 
   const handleRerollMessage = useCallback((messageId) => {
@@ -3099,25 +3109,44 @@ if (type === 'interaction_coupon') {
 
            <button
   type="button"
-  onClick={handleTriggerAiButtonClick}
+  onClick={isAiTyping ? handleCancelAiResponse : handleTriggerAiButtonClick}
 
-              disabled={isAiTyping}
-              className="chat-respond-btn flex items-center gap-1 rounded-full px-3.5 py-2 text-[10px] font-semibold shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+              className="chat-respond-btn flex items-center gap-1 rounded-full px-3.5 py-2 text-[10px] font-semibold shadow-sm transition-transform active:scale-95"
               style={{
                 background: 'var(--accent-color)',
                 color: 'var(--accent-foreground)',
               }}
-              title="触发伴侣回应"
+              title={isAiTyping ? '打住这次回应' : '触发伴侣回应'}
             >
-              <SparklesIcon
+              {isAiTyping ? (
+                <Hand size={12} className="text-current chat-stop-hand-icon" />
+              ) : (
+                <SparklesIcon
   ref={sparklesIconRef}
   size={12}
   animateOnHover={false}
   className="text-current"
 />
+              )}
 
-              <span>回应</span>
+              <span>{isAiTyping ? '打住' : '回应'}</span>
             </button>
+            <style>{`
+              @keyframes chatStopHandWobble {
+                0%, 100% { transform: rotate(0deg); }
+                25% { transform: rotate(-12deg); }
+                75% { transform: rotate(12deg); }
+              }
+              .chat-stop-hand-icon {
+                animation: chatStopHandWobble 0.6s ease-in-out infinite;
+              }
+              @media (prefers-reduced-motion: reduce) {
+                .chat-stop-hand-icon {
+                  animation-duration: 0.001ms;
+                  animation-iteration-count: 1;
+                }
+              }
+            `}</style>
           </div>
           </>
           )}
