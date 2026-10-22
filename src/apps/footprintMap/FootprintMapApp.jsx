@@ -19,12 +19,14 @@ import {
   FOOTPRINT_FILTERS,
   formatRelativeTime,
   getFootprintConsent,
+  getFootprintMapKey,
   getPinColor,
   isPlaceVisibleForFilter,
   loadFootprintChats,
   loadFootprintMemories,
   loadFootprintPlaces,
   saveFootprintConsent,
+  saveFootprintMapKey,
 } from './footprintMapService';
 import { createPinIcon } from './placePinIcon';
 import './footprintMap.css';
