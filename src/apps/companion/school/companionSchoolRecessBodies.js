@@ -24,8 +24,8 @@
  *
  * 【切片进度】
  *   A          外壳和概率
- *   B（现在）  石头剪刀布
- *   C          猜词
+ *   B          石头剪刀布
+ *   C（现在）  猜词
  *   D          文字选项
  * 登记了哪个，就要同时把对应的种类加进 companionSchoolRecessData.js 的
  * RECESS_LIVE_KINDS，两边要一起改，否则要么抽到没有玩法的事件，要么玩法
@@ -34,7 +34,9 @@
 
 import { RECESS_KIND } from './companionSchoolRecessData';
 import CompanionSchoolRecessRps from './CompanionSchoolRecessRps';
+import CompanionSchoolRecessGuess from './CompanionSchoolRecessGuess';
 
 export const RECESS_BODIES = {
   [RECESS_KIND.RPS]: CompanionSchoolRecessRps,
+  [RECESS_KIND.GUESS]: CompanionSchoolRecessGuess,
 };

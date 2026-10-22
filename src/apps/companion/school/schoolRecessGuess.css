@@ -1,0 +1,118 @@
+/* =========================================================
+ * schoolRecessGuess.css —— 「猜词」玩法组件的样式
+ * 前缀：rc-guess-。外壳通用样式（按钮、贴图、角色、rc-pop 动画）在
+ * schoolRecess.css。没有点阵底纹；动画都带 prefers-reduced-motion 保护。
+ * 没放出来的线索用虚线灰贴，是设计里要的"虚线"，不是点阵。
+ * ========================================================= */
+
+.rc-guess { margin-top: 4px; }
+.rc-guess-hint { margin: 10px 0 8px; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--cp-sub); }
+
+/* ---------------- 取题中 ---------------- */
+.rc-guess-wait { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 0 10px; }
+.rc-guess-wait p { margin: 0; font-size: 13px; font-weight: 800; color: var(--cp-sub); }
+.rc-guess-wait-star { animation: rc-guess-bob 1.4s ease-in-out infinite; }
+@keyframes rc-guess-bob { 50% { transform: translateY(-8px) rotate(8deg); } }
+
+/* ---------------- 便利贴线索 ---------------- */
+.rc-guess-notes { list-style: none; margin: 0; padding: 14px 6px 4px; display: flex; flex-direction: column; gap: 16px; }
+.rc-guess-note {
+  position: relative; padding: 16px 14px 12px; border-radius: 10px 10px 18px 10px;
+  background: var(--cp-butter-bg); color: var(--cp-text); border: 3px solid #fff;
+  box-shadow: 0 10px 14px -10px var(--cp-shadow), 0 4px 0 -1px var(--cp-border);
+  transition: transform 0.25s, background 0.25s;
+}
+.rc-guess-note:nth-child(1) { transform: rotate(-1.6deg); }
+.rc-guess-note:nth-child(2) { transform: rotate(1.2deg); }
+.rc-guess-note:nth-child(3) { transform: rotate(-0.8deg); }
+
+.rc-guess-note.is-now { box-shadow: 0 14px 18px -10px rgba(255, 134, 160, 0.55), 0 4px 0 -1px #FFC7D4; }
+.rc-guess-note.is-hit { background: var(--cp-mint-bg); }
+
+/* 没放出来：虚线灰贴 + 小锁 */
+.rc-guess-note.is-locked {
+  background: var(--cp-soft); border: 3px dashed var(--cp-border); color: var(--cp-muted);
+  box-shadow: none;
+}
+
+.rc-guess-pin { position: absolute; left: 50%; top: -13px; margin-left: -10px; display: block; line-height: 0; }
+.rc-guess-no {
+  display: block; margin-bottom: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+  color: var(--cp-butter-fg);
+}
+.rc-guess-note.is-hit .rc-guess-no { color: var(--cp-mint-fg); }
+.rc-guess-note.is-locked .rc-guess-no { color: var(--cp-muted); }
+
+.rc-guess-text { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.6; }
+.rc-guess-text.is-lock { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--cp-muted); }
+
+/* 猜错了：粉色小标 + 猜的内容 */
+.rc-guess-tag {
+  position: absolute; right: 10px; top: -10px; padding: 3px 10px; border-radius: 14px;
+  background: var(--cp-heart); color: #fff; font-size: 11.5px; font-weight: 800;
+  border: 3px solid #fff; transform: rotate(5deg); box-shadow: 0 3px 0 -1px var(--sd-heart-deep);
+}
+.rc-guess-said { display: block; margin-top: 6px; font-size: 12px; font-weight: 800; color: var(--sd-heart-deep); }
+
+.rc-guess-note.is-shake { animation: rc-guess-shake 0.45s ease-in-out; }
+@keyframes rc-guess-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -7px 0; }
+  40% { translate: 7px 0; }
+  60% { translate: -5px 0; }
+  80% { translate: 4px 0; }
+}
+
+/* ---------------- 输入 ---------------- */
+.rc-guess-form { display: flex; gap: 10px; margin-top: 18px; align-items: center; }
+.rc-guess-input {
+  flex: 1; min-width: 0; height: 50px; padding: 0 18px; border-radius: 25px;
+  background: #fff; border: 3px solid var(--cp-border); color: var(--cp-text);
+  font-family: var(--cp-font-body); font-size: 16px; font-weight: 700;
+  box-shadow: 0 5px 0 -2px var(--cp-border);
+  outline: none; transition: border-color 0.2s;
+  -webkit-user-select: text; user-select: text;
+}
+.rc-guess-input::placeholder { color: var(--cp-muted); font-weight: 700; }
+.rc-guess-input:focus { border-color: var(--cp-heart); }
+.rc-guess-input:disabled { opacity: 0.6; }
+.rc-guess-go {
+  flex: none; width: 70px; height: 50px; border-radius: 25px;
+  background: var(--cp-heart); color: #fff; font-family: var(--cp-font-display); font-size: 20px;
+  box-shadow: 0 6px 0 -2px var(--sd-heart-deep), 0 12px 16px -8px rgba(255, 134, 160, 0.5);
+}
+.rc-guess-go:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 3px 0 -2px var(--sd-heart-deep); }
+.rc-guess-go:disabled { opacity: 0.5; }
+.rc-guess-warn {
+  margin: 10px 0 0; padding: 7px 14px; border-radius: 16px; text-align: center;
+  background: var(--cp-heart-soft); color: var(--sd-heart-deep); font-size: 12.5px; font-weight: 800;
+}
+
+/* ---------------- 揭晓 ---------------- */
+.rc-guess-end { display: flex; flex-direction: column; align-items: center; margin-top: 12px; }
+.rc-guess-stars { display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding: 4px 0 0; }
+.rc-guess-star { opacity: 0; animation: rc-guess-star-in 0.55s cubic-bezier(0.3, 1.5, 0.5, 1) forwards; }
+.rc-guess-star.s1 { animation-delay: 0.05s; }
+.rc-guess-star.s2 { animation-delay: 0.25s; }
+.rc-guess-star.s3 { animation-delay: 0.45s; }
+@keyframes rc-guess-star-in {
+  0% { opacity: 0; transform: scale(0) rotate(-30deg); }
+  60% { opacity: 1; transform: scale(1.2) rotate(8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.rc-guess-badge {
+  width: max-content; margin-top: 8px; padding: 6px 28px; border-radius: 22px;
+  font-family: var(--cp-font-display); font-size: 24px; border: 3px solid #fff;
+  box-shadow: 0 8px 12px -8px var(--cp-shadow); animation: rc-pop 0.45s;
+}
+.rc-guess-badge.is-ok { background: var(--cp-mint-bg); color: var(--cp-mint-fg); }
+.rc-guess-badge.is-miss { background: var(--cp-sky-bg); color: var(--cp-sky-fg); }
+.rc-guess-answer { margin: 10px 0 0; font-size: 13px; font-weight: 800; color: var(--cp-sub); }
+.rc-guess-answer b { margin-left: 4px; font-family: var(--cp-font-display); font-weight: 400; font-size: 20px; color: var(--sd-heart-deep); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-guess-wait-star, .rc-guess-note.is-shake, .rc-guess-badge { animation: none !important; }
+  .rc-guess-star { animation: none !important; opacity: 1 !important; }
+  .rc-guess-note { transition: none; }
+}

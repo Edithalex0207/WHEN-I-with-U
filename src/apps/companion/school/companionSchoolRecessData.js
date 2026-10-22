@@ -40,10 +40,10 @@ export const RECESS_KIND = {
  * 接入之前完全一样（只会抽到固定小事）。每做完一个玩法，往这里加一个种类，
  * 并在 companionSchoolRecessBodies.js 里登记对应的玩法组件。
  *   切片 B：石头剪刀布（已加入）
- *   切片 C：猜词
+ *   切片 C：猜词（已加入）
  *   切片 D：文字选项
  */
-export const RECESS_LIVE_KINDS = [RECESS_KIND.RPS];
+export const RECESS_LIVE_KINDS = [RECESS_KIND.RPS, RECESS_KIND.GUESS];
 
 /**
  * 本地测试开关：改成 true，做完一组题就一定会弹"课间有小事"（每次都是
