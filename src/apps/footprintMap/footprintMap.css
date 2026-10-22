@@ -599,6 +599,64 @@
   pointer-events: none;
 }
 
+/* 选聊天窗页内容变多之后要能滚动 */
+.fm-layer--picker {
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+}
+
+.fm-layer--picker::-webkit-scrollbar { display: none; }
+
+/* 底图 key */
+.fm-key-box { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--fm-line); }
+.fm-key-title { font-size: 13px; font-weight: 600; letter-spacing: 0.16em; }
+.fm-key-help { margin-top: 6px; font-size: 12px; line-height: 1.7; color: var(--fm-muted); }
+.fm-key-help a { color: var(--fm-wine-text); text-decoration: underline; }
+.fm-key-row { margin-top: 10px; display: flex; gap: 8px; }
+
+.fm-key-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--fm-border);
+  border-radius: 4px;
+  background: var(--fm-sheet);
+  color: var(--fm-ink);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 16px;
+}
+
+.fm-key-save {
+  flex-shrink: 0;
+  min-width: 72px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--fm-btn-bg);
+  color: var(--fm-btn-fg);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-align: center;
+}
+
+.fm-key-notice {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: calc(214px + env(safe-area-inset-top, 0px));
+  z-index: 11;
+  padding: 8px 14px;
+  border: 1px solid var(--fm-wine-text);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--fm-sheet) 92%, transparent);
+  color: var(--fm-wine-text);
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fm-root *,
   .fm-root *::before,

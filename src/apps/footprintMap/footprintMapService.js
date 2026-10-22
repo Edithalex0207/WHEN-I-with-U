@@ -45,8 +45,41 @@ export const saveFootprintConsent = async () => {
   });
 };
 
+// 底图（CARTO）要求每个人用自己的免费 key，只存在本机的 db.settings 里，不写死在代码中。
+export const FOOTPRINT_MAP_KEY_SETTING = 'footprintMapKey';
+const FOOTPRINT_MAP_KEY_MAX_CHARS = 200;
+
+export const getFootprintMapKey = async () => {
+  try {
+    const row = await db.settings.get(FOOTPRINT_MAP_KEY_SETTING);
+
+    return typeof row?.value?.key === 'string' ? row.value.key : '';
+  } catch (error) {
+    console.warn('[FootprintMap] 读取底图 key 失败：', error);
+    return '';
+  }
+};
+
+// 返回清理过的 key（去掉所有空白、限制长度）；传空就是清除。
+export const saveFootprintMapKey = async (raw) => {
+  const key = String(raw ?? '').replace(/\s+/g, '').slice(0, FOOTPRINT_MAP_KEY_MAX_CHARS);
+
+  if (!key) {
+    await db.settings.delete(FOOTPRINT_MAP_KEY_SETTING);
+
+    return '';
+  }
+
+  await db.settings.put({
+    key: FOOTPRINT_MAP_KEY_SETTING,
+    value: { key, savedAt: new Date().toISOString() },
+  });
+
+  return key;
+};
+
 const toTime = (iso) => {
-  const time = new Date(iso).getTime();
+const time = new Date(iso).getTime();
 
   return Number.isFinite(time) ? time : 0;
 };
@@ -188,7 +221,9 @@ export const loadFootprintMemories = async (placeId) => {
 
 export default {
   getFootprintConsent,
-  saveFootprintConsent,
+  getFootprintMapKey,
+    saveFootprintConsent,
+  saveFootprintMapKey,
   formatRelativeTime,
   loadFootprintChats,
   loadFootprintPlaces,

@@ -30,6 +30,7 @@ import { createPinIcon } from './placePinIcon';
 import './footprintMap.css';
 
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const buildTileUrl = (key) => `${TILE_URL}?key=${encodeURIComponent(key)}`;
 const DEFAULT_CENTER = [35, 105];
 const DEFAULT_ZOOM = 4;
 const FOCUS_ZOOM = 15;
@@ -52,6 +53,8 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
   const [sheetState, setSheetState] = useState('closed'); // closed | peek | full
   const [memories, setMemories] = useState([]);
   const [toast, setToast] = useState('');
+  const [mapKey, setMapKey] = useState('');
+  const [keyDraft, setKeyDraft] = useState('');
 
   const mapElRef = useRef(null);
   const mapRef = useRef(null);
@@ -94,7 +97,13 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
     let cancelled = false;
 
     (async () => {
-      const agreed = await getFootprintConsent();
+           const agreed = await getFootprintConsent();
+      const savedKey = await getFootprintMapKey();
+
+      if (!cancelled) {
+        setMapKey(savedKey);
+        setKeyDraft(savedKey);
+      }
 
       if (cancelled) return;
 
@@ -119,6 +128,19 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
 
     await refreshChats();
     setScreen('picker');
+  };
+
+   const handleSaveKey = async () => {
+    try {
+      const saved = await saveFootprintMapKey(keyDraft);
+
+      setMapKey(saved);
+      setKeyDraft(saved);
+      showToast(saved ? '底图 key 已保存' : '已清除底图 key');
+    } catch (error) {
+      console.warn('[FootprintMap] 保存底图 key 失败：', error);
+      showToast('保存失败，请再试一次');
+    }
   };
 
   const resetMapState = () => {
@@ -185,8 +207,8 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
       minZoom: 2,
     });
 
-    L.tileLayer(TILE_URL, {
-      subdomains: 'abcd',
+    L.tileLayer(mapKey ? buildTileUrl(mapKey) : TILE_URL, {
+    subdomains: 'abcd',
       maxZoom: 19,
       detectRetina: true,
     }).addTo(map);
@@ -210,7 +232,7 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
       markersRef.current = new Map();
       setMapReady(false);
     };
-  }, [screen]);
+  }, [screen, mapKey]);
 
   // ---------- 图钉：地点列表变了才重建，选中 / 筛选只改 class，不重播落下动画 ----------
 
@@ -376,6 +398,16 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
           <div className="fm-attribution">
             Map data &copy; OpenStreetMap contributors &copy; CARTO
           </div>
+
+                  {!mapKey && (
+            <button
+              type="button"
+              className="fm-btn-reset fm-key-notice"
+              onClick={handleBackToPicker}
+            >
+              还没填底图 key，地图上会盖着水印。点这里去填写
+            </button>
+          )}
 
           {placesReady && places.length === 0 && (
             <div className="fm-empty-note">
@@ -565,6 +597,38 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
         </div>
 
         <div className="fm-picker-note">在聊天窗设置里打开定位，它才会出现在这里。</div>
+
+        <div className="fm-key-box">
+          <div className="fm-key-title">底图 key</div>
+          <div className="fm-key-help">
+            地图底图来自 CARTO，需要你自己的免费 key。
+            <a
+              href="https://www.carto.com/basemaps/apikey/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              去申请
+            </a>
+            ，填邮箱就能收到。key 只保存在这台设备上。
+          </div>
+          <div className="fm-key-row">
+            <input
+              type="text"
+              name="footprint-map-key"
+              className="fm-key-input"
+              value={keyDraft}
+              maxLength={200}
+              placeholder="粘贴你的 key"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              onChange={(event) => setKeyDraft(event.target.value)}
+            />
+            <button type="button" className="fm-btn-reset fm-key-save" onClick={handleSaveKey}>
+              保存
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 隐私说明页：第一次打开才出现，同意之后才会加载地图瓦片 */}
@@ -611,7 +675,12 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
             </div>
             <div className="fm-gate-item">
               <b>03</b>
-              <span>不想用也没关系，原来的地点小册子完全不受影响。</span>
+                 <span>不想用也没关系，原来的地点小册子完全不受影响。</span>
+            </div>
+            <div className="fm-gate-item">
+              <b>04</b>
+              <span>底图需要你自己的免费 key，下一页填写。key 只存在这台设备上，加载瓦片时会一起发给地图服务。</span>
+
             </div>
           </div>
         </div>
