@@ -41,9 +41,9 @@ export const RECESS_KIND = {
  * 并在 companionSchoolRecessBodies.js 里登记对应的玩法组件。
  *   切片 B：石头剪刀布（已加入）
  *   切片 C：猜词（已加入）
- *   切片 D：文字选项
+ *   切片 D：文字选项（已加入）
  */
-export const RECESS_LIVE_KINDS = [RECESS_KIND.RPS, RECESS_KIND.GUESS];
+export const RECESS_LIVE_KINDS = [RECESS_KIND.RPS, RECESS_KIND.GUESS, RECESS_KIND.CHOICE];
 
 /**
  * 本地测试开关：改成 true，做完一组题就一定会弹"课间有小事"（每次都是
@@ -62,7 +62,8 @@ export const RECESS_KIND_META = {
  * 心情加成。都是正数，输了 / 没猜中 / 随便选哪个也至少有 1。
  *   rps    赢 / 平 / 输
  *   guess  按第几条线索猜中（1 最早最多），没猜中是 miss
- *   choice [最小, 最大]，闭区间里随机取一个整数
+ *   choice 每个选项的心情事先写在 companionSchoolRecessChoiceEvents.js 里（1 或 2）；
+ *          这里的 [最小, 最大] 只在那边的数据写漏时当后备，闭区间里随机取一个整数
  */
 export const RECESS_MOOD = {
   [RECESS_KIND.RPS]: { win: 3, draw: 2, lose: 1 },
@@ -99,9 +100,11 @@ export const RECESS_SCENES = {
     '{mate}在草稿纸上画了一半就捂住了：猜猜我想画什么？只给你三条线索。',
     '{mate}神秘兮兮地说，自己想好了一个东西，要{name}来猜，线索一条一条放出来。',
   ],
+  /* 文字选项的具体场景在 companionSchoolRecessChoiceEvents.js 里（十几条），
+     这里只放通用的开场，免得气泡和下面的场景小卡片对不上。 */
   [RECESS_KIND.CHOICE]: [
-    '课间，{mate}的橡皮滚到了{name}脚边，上面画着一张歪歪扭扭的笑脸。{mate}红着脸看过来。',
-    '{mate}把一颗糖放在了{name}的桌角，什么也没说，只是眼睛一直往这边瞟。',
+    '课间，{mate}走到{name}身边，好像有话想说，又有点不好意思开口。',
+    '下课铃一响，{mate}就朝{name}这边看了过来，今天好像有一件小事要发生。',
   ],
 };
 

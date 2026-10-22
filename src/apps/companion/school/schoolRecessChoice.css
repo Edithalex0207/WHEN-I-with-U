@@ -1,0 +1,53 @@
+/* =========================================================
+ * schoolRecessChoice.css —— 「文字选项」玩法组件的样式
+ * 前缀：rc-choice-。外壳通用样式（按钮、贴图、胶带 rc-tape、rc-pop 动画）
+ * 在 schoolRecess.css。没有点阵底纹；动画都带 prefers-reduced-motion 保护。
+ * ========================================================= */
+
+.rc-choice { margin-top: 4px; }
+
+/* ---------------- 场景小卡片 ---------------- */
+.rc-choice-card {
+  position: relative; margin: 14px 6px 0; padding: 16px 16px 14px; border-radius: 18px;
+  background: var(--cp-card); border: 3px solid #fff; transform: rotate(-1deg);
+  box-shadow: 0 10px 16px -10px var(--cp-shadow), 0 4px 0 -1px var(--cp-border);
+}
+.rc-choice-card p { margin: 0; font-size: 13.5px; font-weight: 700; line-height: 1.7; color: var(--cp-text); }
+.rc-choice-card .rc-tape { left: 50%; top: -10px; margin-left: -22px; }
+
+.rc-choice-hint { margin: 14px 0 10px; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--cp-sub); }
+
+/* ---------------- 选项 ---------------- */
+.rc-choice-list { list-style: none; margin: 0; padding: 0 2px; display: flex; flex-direction: column; gap: 12px; }
+.rc-choice-opt {
+  position: relative; width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 10px 14px 10px 10px; border-radius: 26px; background: #fff; border: 3px solid transparent;
+  box-shadow: 0 10px 16px -12px var(--cp-shadow), 0 5px 0 -1px var(--cp-border);
+  transition: transform 0.2s, background 0.2s, opacity 0.25s;
+}
+.rc-choice-list li:nth-child(1) .rc-choice-opt { transform: rotate(-0.8deg); }
+.rc-choice-list li:nth-child(3) .rc-choice-opt { transform: rotate(0.8deg); }
+.rc-choice-opt.is-sel {
+  transform: scale(1.02); background: var(--cp-heart-soft); border-color: var(--cp-heart);
+  box-shadow: 0 14px 20px -12px rgba(255, 134, 160, 0.6), 0 5px 0 -1px #FFC7D4;
+}
+.rc-choice-opt.is-dim { opacity: 0.5; }
+.rc-choice-opt:disabled { cursor: default; }
+
+.rc-choice-body { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.rc-choice-tag {
+  padding: 2px 10px; border-radius: 99px; background: var(--sd-t-bg); color: var(--sd-t-fg);
+  font-size: 11.5px; font-weight: 800;
+}
+.rc-choice-text { font-size: 13.5px; font-weight: 700; line-height: 1.5; color: var(--cp-text); }
+
+.rc-choice-ok {
+  position: absolute; top: -9px; right: -5px; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--cp-heart); border: 3px solid #fff;
+  animation: rc-pop 0.35s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-choice-ok { animation: none !important; }
+  .rc-choice-opt { transition: none; }
+}
