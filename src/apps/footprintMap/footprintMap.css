@@ -678,6 +678,16 @@
   background: var(--fm-sheet);
 }
 
+/* 足迹地图铺满整个屏幕：iOS 主屏幕 PWA 里 100dvh 常和真实可见区域对不上，
+   改用 fixed + inset:0 直接贴着屏幕四边。顶部和底部的安全区，由各处自己的
+   env(safe-area-inset-*) 留白来处理。 */
+.fm-root {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fm-root *,
   .fm-root *::before,

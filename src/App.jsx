@@ -987,7 +987,9 @@ const isEmotionKitApp = currentApp === 'emotionkit';
 const isTextGameHallApp = currentApp === 'textgames';
 const isFootprintMapApp = currentApp === 'footprintMap';
 
-  const mainClassName = isInsideChatRoom
+  const mainClassName = currentApp === 'footprintMap'
+    ? 'relative z-10 w-full h-[100dvh] overflow-hidden'
+    : isInsideChatRoom
     ? 'relative z-10 mx-auto h-[100dvh] w-full max-w-[420px] overflow-hidden'
     : isEmotionKitApp || isTextGameHallApp
       ? 'relative z-10 w-full min-h-[100dvh] overflow-x-hidden'
