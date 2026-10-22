@@ -7,7 +7,8 @@
  *    存进 db.settings，返回它；没中 / 已经有一份未批的 / 没入学，返回 null。
  * 2. getHomeworkTask / clearHomeworkTask：学校页横幅和弹窗读、批完删。
  * 3. 造作业用的纯函数（buildHomeworkTask、pickQuizItems、pickEssayTopic、
- *    pickFixedEssay、describeHomework），后面切片 C 也会用。
+ *    pickFixedEssay、describeHomework），updateHomeworkEssay 供小作文
+ *    换一篇 / AI 写好后更新这一份嘱托。
  * 4. finishHomeworkTask：批完之后调一次，写一条在校生活记录、给小伙伴加心心
  *    和心情、删掉这份未批嘱托（切片 B 起；题目类和小作文共用）。
  *
@@ -239,6 +240,25 @@ export const saveHomeworkTask = async (companionId, task) => {
   if (!isUsableTask(plain)) throw new Error('这份作业没有准备好');
   await db.settings.put({ key: getHomeworkTaskKey(companionId), value: plain });
   return hydrateTask(plain);
+};
+
+/**
+ * 只更新未批嘱托里的小作文（AI 写好了、"换一篇"换了新的）。
+ * 只在这一行还在、并且 taskId 对得上、是小作文时才写：嘱托已经批完被删了
+ * 就什么都不做，防止晚到的 AI 结果把一份批完的嘱托又写回来。
+ * @returns {Promise<object|null>} 更新后的嘱托（带 classmate）；没写就是 null
+ */
+export const updateHomeworkEssay = async (companionId, taskId, essay) => {
+  const key = getHomeworkTaskKey(companionId);
+  return db.transaction('rw', db.settings, async () => {
+    const row = await db.settings.get(key);
+    const value = row?.value;
+    if (!value || value.taskId !== taskId || value.type !== HOMEWORK_TYPE.ESSAY) return null;
+    const next = { ...value, essay: { ...(value.essay || {}), ...essay } };
+    if (!isUsableTask(next)) return null;
+    await db.settings.put({ key, value: next });
+    return hydrateTask(next);
+  });
 };
 
 /** 批完之后删掉这一行。 */

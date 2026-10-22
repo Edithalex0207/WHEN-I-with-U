@@ -193,6 +193,27 @@ export const HOMEWORK_QUIZ_REACTIONS = {
 /** AI 现写的小作文才显示的说明条（固定小作文不显示）。 */
 export const HOMEWORK_AI_NOTICE = '这篇小作文由 AI 现写，会用到你配置的接口。';
 
+/** AI 写的小作文，字数的合理范围（超出就当失败）。 */
+export const HOMEWORK_ESSAY_LENGTH = {
+  kindergarten: { min: 20, max: 100 },
+  primary: { min: 50, max: 240 },
+};
+
+/** AI 现写小作文的超时（毫秒）。 */
+export const HOMEWORK_AI_TIMEOUT_MS = 15000;
+
+/** AI 写不成时给玩家看的提示（不是错误弹窗，只是作业纸下面的一句话）。 */
+export const HOMEWORK_AI_TEXTS = {
+  writing: '{mate}正在认真写……',
+  noConfigFirst: '还没有配置 API，这次先用现成的一篇。想让 AI 来写，请先去设置里配置好接口。',
+  failFirst: '这次没能让 AI 写成，先用现成的一篇。如果接口有问题，请检查一下 API 配置。',
+  noConfigReroll: '还没有配置 API，换不了。请先去设置里配置好接口。',
+  failReroll: '接口好像有问题，这次没换成。请检查一下 API 配置后再试。',
+};
+
+/** 批小作文时，说明心心怎么算的小字。 */
+export const HOMEWORK_ESSAY_HEARTS_HINT = '只打分 1 颗心心，再点选评语 2 颗，再写一句自己的话 3 颗。';
+
 /** 小作文可以打的分数。 */
 export const HOMEWORK_ESSAY_SCORES = [70, 80, 90, 100];
 

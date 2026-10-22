@@ -16,9 +16,9 @@
  *   "收下"按钮。落库后批改界面仍留在界面上显示揭晓结果，同学的贴图换成
  *   对应的表情（mateMood）。落库失败就在原地提示一句，不关弹窗，批改界面
  *   可以再调一次 onDone（结果不重抽）。
- * - 小作文（切片 C，还没做）：先只显示题目和正文，不批。小作文如果是
- *   AI 现写的（task.essay.source === 'ai'），作业纸上方显示蓝色小条说明会用到
- *   玩家配置的接口；固定小作文不显示。
+ * - 小作文（切片 C，已做）：中间渲染 CompanionSchoolHomeworkEssay；流程跟题目类
+ *   一样（批完调 onDone，外壳落库、显示结算贴纸）。小作文由 AI 现写的部分（会
+ *   用到玩家配置的接口）、"换一篇"、蓝色说明条都在 Essay 组件里，外壳不管。
  *
  * 【关闭规则（已确认）】
  * 点背景不关，只能点右上角关闭键。中途关闭 = 没批，嘱托继续留着，不扣任何
@@ -36,11 +36,12 @@ import './school.css';
 import './schoolRecess.css';
 import './schoolHomework.css';
 
-import { HOMEWORK_BANNER, HOMEWORK_TYPE, HOMEWORK_AI_NOTICE } from './companionSchoolHomeworkData';
-import { describeHomework, finishHomeworkTask } from './companionSchoolHomeworkService';
+import { HOMEWORK_BANNER, HOMEWORK_TYPE } from './companionSchoolHomeworkData';
+import { finishHomeworkTask } from './companionSchoolHomeworkService';
 import { CloseGlyph, PetFace } from './SchoolArt';
 import { ClassmateSticker } from './CompanionSchoolRecessSticker';
 import CompanionSchoolHomeworkQuiz from './CompanionSchoolHomeworkQuiz';
+import CompanionSchoolHomeworkEssay from './CompanionSchoolHomeworkEssay';
 
 /* 抽屉四周的小装饰，纯 SVG，颜色是写死的柔和色（跟课间事件小窗一样）。 */
 const SparkleDeco = ({ size = 18, color = '#FFE27A', className = '' }) => (
@@ -70,8 +71,6 @@ const CompanionSchoolHomeworkModal = ({ companion, task, onClose }) => {
 
   const mate = task.classmate;
   const petName = companion?.name || '小伙伴';
-  const { title } = describeHomework(task);
-  const isAiEssay = task.type === HOMEWORK_TYPE.ESSAY && task.essay?.source === 'ai';
   const done = phase === 'done' && settled;
 
   /* 批改界面批完后调用：落库。失败就回到 play，让批改界面可以再调一次 */
@@ -136,8 +135,6 @@ const CompanionSchoolHomeworkModal = ({ companion, task, onClose }) => {
             </div>
           </div>
 
-          {isAiEssay && <p className="hw-ainote">{HOMEWORK_AI_NOTICE}</p>}
-
           {task.type === HOMEWORK_TYPE.QUIZ && (
             <CompanionSchoolHomeworkQuiz
               task={task}
@@ -149,19 +146,13 @@ const CompanionSchoolHomeworkModal = ({ companion, task, onClose }) => {
           )}
 
           {task.type === HOMEWORK_TYPE.ESSAY && (
-            <>
-              <div className="hw-paper">
-                <i className="hw-paper-tape" />
-                <div className="hw-paper-head">
-                  <b>{title}</b>
-                  <span>{mate?.name}</span>
-                </div>
-                <div className="hw-essay">{task.essay?.text}</div>
-              </div>
-              <p className="hw-soon">
-                这一步先看看作业，批改下一步开放。关掉也没关系，嘱托会一直留着。
-              </p>
-            </>
+            <CompanionSchoolHomeworkEssay
+              task={task}
+              companion={companion}
+              disabled={phase === 'saving'}
+              settled={done ? settled : null}
+              onDone={handleDone}
+            />
           )}
 
           {error && <p className="rc-notice" role="status">{error}</p>}
