@@ -10,6 +10,9 @@ import PageLoadingBar from './components/PageLoadingBar';
 import NotificationToast from './components/NotificationToast';
 import KeepAliveIndicator from './components/KeepAliveIndicator';
 import HouseManualModal from './components/manual/HouseManualModal';
+import FullscreenEffectLayer from './apps/messages/screenEffects/FullscreenEffectLayer';
+import { GLOBAL_SCREEN_EFFECT_SCOPE } from './apps/messages/screenEffects/screenEffectPresets';
+import { maybeTriggerStartupFocusText } from './apps/messages/screenEffects/startupFocusTextService';
 
 import HubHeader from './apps/hub/HubHeader';
 import QuickBoard from './apps/hub/QuickBoard';
@@ -261,6 +264,7 @@ const [isInsideChatRoom, setIsInsideChatRoom] = useState(false);
 
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [hasCheckedManual, setHasCheckedManual] = useState(false);
+  const [hasCheckedStartupFocusText, setHasCheckedStartupFocusText] = useState(false);
 
   const [
     activeKeepAliveChats,
@@ -853,6 +857,27 @@ const [isInsideChatRoom, setIsInsideChatRoom] = useState(false);
     hasCheckedManual,
   ]);
 
+  // 每天首次打开App时，Preloader播完后检查一次要不要触发一次全屏文字
+  // （目前内容是占位测试数据，见 startupFocusTextService.js 顶部注释）。
+  // 不挂在 currentApp === 'hub' 上——不管先落到哪个页面都该检查一次。
+  useEffect(() => {
+    if (showPreloader || hasCheckedStartupFocusText) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void maybeTriggerStartupFocusText().finally(() => {
+      if (!cancelled) {
+        setHasCheckedStartupFocusText(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showPreloader, hasCheckedStartupFocusText]);
+
   const handlePreloaderFinish = useCallback(() => {
     setShowPreloader(false);
   }, []);
@@ -1005,6 +1030,10 @@ const isTextGameHallApp = currentApp === 'textgames';
       />
 
       <DesktopPetWidget />
+
+      {/* 不绑定具体聊天窗的全屏文字实例——App启动时触发走这里，
+          和聊天室里各自绑定自己chatId的实例互不干扰。 */}
+      <FullscreenEffectLayer chatId={GLOBAL_SCREEN_EFFECT_SCOPE} global />
 
       {currentApp === 'hub' && (
         <StorageWarningBadge

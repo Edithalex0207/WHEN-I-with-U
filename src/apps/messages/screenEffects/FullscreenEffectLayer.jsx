@@ -6,6 +6,11 @@
 // - 聊天室里挂一份（传 chatId），只响应自己聊天窗的事件，铺满聊天室容器。
 // - 设置页预览用 preview 模式：只响应 detail.preview 的事件，
 //   通过 portal 挂到 body 上用 fixed 铺满整个窗口。
+// - App 顶层挂一份 global 模式（chatId 固定传 GLOBAL_SCREEN_EFFECT_SCOPE，
+//   见 screenEffectPresets.js）：不属于任何聊天室，同样 portal 到 body、
+//   fixed 铺满整个窗口，用于App启动时触发这类不挂在具体聊天窗下的场景。
+//   匹配逻辑和聊天室模式完全一样（按 chatId 严格相等），只是展示方式
+//   （fixed + portal）借用了 preview 模式的做法。
 //
 // 底色（背景渐变）是否显示按预设读用户偏好（screenEffectPrefs.js），
 // 预览时可以用 detail.backdrop 直接覆盖。
@@ -281,7 +286,7 @@ const FocusScene = ({ layout }) => (
   </div>
 );
 
-const FullscreenEffectLayer = ({ chatId = null, preview = false }) => {
+const FullscreenEffectLayer = ({ chatId = null, preview = false, global = false }) => {
   const [playing, setPlaying] = useState(null);
   const [leaving, setLeaving] = useState(false);
 
@@ -369,6 +374,7 @@ const FullscreenEffectLayer = ({ chatId = null, preview = false }) => {
   const className = [
     'sfx-root',
     preview ? 'sfx-root--preview' : '',
+    global ? 'sfx-root--global' : '',
     backdrop ? '' : 'sfx-nobg',
     leaving ? 'sfx-out' : '',
   ].filter(Boolean).join(' ');
@@ -411,7 +417,7 @@ const FullscreenEffectLayer = ({ chatId = null, preview = false }) => {
     </div>
   );
 
-  return preview && typeof document !== 'undefined'
+  return (preview || global) && typeof document !== 'undefined'
     ? createPortal(node, document.body)
     : node;
 };

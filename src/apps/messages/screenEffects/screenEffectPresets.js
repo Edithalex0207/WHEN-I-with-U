@@ -7,6 +7,12 @@
 // 窗口事件名：directive 派发，FullscreenEffectLayer 监听。
 export const SCREEN_EFFECT_EVENT = 'screen-effect-play';
 
+// 不属于任何具体聊天窗、挂在 App 顶层的全屏文字用这个当 chatId 占位
+// （比如App启动时触发的那次）。FullscreenEffectLayer 按 chatId 严格匹配
+// 事件，所以全局实例和派发时都用这同一个值，既不会被某个聊天室的实例
+// 误接，也不会和真实 chatId 撞车。
+export const GLOBAL_SCREEN_EFFECT_SCOPE = '__app_launch__';
+
 // 氛围特效约持续多久后开始淡出（毫秒）。
 export const AMBIENT_DURATION_MS = 7000;
 // 专注文字停留更久一点，让人读完。

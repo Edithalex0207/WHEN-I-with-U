@@ -15,6 +15,13 @@
   z-index: 9999;
 }
 
+/* App 顶层挂载的全局实例（比如App启动时触发）：和聊天室里不一样，
+   它的父级未必是 fixed/relative 定位的满屏容器，所以必须自己 fixed，
+   不能像聊天室里那样靠 absolute+inset:0 蹭父容器的尺寸。*/
+.sfx-root--global {
+  position: fixed;
+}
+
 .sfx-root.sfx-out {
   animation: sfx-overlay-out 0.9s ease-in forwards;
   pointer-events: none;
