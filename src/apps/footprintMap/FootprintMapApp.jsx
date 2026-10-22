@@ -211,11 +211,18 @@ const FootprintMapApp = ({ onBackHub, onChatRoomStateChange }) => {
 
     L.tileLayer(mapKey ? buildTileUrl(mapKey) : TILE_URL, {
     subdomains: 'abcd',
-      maxZoom: 19,
+      maxZoom: 20,
       detectRetina: true,
     }).addTo(map);
 
-    map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+       map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+
+    // 自带的缩放按钮上面关掉了，这里单独加回来，放在右下角（位置见 footprintMap.css）。
+    L.control.zoom({
+      position: 'bottomright',
+      zoomInTitle: '放大',
+      zoomOutTitle: '缩小',
+    }).addTo(map);
 
     map.on('click', () => {
       setSelectedId(null);

@@ -657,6 +657,27 @@
   text-align: center;
 }
 
+/* 缩放按钮：右下角，抬高到底部提示卡 / 半展开详情的上面 */
+.fm-map .leaflet-bottom.leaflet-right {
+  margin-bottom: calc(270px + env(safe-area-inset-bottom, 0px));
+}
+
+.fm-map .leaflet-control-zoom {
+  margin-right: 16px;
+  border: 1px solid var(--fm-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(28, 24, 20, 0.15);
+}
+
+.fm-map .leaflet-control-zoom a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  color: var(--fm-ink);
+  background: var(--fm-sheet);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fm-root *,
   .fm-root *::before,
