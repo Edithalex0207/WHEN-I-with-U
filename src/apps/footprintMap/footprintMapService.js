@@ -13,6 +13,11 @@ import db from '../../db';
 import { listPlaces } from '../location/placeService';
 import { listPlaceMemories } from '../location/placeMemoryService';
 import { getChatPattern } from '../location/placePatternService';
+import {
+  DEFAULT_PROVIDER_ID,
+  FOOTPRINT_MAP_PROVIDER_SETTING,
+  getProviderById,
+} from './mapProviders';
 
 // 图钉颜色是固定的，不跟主题：酒红 = 我留下的，蓝 = 角色留下的。
 export const PIN_COLOR_USER = '#8e1f2f';
@@ -78,7 +83,69 @@ export const saveFootprintMapKey = async (raw) => {
   return key;
 };
 
+
+// ---------- 地图服务商：当前选中哪一家，以及每一家各自的 key ----------
+
+// 当前选中的服务商 id。没存过、或者存的 id 已经不在注册表里，都回到默认的那一家。
+export const getFootprintProviderId = async () => {
+  try {
+    const row = await db.settings.get(FOOTPRINT_MAP_PROVIDER_SETTING);
+
+    return getProviderById(row?.value?.id).id;
+  } catch (error) {
+    console.warn('[FootprintMap] 读取地图服务商失败：', error);
+    return DEFAULT_PROVIDER_ID;
+  }
+};
+
+export const saveFootprintProviderId = async (id) => {
+  const provider = getProviderById(id);
+
+  await db.settings.put({
+    key: FOOTPRINT_MAP_PROVIDER_SETTING,
+    value: { id: provider.id, savedAt: new Date().toISOString() },
+  });
+
+  return provider.id;
+};
+
+// 读某一家服务商自己的 key。不需要 key 的服务商直接返回空字符串。
+// 每家各读各的键，所以不会把 A 家的 key 拿去给 B 家用。
+export const getProviderKey = async (provider) => {
+  if (!provider?.needsKey || !provider.keySettingName) return '';
+
+  try {
+    const row = await db.settings.get(provider.keySettingName);
+
+    return typeof row?.value?.key === 'string' ? row.value.key : '';
+  } catch (error) {
+    console.warn('[FootprintMap] 读取底图 key 失败：', error);
+    return '';
+  }
+};
+
+// 返回清理过的 key（去掉所有空白、限制长度）；传空就是清除。
+export const saveProviderKey = async (provider, raw) => {
+  if (!provider?.needsKey || !provider.keySettingName) return '';
+
+  const key = String(raw ?? '').replace(/\s+/g, '').slice(0, FOOTPRINT_MAP_KEY_MAX_CHARS);
+
+  if (!key) {
+    await db.settings.delete(provider.keySettingName);
+
+    return '';
+  }
+
+  await db.settings.put({
+    key: provider.keySettingName,
+    value: { key, savedAt: new Date().toISOString() },
+  });
+
+  return key;
+};
+
 const toTime = (iso) => {
+
 const time = new Date(iso).getTime();
 
   return Number.isFinite(time) ? time : 0;
@@ -223,7 +290,11 @@ export default {
   getFootprintConsent,
   getFootprintMapKey,
     saveFootprintConsent,
-  saveFootprintMapKey,
+ saveFootprintMapKey,
+  getFootprintProviderId,
+  saveFootprintProviderId,
+  getProviderKey,
+  saveProviderKey, 
   formatRelativeTime,
   loadFootprintChats,
   loadFootprintPlaces,
