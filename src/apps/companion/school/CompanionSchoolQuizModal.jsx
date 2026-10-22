@@ -24,12 +24,19 @@
  * 都不留）。这个 roll 是异步的、独立于 finishQuizSet，失败/没中都不影响
  * 已经显示的做题结果，所以这里对它的结果不做任何 try 之外的处理。
  *
+ * 【老师的嘱托】结算成功后还会再单独 roll 一次 rollHomeworkTask（见
+ * companionSchoolHomeworkService.js），跟校园小事、收藏卡都互不影响：当前
+ * 没有未批嘱托并且命中概率时，会在 db.settings 里存一份同学的作业，学校页
+ * 出现"老师的嘱托"横幅。这里不显示任何东西，只是在命中后通过
+ * onHomeworkRolled 通知上一层刷新；没中 / 出错都静默忽略。
+ *
  * Props:
  *   companion      object    —— 当前小伙伴
  *   mode           string    —— QUIZ_MODE 的取值（mixed / preset / custom / wrong）
  *   subjectIds     string[]  —— 空数组 = 不限科目
  *   onClose        function  —— 关闭弹窗
  *   onFinished     function(result)  —— 结算完成后调用，调用方据此刷新学校状态
+ *   onHomeworkRolled function(task)  —— 命中新的作业嘱托后调用（可选）
  *   onReviewWrong  function  —— 结算页点"错题本"时调用
  */
 
@@ -42,6 +49,7 @@ import './schoolCards.css';
 import { SET_REWARD, findSubject } from './companionSchoolData';
 import { startQuizSet, finishQuizSet } from './companionSchoolQuizService';
 import { rollCampusBreak } from './companionSchoolRecessService';
+import { rollHomeworkTask } from './companionSchoolHomeworkService';
 import { rollCollectibleCard } from './companionSchoolCardService';
 import { CARD_RARITY_LABELS } from './companionSchoolCardCatalog';
 import CompanionSchoolCardStoryModal from './CompanionSchoolCardStoryModal';
@@ -56,7 +64,7 @@ const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const pickRandom = (list) => list[Math.floor(Math.random() * list.length)];
 
-const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, onFinished, onReviewWrong }) => {
+const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, onFinished, onHomeworkRolled, onReviewWrong }) => {
   const [questions, setQuestions] = useState([]);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState(null); // 选择题：下标；判断题：true/false
@@ -131,6 +139,13 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
         setActivity(null);
         setRecess(null);
       });
+      // 「老师的嘱托」：单独再 roll 一次，跟上面两次互不影响，没中 / 出错都静默忽略
+      rollHomeworkTask(companion.id, {
+        stage: res.status?.record?.stage,
+        companionName: companion.name,
+      }).then((task) => {
+        if (task) onHomeworkRolled?.(task);
+      }).catch(() => {});
             rollCollectibleCard(companion.id)
         .then((drop) => {
           setCardDrop(drop);

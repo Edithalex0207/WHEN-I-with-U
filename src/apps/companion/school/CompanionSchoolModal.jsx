@@ -28,6 +28,10 @@
  *   companionSchoolEventService.getOpenEventForCompanion），点开打开
  *   CompanionSchoolEventFlow（通知签字 -> 零食 -> 三轮事件选择 -> 合影
  *   结算），结算完成后关闭时刷新这个首页。
+ * - 「老师的嘱托」横条：有没有批完的同学作业，读 db.settings 里的一行
+ *   （companionSchoolHomeworkService.getHomeworkTask），有才显示，放在四个
+ *   入口上面；点开打开 CompanionSchoolHomeworkModal。做完一组题后有概率出
+ *   一份新嘱托，QuizModal 通过 onHomeworkRolled 通知这里刷新。
  *
  * Props:
  *   companion  object    —— 当前小伙伴（用 id / name / avatarUrl / hearts）
@@ -48,6 +52,7 @@ import { getSchoolStatus, getAlbum } from './companionSchoolService';
 import { getWrongBook, getCustomQuestions, QUIZ_MODE } from './companionSchoolQuizService';
 import { getCardCollection } from './companionSchoolCardService';
 import { getOpenEventForCompanion } from './companionSchoolEventService';
+import { getHomeworkTask } from './companionSchoolHomeworkService';
 import { getPetLine, resolvePetStatus } from './companionSchoolPetLines';
 import {
   CloseGlyph,
@@ -71,6 +76,8 @@ import CompanionSchoolAlbumModal from './CompanionSchoolAlbumModal';
 import CompanionSchoolCustomQuizModal from './CompanionSchoolCustomQuizModal';
 import CompanionSchoolCardsModal from './CompanionSchoolCardsModal';
 import CompanionSchoolEventFlow from './CompanionSchoolEventFlow';
+import CompanionSchoolHomeworkEntry from './CompanionSchoolHomeworkEntry';
+import CompanionSchoolHomeworkModal from './CompanionSchoolHomeworkModal';
 
 /** 「今天的小课堂」的题目来源分段，顺序跟预览一致 */
 const SOURCE_OPTIONS = [
@@ -95,6 +102,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [albumCount, setAlbumCount] = useState(0);
   const [cardSummary, setCardSummary] = useState({ ownedKinds: 0, totalKinds: 0 });
   const [openEvent, setOpenEvent] = useState(null);
+  const [homeworkTask, setHomeworkTask] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [now, setNow] = useState(Date.now());
@@ -111,6 +119,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
   const [showCustomQuiz, setShowCustomQuiz] = useState(false);
   const [showCards, setShowCards] = useState(false);
   const [showEvent, setShowEvent] = useState(false);
+  const [showHomework, setShowHomework] = useState(false);
 
   /* ---------------- 拉取 / 刷新数据 ---------------- */
   const refresh = async () => {
@@ -128,8 +137,10 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
     setCardSummary({ ownedKinds: cards.ownedKinds, totalKinds: cards.totalKinds });
     if (st.enrolled) {
       setOpenEvent(await getOpenEventForCompanion(companion.id));
+      setHomeworkTask(await getHomeworkTask(companion.id));
     } else {
       setOpenEvent(null);
+      setHomeworkTask(null);
     }
     setLoading(false);
   };
@@ -372,6 +383,11 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
                   </div>
                 )}
 
+                {/* 老师的嘱托：有未批的同学作业才出现，放在四个入口上面 */}
+                {homeworkTask && (
+                  <CompanionSchoolHomeworkEntry task={homeworkTask} onOpen={() => setShowHomework(true)} />
+                )}
+
                 {/* 四个入口 */}
                 <div className="sh-tiles">
                   <button type="button" className="sh-tile sd-tone-heart" onClick={() => setShowWrongBook(true)}>
@@ -447,6 +463,7 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
           subjectIds={selectedSubjectId ? [selectedSubjectId] : []}
           onClose={() => setShowQuiz(false)}
           onFinished={() => refresh()}
+          onHomeworkRolled={() => refresh()}
           onReviewWrong={() => {
             setShowQuiz(false);
             setShowWrongBook(true);
@@ -497,6 +514,16 @@ const CompanionSchoolModal = ({ companion, chatId, character, onClose }) => {
           companion={companion}
           onClose={() => {
             setShowCards(false);
+            refresh();
+          }}
+        />
+      )}
+      {showHomework && homeworkTask && (
+        <CompanionSchoolHomeworkModal
+          companion={companion}
+          task={homeworkTask}
+          onClose={() => {
+            setShowHomework(false);
             refresh();
           }}
         />
