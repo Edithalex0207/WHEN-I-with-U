@@ -8,32 +8,39 @@
  * 关闭键、气泡、角色），作业纸这部分的样式在 schoolHomework.css（前缀 hw-）。
  * 同学头像用 ClassmateSticker（贴图位：没填图就显示纯色占位）。
  *
- * 【切片 A 做到什么程度】
- * 只显示作业，不批：题目类显示 4 道题和同学的答案；小作文显示题目和正文。
- * 批改界面（对错打勾、揭晓、分数、评语、结算、落库）是切片 B / C。
- * 小作文如果是 AI 现写的（task.essay.source === 'ai'，切片 C 才会出现），
- * 作业纸上方显示蓝色小条说明会用到玩家配置的接口；固定小作文不显示。
+ * 【这个外壳管什么】
+ * - 标题丝带、关闭键、旁白气泡（task.scene）、小伙伴和同学的贴图。
+ * - 题目类（切片 B，已做）：中间渲染 CompanionSchoolHomeworkQuiz 批改界面；
+ *   它批完调 onDone，外壳负责落库（finishHomeworkTask：写生活记录、加心心
+ *   和心情、删掉未批嘱托），然后显示"+N 心心 +N 心情"、同学的一句话和
+ *   "收下"按钮。落库后批改界面仍留在界面上显示揭晓结果，同学的贴图换成
+ *   对应的表情（mateMood）。落库失败就在原地提示一句，不关弹窗，批改界面
+ *   可以再调一次 onDone（结果不重抽）。
+ * - 小作文（切片 C，还没做）：先只显示题目和正文，不批。小作文如果是
+ *   AI 现写的（task.essay.source === 'ai'），作业纸上方显示蓝色小条说明会用到
+ *   玩家配置的接口；固定小作文不显示。
  *
  * 【关闭规则（已确认）】
- * 点背景不关，只能点右上角关闭键。中途关闭 = 没批，嘱托继续留着，
- * 不扣任何东西。
+ * 点背景不关，只能点右上角关闭键。中途关闭 = 没批，嘱托继续留着，不扣任何
+ * 东西。已经落库之后，关闭键等同于"收下"。
  *
  * Props:
- *   companion  object    —— 当前小伙伴（用 name / avatarUrl）
+ *   companion  object    —— 当前小伙伴（用 id / name / avatarUrl）
  *   task       object    —— getHomeworkTask 读出来的未批嘱托（带 classmate）
- *   onClose    function  —— 关闭弹窗
+ *   onClose    function  —— 关闭弹窗（调用方据此刷新学校页）
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import './school.css';
 import './schoolRecess.css';
 import './schoolHomework.css';
 
 import { HOMEWORK_BANNER, HOMEWORK_TYPE, HOMEWORK_AI_NOTICE } from './companionSchoolHomeworkData';
-import { describeHomework } from './companionSchoolHomeworkService';
+import { describeHomework, finishHomeworkTask } from './companionSchoolHomeworkService';
 import { CloseGlyph, PetFace } from './SchoolArt';
 import { ClassmateSticker } from './CompanionSchoolRecessSticker';
+import CompanionSchoolHomeworkQuiz from './CompanionSchoolHomeworkQuiz';
 
 /* 抽屉四周的小装饰，纯 SVG，颜色是写死的柔和色（跟课间事件小窗一样）。 */
 const SparkleDeco = ({ size = 18, color = '#FFE27A', className = '' }) => (
@@ -55,12 +62,39 @@ const CloudDeco = ({ width = 46, className = '' }) => (
 );
 
 const CompanionSchoolHomeworkModal = ({ companion, task, onClose }) => {
+  const [phase, setPhase] = useState('play'); // play | saving | done
+  const [settled, setSettled] = useState(null);
+  const [error, setError] = useState('');
+
   if (!task) return null;
 
   const mate = task.classmate;
   const petName = companion?.name || '小伙伴';
   const { title } = describeHomework(task);
   const isAiEssay = task.type === HOMEWORK_TYPE.ESSAY && task.essay?.source === 'ai';
+  const done = phase === 'done' && settled;
+
+  /* 批改界面批完后调用：落库。失败就回到 play，让批改界面可以再调一次 */
+  const handleDone = async ({ outcome = '', hearts = 1, text = '', meta = {}, mateMood = 'happy', reaction = null } = {}) => {
+    if (phase !== 'play') return;
+    setError('');
+    setPhase('saving');
+    try {
+      const res = await finishHomeworkTask(companion.id, {
+        task, outcome, hearts, text, meta, companionName: petName,
+      });
+      setSettled({ ...res, text, mateMood, reaction });
+      setPhase('done');
+    } catch (e) {
+      setError(e?.message || '没有记下来，再试一次吧');
+      setPhase('play');
+    }
+  };
+
+  const handleClose = () => {
+    if (phase === 'saving') return;
+    onClose?.();
+  };
 
   return (
     <div className="cp-overlay">
@@ -75,7 +109,7 @@ const CompanionSchoolHomeworkModal = ({ companion, task, onClose }) => {
             <SparkleDeco size={16} color="#D19A0A" />
             {HOMEWORK_BANNER.title}
           </div>
-          <button type="button" className="rc-x" aria-label="关闭" onClick={onClose}>
+          <button type="button" className="rc-x" aria-label="关闭" onClick={handleClose} disabled={phase === 'saving'}>
             <CloseGlyph size={14} />
           </button>
         </div>
@@ -97,45 +131,57 @@ const CompanionSchoolHomeworkModal = ({ companion, task, onClose }) => {
               <span className="rc-name">{petName}</span>
             </div>
             <div className="rc-who rc-bob rc-b">
-              <ClassmateSticker classmate={mate} mood="normal" size={78} />
+              <ClassmateSticker classmate={mate} mood={done ? (settled.mateMood || 'happy') : 'normal'} size={78} />
               <span className="rc-name">{mate?.name}</span>
             </div>
           </div>
 
           {isAiEssay && <p className="hw-ainote">{HOMEWORK_AI_NOTICE}</p>}
 
-          <div className="hw-paper">
-            <i className="hw-paper-tape" />
-            <div className="hw-paper-head">
-              <b>{title}</b>
-              <span>{mate?.name}</span>
+          {task.type === HOMEWORK_TYPE.QUIZ && (
+            <CompanionSchoolHomeworkQuiz
+              task={task}
+              companion={companion}
+              disabled={phase === 'saving'}
+              settled={done ? settled : null}
+              onDone={handleDone}
+            />
+          )}
+
+          {task.type === HOMEWORK_TYPE.ESSAY && (
+            <>
+              <div className="hw-paper">
+                <i className="hw-paper-tape" />
+                <div className="hw-paper-head">
+                  <b>{title}</b>
+                  <span>{mate?.name}</span>
+                </div>
+                <div className="hw-essay">{task.essay?.text}</div>
+              </div>
+              <p className="hw-soon">
+                这一步先看看作业，批改下一步开放。关掉也没关系，嘱托会一直留着。
+              </p>
+            </>
+          )}
+
+          {error && <p className="rc-notice" role="status">{error}</p>}
+
+          {done && (
+            <div className="rc-result hw-result sd-tone-mint">
+              <span className="rc-gain">+{settled.hearts} 心心</span>
+              <span className="rc-gain hw-gain-mood">+{settled.moodDelta} 心情</span>
+              <p>
+                {settled.reaction?.line
+                  ? <><b className="hw-say">{mate?.name}：</b>{settled.reaction.line}</>
+                  : settled.text}
+              </p>
+              <button type="button" className="rc-btn is-heart" onClick={handleClose}>
+                <SparkleDeco size={16} color="#fff" />
+                收下
+                <SparkleDeco size={16} color="#fff" />
+              </button>
             </div>
-
-            {task.type === HOMEWORK_TYPE.QUIZ && (
-              <ol className="hw-rows">
-                {(task.quiz?.items || []).map((item, index) => (
-                  <li className="hw-row" key={item.id}>
-                    <span className="hw-no">{index + 1}</span>
-                    <div className="hw-row-main">
-                      <p className="hw-stem">{item.stem}</p>
-                      <p className="hw-ans">
-                        <span>{mate?.name}的答案</span>
-                        <b>{item.mateAnswer}</b>
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
-
-            {task.type === HOMEWORK_TYPE.ESSAY && (
-              <div className="hw-essay">{task.essay?.text}</div>
-            )}
-          </div>
-
-          <p className="hw-soon">
-            这一步先看看作业，批改下一步开放。关掉也没关系，嘱托会一直留着。
-          </p>
+          )}
         </div>
       </div>
     </div>

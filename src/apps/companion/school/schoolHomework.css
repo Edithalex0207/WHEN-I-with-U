@@ -94,6 +94,49 @@
 
 .hw-soon { margin: 16px 0 4px; text-align: center; font-size: 12px; font-weight: 800; line-height: 1.6; color: var(--cp-muted); }
 
+/* ================= 题目类：对 / 错 打勾 ================= */
+.hw-judge { display: flex; gap: 8px; margin-top: 10px; }
+.hw-mark {
+  flex: 1; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: #fff; border: 2px solid var(--cp-border); color: var(--cp-sub);
+  font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 -1px var(--cp-border);
+}
+.hw-mark:active:not(:disabled) { transform: scale(0.95); }
+.hw-mark:disabled:not(.is-on) { opacity: 0.5; }
+.hw-mark.is-yes.is-on { background: var(--cp-mint-bg); color: var(--cp-mint-fg); border-color: var(--cp-mint-fg); box-shadow: 0 3px 0 -1px var(--cp-mint-fg); }
+.hw-mark.is-no.is-on { background: var(--cp-heart-soft); color: var(--sd-heart-deep); border-color: var(--sd-heart-deep); box-shadow: 0 3px 0 -1px var(--sd-heart-deep); }
+
+.hw-progress { margin: 16px 0 0; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--cp-sub); }
+.hw-progress small { font-size: 12px; color: var(--cp-muted); }
+
+/* ================= 揭晓：红笔分数章 + 批反的题 ================= */
+.hw-paper-head .hw-stamp {
+  flex: none; display: grid; place-items: center; align-content: center; width: 64px; height: 64px; margin: -8px 2px -10px 0; padding: 0;
+  border-radius: 50%; background: rgba(255, 255, 255, 0.55); color: var(--sd-heart-deep);
+  border: 3px solid var(--sd-heart-deep); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3.5px var(--sd-heart-deep);
+  transform: rotate(12deg); line-height: 1; animation: hw-stamp-in 0.45s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.hw-stamp strong { font-family: var(--cp-font-display); font-weight: 400; font-size: 24px; }
+.hw-stamp small { font-size: 10px; font-weight: 800; margin-top: 1px; }
+@keyframes hw-stamp-in { 0% { transform: rotate(12deg) scale(2); opacity: 0; } 100% { transform: rotate(12deg) scale(1); opacity: 1; } }
+
+.hw-row.is-flipped { background: var(--cp-heart-soft); border-radius: 14px; padding-left: 8px; padding-right: 8px; border-bottom-color: transparent; }
+.hw-verdict { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 8px; }
+.hw-pill { padding: 2px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 800; }
+.hw-pill.is-yes { background: var(--cp-mint-bg); color: var(--cp-mint-fg); }
+.hw-pill.is-no { background: var(--sd-lav-bg); color: var(--sd-lav-fg); }
+.hw-flip {
+  padding: 2px 10px; border-radius: 99px; background: var(--cp-heart); color: #fff; font-size: 11.5px; font-weight: 800;
+  transform: rotate(-3deg); box-shadow: 0 2px 0 -1px var(--sd-heart-deep);
+}
+.hw-right { font-size: 12.5px; font-weight: 800; color: var(--sd-heart-deep); }
+.hw-right b { font-family: var(--cp-font-display); font-weight: 400; font-size: 15px; }
+
+/* 结算贴纸：心心 + 心情两个小标，同学说的话 */
+.rc-result.hw-result { padding-top: 30px; }
+.hw-gain-mood { right: 104px; transform: rotate(-4deg); background: var(--cp-accent); box-shadow: 0 4px 0 -1px var(--sd-blue-deep); }
+.hw-say { color: var(--sd-heart-deep); }
+
 @media (prefers-reduced-motion: reduce) {
-  .hw-entry { animation: none !important; }
+  .hw-entry, .hw-stamp { animation: none !important; }
 }

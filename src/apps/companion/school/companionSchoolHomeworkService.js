@@ -7,7 +7,9 @@
  *    存进 db.settings，返回它；没中 / 已经有一份未批的 / 没入学，返回 null。
  * 2. getHomeworkTask / clearHomeworkTask：学校页横幅和弹窗读、批完删。
  * 3. 造作业用的纯函数（buildHomeworkTask、pickQuizItems、pickEssayTopic、
- *    pickFixedEssay、describeHomework），后面切片 B / C 也会用。
+ *    pickFixedEssay、describeHomework），后面切片 C 也会用。
+ * 4. finishHomeworkTask：批完之后调一次，写一条在校生活记录、给小伙伴加心心
+ *    和心情、删掉这份未批嘱托（切片 B 起；题目类和小作文共用）。
  *
  * 【未批嘱托存哪】
  * 不新增 Dexie 表，不改 db 版本：存在 db.settings 的一行，
@@ -21,15 +23,16 @@
  *     essay: { topicId, title, text, source: 'fixed' | 'ai' } | null,
  *   }
  *
- * 切片 A 只管造、存、读；批改和落库（写生活记录、加心心心情）在切片 B / C。
+ * 批完才落库：中途关闭 = 没批，嘱托继续留着，什么都不扣。
  *
  * 只 import db、companionSchoolData、companionSchoolService、
- * companionSchoolRecessData、companionSchoolHomeworkData。
+ * companionSchoolRecessData、companionSchoolHomeworkData、
+ * companionSchoolHomeworkRules。
  */
 
 import db from '../../../db';
-import { SCHOOL_STAGE } from './companionSchoolData';
-import { getSchoolRecord } from './companionSchoolService';
+import { SCHOOL_STAGE, LIFE_KIND } from './companionSchoolData';
+import { getSchoolRecord, getDayKey } from './companionSchoolService';
 import { RECESS_CLASSMATES } from './companionSchoolRecessData';
 import {
   HOMEWORK_TRIGGER_CHANCE,
@@ -47,7 +50,10 @@ import {
   HOMEWORK_ESSAY_TOPICS,
   HOMEWORK_ENTRY_LINES,
   HOMEWORK_SCENES,
+  HOMEWORK_ESSAY_HEARTS,
+  HOMEWORK_QUIZ_HEARTS,
 } from './companionSchoolHomeworkData';
+import { getMoodForHearts } from './companionSchoolHomeworkRules';
 
 /* ---------------- 小工具 ---------------- */
 
@@ -285,5 +291,98 @@ export const rollHomeworkTask = async (companionId, {
     if (isUsableTask(existing?.value)) return null;
     await db.settings.put({ key, value: task });
     return hydrateTask(task);
+  });
+};
+
+/* ---------------- 批完落库 ---------------- */
+
+const clamp100 = (value) => Math.max(0, Math.min(100, value));
+const round1 = (value) => Math.round(value * 10) / 10;
+const MAX_HEARTS = Math.max(...HOMEWORK_QUIZ_HEARTS.map((t) => t.hearts), ...Object.values(HOMEWORK_ESSAY_HEARTS));
+
+/**
+ * 批完之后调一次：写一条在校生活记录 + 给小伙伴加心心和心情 + 删掉这份
+ * 未批嘱托，三件事在同一个事务里，要么都成功要么都不发生。
+ * 同一个作业 id 只会落库一次（手快连点、两个标签页同时点都不会加两遍）：
+ * 重复调用时直接返回第一次写下的那一行，duplicate 为 true。
+ *
+ * 心心保底 1 颗、不扣；心情按心心颗数取（getMoodForHearts），只加不减。
+ *
+ * @param {number} companionId
+ * @param {{
+ *   task: object,           // getHomeworkTask 读出来的嘱托
+ *   outcome?: string,       // 结果标签，只是记进 meta
+ *   hearts: number,         // 这次给的心心颗数（会被夹到 1 到 MAX_HEARTS）
+ *   text?: string,          // 记进生活记录的一句话；不传就用默认的
+ *   meta?: object,          // 额外记进 meta 的内容（分数、评语、判断明细……）
+ *   companionName?: string,
+ *   now?: number,
+ * }} payload
+ * @returns {Promise<{ row: object, hearts: number, moodDelta: number, duplicate: boolean }>}
+ */
+export const finishHomeworkTask = async (companionId, {
+  task,
+  outcome = '',
+  hearts = 1,
+  text = '',
+  meta = {},
+  companionName = '',
+  now = Date.now(),
+} = {}) => {
+  if (!task?.taskId) throw new Error('这份作业已经找不到啦');
+
+  const gained = Math.max(1, Math.min(MAX_HEARTS, round1(Number(hearts) || 1)));
+  const moodDelta = getMoodForHearts(Math.round(gained));
+  const dayKey = getDayKey(now);
+  const key = getHomeworkTaskKey(companionId);
+  const mateName = task.classmate?.name || '同学';
+  const finalText = text || `${mateName}的${describeHomework(task).what}批改完了，${companionName || '小伙伴'}得到了心心。`;
+
+  return db.transaction('rw', [db.companionSchoolLife, db.companions, db.settings], async () => {
+    // 先看有没有已经落过的（嘱托这一行已经被删了，说明落过）
+    const stored = await db.settings.get(key);
+    const pending = stored?.value?.taskId === task.taskId;
+    if (!pending) {
+      const rows = await db.companionSchoolLife
+        .where('[companionId+date]')
+        .between([companionId, ''], [companionId, '\uffff'], true, true)
+        .toArray();
+      const existing = rows.find((r) => r.meta?.homeworkId === task.taskId);
+      if (existing) {
+        return { row: existing, hearts: existing.meta?.hearts ?? 0, moodDelta: existing.meta?.moodDelta ?? 0, duplicate: true };
+      }
+      throw new Error('这份作业已经不在啦');
+    }
+
+    const row = {
+      companionId,
+      date: dayKey,
+      kind: LIFE_KIND.ACTIVITY,
+      text: finalText,
+      meta: {
+        ...meta,
+        homework: true,
+        homeworkType: task.type,
+        homeworkId: task.taskId,
+        classmateId: task.classmateId || task.classmate?.id || null,
+        outcome,
+        hearts: gained,
+        moodDelta,
+      },
+      createdAt: now,
+    };
+    row.id = await db.companionSchoolLife.add(row);
+
+    const companion = await db.companions.get(companionId);
+    if (companion) {
+      await db.companions.update(companionId, {
+        hearts: round1((companion.hearts || 0) + gained),
+        mood: clamp100((companion.mood ?? 0) + moodDelta),
+        updatedAt: now,
+      });
+    }
+
+    await db.settings.delete(key);
+    return { row, hearts: gained, moodDelta, duplicate: false };
   });
 };
