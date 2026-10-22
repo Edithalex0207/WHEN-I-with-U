@@ -146,6 +146,7 @@ const TextGameHallApp = lazyWithRetry(() => import('./apps/textgames/TextGameHal
 const SweetStreetApp = lazyWithRetry(() => import('./apps/sweetstreet/SweetStreetApp'), 'SweetStreetApp');
 const TripHomeApp = lazyWithRetry(() => import('./apps/tripHome/TripApp'), 'TripHomeApp');
 const FlightChessApp = lazyWithRetry(() => import('./apps/flightchess/FlightChessApp'), 'FlightChessApp');
+const FootprintMapApp = lazyWithRetry(() => import('./apps/footprintMap/FootprintMapApp'), 'FootprintMapApp');
 
 // 只是"这个模块的代码正在下载"那零点几秒到一两秒（视网络而定）的占位，
 // 不是常规的应用内 loading 状态，所以故意做得很轻，没有另起 CSS 文件。
@@ -205,6 +206,7 @@ const CHAT_APPS = [
 ];
 
 const REGISTERED_APPS = [
+  'footprintMap',
   'hub',
   'settings',
   'messages',
@@ -983,6 +985,7 @@ const isEmotionKitApp = currentApp === 'emotionkit';
   // 只去掉上下 padding"的处理，否则宽屏下左右两侧还是会露出车道外的
   // 空白。
 const isTextGameHallApp = currentApp === 'textgames';
+const isFootprintMapApp = currentApp === 'footprintMap';
 
   const mainClassName = isInsideChatRoom
     ? 'relative z-10 mx-auto h-[100dvh] w-full max-w-[420px] overflow-hidden'
@@ -1091,12 +1094,12 @@ const isTextGameHallApp = currentApp === 'textgames';
         className={mainClassName}
         style={{
           paddingTop:
-                                           isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp
+                                           isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp || isFootprintMapApp || isFootprintMapApp
               ? '0'
               : 'calc(1.5rem + env(safe-area-inset-top, 0px))',
 
           paddingBottom:
-            isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp
+            isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp || isFootprintMapApp || isFootprintMapApp
               ? '0'
               : 'calc(5rem + env(safe-area-inset-bottom, 0px))',
         }}
@@ -1321,6 +1324,19 @@ const isTextGameHallApp = currentApp === 'textgames';
                   setIsInsideChatRoom
                 }
                 hubBackground={hubBackground}
+              />
+            </React.Suspense>
+          </ErrorBoundary>
+        )}
+
+        {currentApp === 'footprintMap' && (
+          <ErrorBoundary>
+            <React.Suspense fallback={<AppLoadingFallback />}>
+              <FootprintMapApp
+                onBackHub={() => openApp('hub')}
+                onChatRoomStateChange={
+                  setIsInsideChatRoom
+                }
               />
             </React.Suspense>
           </ErrorBoundary>

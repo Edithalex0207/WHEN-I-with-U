@@ -41,6 +41,7 @@ import {
   Palette,
  Dices,
   Plane,
+  Map as MapIcon,
 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import AppTitle from './AppTitle';
@@ -844,6 +845,35 @@ export const buildAppGridItems = ({
           <AppTitle en="Text Game Hall" zh="文字游戏" ko="텍스트 게임" mode={nameMode} />
           <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
             Issue Index
+          </p>
+        </div>
+      </GlassCard>
+    ),
+  },
+
+  {
+      id: 'footprintMap',
+    colSpan: 1,
+    content: (
+      <GlassCard
+        blur={false}
+        onClick={() => onOpenApp('footprintMap')}
+        className="group flex h-full cursor-pointer flex-col justify-between p-4 text-left"
+      >
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: 'var(--control-soft-bg)' }}
+        >
+          <MapIcon
+            className="h-5 w-5 opacity-90"
+            style={{ color: 'var(--text-main)' }}
+          />
+        </div>
+
+        <div>
+          <AppTitle en="Footprints" zh="足迹地图" ko="발자취 지도" mode={nameMode} />
+          <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
+            Places
           </p>
         </div>
       </GlassCard>
