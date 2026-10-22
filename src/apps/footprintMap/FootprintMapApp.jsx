@@ -31,7 +31,7 @@ import {
 import { createPinIcon } from './placePinIcon';
 import './footprintMap.css';
 
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_URL = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
 const buildTileUrl = (key) => `${TILE_URL}?key=${encodeURIComponent(key)}`;
 const DEFAULT_CENTER = [35, 105];
 const DEFAULT_ZOOM = 4;
