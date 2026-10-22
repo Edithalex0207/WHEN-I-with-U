@@ -36,12 +36,20 @@ export const RECESS_KIND = {
 };
 
 /**
- * 现在已经做好、可以被抽到的种类。切片 A 只接好了概率和外壳，玩法还没
- * 做，所以先是空数组：数组为空时，rollCampusBreak 的表现跟接入之前完全
- * 一样（只会抽到固定小事）。后面每做完一个玩法，往这里加一个种类，并
- * 在 companionSchoolRecessBodies.js 里登记对应的玩法组件。
+ * 现在已经做好、可以被抽到的种类。数组为空时，rollCampusBreak 的表现跟
+ * 接入之前完全一样（只会抽到固定小事）。每做完一个玩法，往这里加一个种类，
+ * 并在 companionSchoolRecessBodies.js 里登记对应的玩法组件。
+ *   切片 B：石头剪刀布（已加入）
+ *   切片 C：猜词
+ *   切片 D：文字选项
  */
-export const RECESS_LIVE_KINDS = [];
+export const RECESS_LIVE_KINDS = [RECESS_KIND.RPS];
+
+/**
+ * 本地测试开关：改成 true，做完一组题就一定会弹"课间有小事"（每次都是
+ * RECESS_LIVE_KINDS 里随机一种），方便看界面。上线前务必改回 false。
+ */
+export const RECESS_DEBUG_ALWAYS = false;
 
 /** 每种事件的小窗标题。 */
 export const RECESS_KIND_META = {

@@ -12,14 +12,19 @@
  *     disabled   boolean   正在落库时为 true，玩法组件此时不要再响应点击
  *     onDone     function({ outcome, moodDelta, text })
  *                玩完调一次：outcome 是结果标签，moodDelta 是心情加成
- *                （用 getRecessMoodBonus 取），text 是写进生活记录的那句话。
+ *                （用 getRecessMoodBonus 取），text 是写进生活记录的那句话，
+ *                可选的 mateMood（normal/happy/sad/wink）决定落库后同学
+ *                显示哪张表情贴图，不传就是 happy。
+ *     settled    object|null  落库成功后是 { row, moodDelta, text }，之前是
+ *                null。外壳在落库后仍然保留玩法组件（比如石头剪刀布揭晓
+ *                的画面），玩法组件看到 settled 非空就不要再出现任何操作按钮。
  *                落库失败时弹窗会在外壳里提示一句，并允许玩法组件再调一次
  *                onDone，所以玩法组件的"确认"按钮不要在调完之后永久锁死。
  *   玩法组件自己不写库、不关弹窗、不显示"+N 心情"，这些都是外壳的事。
  *
  * 【切片进度】
- *   A（现在）  外壳和概率接好了，表是空的
- *   B          石头剪刀布
+ *   A          外壳和概率
+ *   B（现在）  石头剪刀布
  *   C          猜词
  *   D          文字选项
  * 登记了哪个，就要同时把对应的种类加进 companionSchoolRecessData.js 的
@@ -27,4 +32,9 @@
  * 永远抽不到。
  */
 
-export const RECESS_BODIES = {};
+import { RECESS_KIND } from './companionSchoolRecessData';
+import CompanionSchoolRecessRps from './CompanionSchoolRecessRps';
+
+export const RECESS_BODIES = {
+  [RECESS_KIND.RPS]: CompanionSchoolRecessRps,
+};

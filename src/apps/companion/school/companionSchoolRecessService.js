@@ -31,6 +31,7 @@ import { getDayKey } from './companionSchoolService';
 import {
   RECESS_INTERACTIVE_SHARE,
   RECESS_LIVE_KINDS,
+  RECESS_DEBUG_ALWAYS,
   RECESS_MOOD,
   RECESS_MOOD_CAP,
   RECESS_CLASSMATES,
@@ -104,7 +105,8 @@ export const rollCampusBreak = async (companionId, {
   rng = Math.random,
 } = {}) => {
   const liveKinds = RECESS_LIVE_KINDS;
-  const interactiveChance = liveKinds.length ? RECESS_INTERACTIVE_CHANCE : 0;
+  let interactiveChance = liveKinds.length ? RECESS_INTERACTIVE_CHANCE : 0;
+  if (liveKinds.length && RECESS_DEBUG_ALWAYS) interactiveChance = 1; // 本地测试：必中
   const roll = rng();
 
   if (roll < interactiveChance) {

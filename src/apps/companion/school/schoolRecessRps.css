@@ -1,0 +1,56 @@
+/* =========================================================
+ * schoolRecessRps.css —— 「石头剪刀布」玩法组件的样式
+ * 前缀：rc-rps-。外壳通用样式（按钮、贴图、角色）在 schoolRecess.css。
+ * 没有点阵底纹；动画都带 prefers-reduced-motion 保护。
+ * ========================================================= */
+
+.rc-rps { margin-top: 4px; }
+.rc-rps-hint { margin: 12px 0 12px; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--cp-sub); }
+
+/* ---------------- 选拳：三张贴图卡 ---------------- */
+.rc-rps-picks { display: flex; gap: 12px; justify-content: center; padding-top: 6px; }
+.rc-rps-pick {
+  position: relative; width: 98px; padding: 12px 0 10px; border-radius: 28px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: #fff; border: 3px solid transparent; font-weight: 800; font-size: 13px; color: var(--cp-text);
+  box-shadow: 0 10px 18px -12px var(--cp-shadow), 0 5px 0 -1px var(--cp-border);
+  transition: transform 0.2s, background 0.2s;
+}
+.rc-rps-pick:nth-child(1) { transform: rotate(-4deg); }
+.rc-rps-pick:nth-child(3) { transform: rotate(4deg); }
+.rc-rps-pick.is-sel {
+  transform: translateY(-6px) scale(1.06); background: var(--cp-heart-soft); border-color: var(--cp-heart);
+  box-shadow: 0 14px 20px -12px rgba(255, 134, 160, 0.6), 0 5px 0 -1px #FFC7D4;
+}
+.rc-rps-ok {
+  position: absolute; top: -9px; right: -7px; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--cp-heart); border: 3px solid #fff;
+  animation: rc-pop 0.35s;
+}
+
+/* ---------------- 对决：两边手势 + VS ---------------- */
+.rc-rps-duel { display: flex; align-items: center; justify-content: space-around; padding: 14px 0 4px; }
+.rc-rps-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rc-rps-cap { min-height: 16px; font-size: 12px; font-weight: 800; color: var(--cp-sub); }
+.rc-rps-vs {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--cp-butter-bg); color: var(--cp-butter-fg); border: 3px solid #fff;
+  font-family: var(--cp-font-display); box-shadow: 0 5px 8px -4px var(--cp-shadow);
+}
+.rc-rps-side.is-shake { animation: rc-rps-shake 0.3s ease-in-out infinite; }
+.rc-rps-side.is-late { animation-delay: -0.12s; }
+@keyframes rc-rps-shake { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-14px) rotate(6deg); } }
+
+/* ---------------- 揭晓大字 ---------------- */
+.rc-rps-badge {
+  width: max-content; margin: 12px auto 0; padding: 6px 28px; border-radius: 22px;
+  font-family: var(--cp-font-display); font-size: 24px; border: 3px solid #fff;
+  box-shadow: 0 8px 12px -8px var(--cp-shadow); animation: rc-pop 0.45s;
+}
+.rc-rps-badge.is-win { background: var(--cp-mint-bg); color: var(--cp-mint-fg); }
+.rc-rps-badge.is-draw { background: var(--cp-butter-bg); color: var(--cp-butter-fg); }
+.rc-rps-badge.is-lose { background: var(--cp-sky-bg); color: var(--cp-sky-fg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-rps-side.is-shake, .rc-rps-badge, .rc-rps-ok { animation: none !important; }
+}

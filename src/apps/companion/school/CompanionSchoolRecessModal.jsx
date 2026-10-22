@@ -10,7 +10,8 @@
  * - 标题丝带、关闭键、旁白气泡（event.scene）、小伙伴和同学的贴图。
  * - 按 event.kind 到 companionSchoolRecessBodies.js 取玩法组件渲染在中间；
  *   玩法组件玩完调 onDone，外壳负责落库（finishRecessEvent）、显示
- *   "+N 心情"的结果贴纸和"收下"按钮。
+ *   "+N 心情"的结果贴纸和"收下"按钮；落库后玩法组件仍保留在界面上
+ *   （比如猜拳揭晓的画面），只是通过 settled 属性知道已经结束。
  * - 落库失败就在原地提示一句，不关弹窗，让玩法组件可以再调一次 onDone。
  *
  * 【放弃规则（已确认）】
@@ -66,7 +67,7 @@ const CompanionSchoolRecessModal = ({ companion, event, onClose, onSettled }) =>
   const mate = event?.classmate;
   const petName = companion?.name || '小伙伴';
 
-  const handleDone = async ({ outcome = '', moodDelta = 1, text = '' } = {}) => {
+  const handleDone = async ({ outcome = '', moodDelta = 1, text = '', mateMood = 'happy' } = {}) => {
     if (phase !== 'play') return;
     setError('');
     setPhase('saving');
@@ -74,7 +75,7 @@ const CompanionSchoolRecessModal = ({ companion, event, onClose, onSettled }) =>
       const res = await finishRecessEvent(companion.id, {
         event, outcome, moodDelta, text, companionName: petName,
       });
-      setSettled({ ...res, text: text || res.row?.text || '' });
+      setSettled({ ...res, text: text || res.row?.text || '', mateMood });
       setPhase('done');
     } catch (e) {
       setError(e?.message || '没有记下来，再试一次吧');
@@ -125,16 +126,17 @@ const CompanionSchoolRecessModal = ({ companion, event, onClose, onSettled }) =>
               <span className="rc-name">{petName}</span>
             </div>
             <div className="rc-who rc-bob rc-b">
-              <ClassmateSticker classmate={mate} mood={done ? 'happy' : 'normal'} size={78} />
+              <ClassmateSticker classmate={mate} mood={done ? (settled.mateMood || 'happy') : 'normal'} size={78} />
               <span className="rc-name">{mate?.name}</span>
             </div>
           </div>
 
-          {!done && Body && (
+          {Body && (
             <Body
               event={event}
               companion={companion}
               disabled={phase === 'saving'}
+              settled={done ? settled : null}
               onDone={handleDone}
             />
           )}
