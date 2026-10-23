@@ -86,9 +86,21 @@ const downloadTemplate = (type) => {
 // 解析结果交给调用方（CharacterLibrary -> MessagesApp）直接当作 characterData
 // 铺进 CharacterEditor 的新建表单——用户还能在编辑器里再检查/调整一遍，
 // 确认没问题才会真正写库。
+//
+// 布局说明（2026-10-23 修复手机端显示不全）：卡片本体用 flex flex-col +
+// max-h-[85vh]，分成「头部 / 中间可滚动内容 / 底部按钮」三段，头尾
+// shrink-0 固定不滚动，只有中间 overflow-y-auto——不用 sticky+负margin
+// 这类定位技巧，避免在小屏上出现头部或按钮被裁掉的问题。
 export const CharacterImportModal = ({ onClose, onImported }) => {
   const [rawText, setRawText] = useState('');
   const [error, setError] = useState('');
+
+  const cardStyle = {
+    background: 'var(--card-bg-gradient)',
+    border: '1px solid var(--card-border)',
+    color: 'var(--text-main)',
+    boxShadow: 'var(--card-shadow)',
+  };
 
   const controlStyle = {
     background: 'var(--control-soft-bg)',
@@ -139,17 +151,13 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in-up">
       <div
-        className="w-full max-w-sm rounded-[2rem] p-6 space-y-4 text-left text-xs max-h-[85vh] overflow-y-auto"
-        style={{
-          background: 'var(--card-bg-gradient)',
-          border: '1px solid var(--card-border)',
-          color: 'var(--text-main)',
-          boxShadow: 'var(--card-shadow)',
-        }}
+        className="w-full max-w-sm max-h-[85vh] rounded-[2rem] flex flex-col text-left text-xs overflow-hidden"
+        style={cardStyle}
       >
+        {/* 头部：固定不滚动 */}
         <div
-          className="flex items-center justify-between border-b pb-3 sticky -top-6 pt-6 -mt-6"
-          style={{ borderColor: 'var(--divider)', background: 'var(--card-bg-gradient)' }}
+          className="flex items-center justify-between border-b px-6 pt-6 pb-3 shrink-0"
+          style={{ borderColor: 'var(--divider)' }}
         >
           <span className="font-bold text-sm">导入角色</span>
           <button
@@ -162,72 +170,76 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
           </button>
         </div>
 
-        <p style={{ color: 'var(--text-sub)' }}>
-          粘贴 json 或 txt 模板内容，也可以直接上传文件。解析后会先进入角色编辑页，你可以检查确认后再保存。
-        </p>
+        {/* 中间：唯一会滚动的区域 */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <p style={{ color: 'var(--text-sub)' }}>
+            粘贴 json 或 txt 模板内容，也可以直接上传文件。解析后会先进入角色编辑页，你可以检查确认后再保存。
+          </p>
 
-        <div className="space-y-1.5">
-          <p className="opacity-50">不知道格式长什么样？先下载一份空白模板：</p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => downloadTemplate('txt')}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] active:scale-95 transition-transform"
-              style={controlStyle}
-            >
-              <Download className="w-3 h-3" />
-              <FileText className="w-3 h-3" />
-              <span>txt 模板</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => downloadTemplate('json')}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] active:scale-95 transition-transform"
-              style={controlStyle}
-            >
-              <Download className="w-3 h-3" />
-              <FileJson className="w-3 h-3" />
-              <span>json 模板</span>
-            </button>
+          <div className="space-y-1.5">
+            <p className="opacity-50">不知道格式长什么样？先下载一份空白模板：</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => downloadTemplate('txt')}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] active:scale-95 transition-transform"
+                style={controlStyle}
+              >
+                <Download className="w-3 h-3" />
+                <FileText className="w-3 h-3" />
+                <span>txt 模板</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadTemplate('json')}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] active:scale-95 transition-transform"
+                style={controlStyle}
+              >
+                <Download className="w-3 h-3" />
+                <FileJson className="w-3 h-3" />
+                <span>json 模板</span>
+              </button>
+            </div>
           </div>
+
+          <label
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform w-fit"
+            style={controlStyle}
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>上传已填好的文件</span>
+            <input
+              type="file"
+              accept=".json,.txt"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </label>
+
+          <textarea
+            value={rawText}
+            onChange={(e) => {
+              setRawText(e.target.value);
+              setError('');
+            }}
+            placeholder="或者直接把填好的模板内容粘贴在这里..."
+            rows={8}
+            className="w-full rounded-xl p-3 outline-none resize-none text-xs leading-relaxed"
+            style={controlStyle}
+          />
+
+          {error && (
+            <div className="flex items-start gap-1.5 text-[11px]" style={{ color: 'var(--accent-color)' }}>
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
 
-        <label
-          className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform w-fit"
-          style={controlStyle}
-        >
-          <Upload className="w-3.5 h-3.5" />
-          <span>上传已填好的文件</span>
-          <input
-            type="file"
-            accept=".json,.txt"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </label>
-
-        <textarea
-          value={rawText}
-          onChange={(e) => {
-            setRawText(e.target.value);
-            setError('');
-          }}
-          placeholder="或者直接把填好的模板内容粘贴在这里..."
-          rows={8}
-          className="w-full rounded-xl p-3 outline-none resize-none text-xs leading-relaxed"
-          style={controlStyle}
-        />
-
-        {error && (
-          <div className="flex items-start gap-1.5 text-[11px]" style={{ color: 'var(--accent-color)' }}>
-            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-
+        {/* 底部：固定不滚动，按钮始终可见 */}
         <div
-          className="flex items-center justify-end gap-2 pt-1 sticky -bottom-6 pb-6 -mb-6"
-          style={{ background: 'var(--card-bg-gradient)' }}
+          className="flex items-center justify-end gap-2 px-6 pt-3 pb-6 border-t shrink-0"
+          style={{ borderColor: 'var(--divider)' }}
         >
           <button
             type="button"
