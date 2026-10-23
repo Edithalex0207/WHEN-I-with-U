@@ -20,12 +20,9 @@ import {
   normalizeComparableText
 } from './memoryQuality';
 
-
 import {
   applyCharacterEmotionMemory
 } from './memoryCharacterState';
-
-
 
 const createStableId = (prefix) => {
   if (
@@ -222,7 +219,6 @@ const normalizeTemporal = (value) => {
   };
 };
 
-
 const normalizeRecallState = (value) => {
   const state = value && typeof value === 'object'
     ? value
@@ -288,15 +284,13 @@ const buildMemorySemanticFields = ({
       type
     ),
 
-       temporal: normalizeTemporal(temporal),
+    temporal: normalizeTemporal(temporal),
 
     temporalStatus: normalizeTemporal(temporal)?.status || null,
 
     recallState: normalizeRecallState(recallState)
-
   };
 };
-
 
 const isValidChatId = (chatId) => (
   chatId !== null &&
@@ -390,8 +384,8 @@ export const getChatMemory = async (chatId) => {
     .toArray();
 
   return memories.sort((a, b) => {
-    const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
-    const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
 
     return bTime - aTime;
   });
@@ -440,7 +434,7 @@ export const createMemory = async ({
   sourceKind = MEMORY_SOURCE_KINDS.USER_CREATED,
   supersedesMemoryId = null,
   supersededByMemoryId = null,
-    duplicateOfMemoryId = null,
+  duplicateOfMemoryId = null,
   conflictWithMemoryIds = [],
 
   subject,
@@ -455,12 +449,11 @@ export const createMemory = async ({
 
   note = ''
 }) => {
-
   assertChatId(chatId);
   assertMemoryContent(content);
   assertMemoryStatus(status);
 
-   const now = toIsoNow();
+  const now = toIsoNow();
 
   const semanticFields = buildMemorySemanticFields({
     type,
@@ -476,7 +469,6 @@ export const createMemory = async ({
   });
 
   const memory = {
-
     memoryId: createStableId('memory'),
     chatId,
     title: normalizeText(title),
@@ -484,7 +476,7 @@ export const createMemory = async ({
     type,
     status,
     importance: normalizeImportance(importance),
-        confidence,
+    confidence,
 
     ...semanticFields,
 
@@ -510,12 +502,11 @@ export const createMemory = async ({
     duplicateOfMemoryId: normalizeText(duplicateOfMemoryId) || null,
     conflictWithMemoryIds: normalizeMemoryIdList(conflictWithMemoryIds),
 
-      lastUsedAt: null,
+    lastUsedAt: null,
     lastRetrievedAt: null,
     useCount: 0,
 
     recallState: semanticFields.recallState
-
   };
 
   await db.transaction(
@@ -601,19 +592,17 @@ export const updateMemory = async (
   });
 
   const nextMemory = {
-
     ...currentMemory,
     ...updates,
     title: updates.title === undefined
       ? currentMemory.title
       : normalizeText(updates.title),
-      content: nextContent,
+    content: nextContent,
     type: nextType,
 
     ...semanticFields,
 
     importance: updates.importance === undefined
-
       ? currentMemory.importance
       : normalizeImportance(updates.importance),
     confidence: updates.confidence === undefined
@@ -974,7 +963,7 @@ const CARRIED_CANDIDATE_FIELDS = [
   'sourceMemoryIds',
   'beliefDomain',
   'emotionTag',
-   'emotionIntensity',
+  'emotionIntensity',
   'emotionValence',
   'moodDelta',
   'avoidRepeatHours',
@@ -1013,7 +1002,7 @@ export const createPendingMemoryCandidate = async ({
   proposalType = MEMORY_CANDIDATE_PROPOSALS.CREATE,
   targetMemoryId = null,
   relatedMemoryIds = [],
-    similarityScore = 0,
+  similarityScore = 0,
   conflictReason = '',
 
   subject,
@@ -1026,13 +1015,12 @@ export const createPendingMemoryCandidate = async ({
   temporal = null,
   extraFields = null
 }) => {
-
   assertChatId(chatId);
   assertMemoryContent(content);
 
   const now = toIsoNow();
 
-    const semanticFields = buildMemorySemanticFields({
+  const semanticFields = buildMemorySemanticFields({
     type,
     subject,
     emotionSubject,
@@ -1044,7 +1032,6 @@ export const createPendingMemoryCandidate = async ({
     temporal
   });
 
-
   const candidate = {
     candidateId: createStableId('memory_candidate'),
     chatId,
@@ -1053,7 +1040,7 @@ export const createPendingMemoryCandidate = async ({
     type,
     priority: normalizeImportance(priority),
     status: MEMORY_CANDIDATE_STATUSES.PENDING,
-     ...semanticFields,
+    ...semanticFields,
     ...pickCarriedFields(extraFields),
 
     proposalType: Object.values(MEMORY_CANDIDATE_PROPOSALS).includes(
@@ -1066,10 +1053,10 @@ export const createPendingMemoryCandidate = async ({
 
     relatedMemoryIds: Array.isArray(relatedMemoryIds)
       ? [...new Set(
-          relatedMemoryIds
-            .map((id) => normalizeText(id))
-            .filter(Boolean)
-        )]
+        relatedMemoryIds
+          .map((id) => normalizeText(id))
+          .filter(Boolean)
+      )]
       : [],
 
     similarityScore: Math.max(
@@ -1092,7 +1079,6 @@ export const createPendingMemoryCandidate = async ({
 
   return candidate;
 };
-
 
 export const acceptMemoryCandidate = async (
   candidateId,
@@ -1128,7 +1114,6 @@ export const acceptMemoryCandidate = async (
   const characterId = chat?.characterId || null;
 
   const nextTitle = normalizeText(
-
     title === undefined ? candidate.title : title
   );
 
@@ -1234,6 +1219,10 @@ export const acceptMemoryCandidate = async (
 
   let acceptedMemory = null;
 
+  // 记忆本身没有 acceptedAsDuplicate 字段（该标记写在候选上），
+  // 所以用局部变量记录"是否按重复采纳"。
+  let acceptedAsDuplicate = false;
+
   await db.transaction(
     'rw',
     db.memories,
@@ -1253,6 +1242,7 @@ export const acceptMemoryCandidate = async (
         });
 
         acceptedMemory = targetMemory;
+        acceptedAsDuplicate = true;
         return;
       }
 
@@ -1260,7 +1250,7 @@ export const acceptMemoryCandidate = async (
         proposalType === MEMORY_CANDIDATE_PROPOSALS.UPDATE_EXISTING &&
         targetMemory
       ) {
-               const semanticFields = buildMemorySemanticFields({
+        const semanticFields = buildMemorySemanticFields({
           type: nextType,
           subject: candidate.subject === undefined
             ? targetMemory.subject
@@ -1307,7 +1297,6 @@ export const acceptMemoryCandidate = async (
             ? targetMemory.confidence
             : MEMORY_CONFIDENCES.CONFIRMED,
 
-
           normalizedContent: normalizeComparableText(nextContent),
 
           userConfirmedAt: candidate.tidyAuto === true
@@ -1325,14 +1314,13 @@ export const acceptMemoryCandidate = async (
           note: `${note} 已更新原有记忆。`
         }));
 
-              await db.memories.update(targetMemory.id, nextTargetMemory);
+        await db.memories.update(targetMemory.id, nextTargetMemory);
 
         /*
          * 记忆整理产生的"合并重复记忆"候选（tidyKind: merge_duplicates）：
-          * 目标记忆更新完之后，把被并入的其余记忆归档（不是删除，
+         * 目标记忆更新完之后，把被并入的其余记忆归档（不是删除，
          * 可以在已归档里找回），并留下修订记录。
-         */
-        /*
+         *
          * 整理发现的"新旧认知冲突"（tidyKind: resolve_conflict）走同一条路：
          * 目标记忆保留（内容是解决冲突后的说法），另外几条标记为"已被更正"，
          * 并指向目标记忆；跟合并重复记忆一样，都不删除，可以找回。
@@ -1366,7 +1354,7 @@ export const acceptMemoryCandidate = async (
               continue;
             }
 
-                 await db.memoryRevisions.add(createRevisionPayload({
+            await db.memoryRevisions.add(createRevisionPayload({
               memoryId: mergedMemory.memoryId,
               chatId: mergedMemory.chatId,
               action: isConflictResolution
@@ -1467,10 +1455,10 @@ export const acceptMemoryCandidate = async (
     }
   );
 
-   if (
+  if (
     acceptedMemory &&
     sourceKind === MEMORY_SOURCE_KINDS.CONVERSATION &&
-    !acceptedMemory.acceptedAsDuplicate
+    !acceptedAsDuplicate
   ) {
     await refreshMemorySourceState(acceptedMemory.memoryId);
   }
@@ -1495,7 +1483,6 @@ export const acceptMemoryCandidate = async (
   }
 
   return acceptedMemory;
-
 };
 
 export const dismissMemoryCandidate = async (
@@ -1631,5 +1618,3 @@ export const expireOutdatedPlannedMemories = async (chatId) => {
 
   return outdatedMemories.length;
 };
-
-

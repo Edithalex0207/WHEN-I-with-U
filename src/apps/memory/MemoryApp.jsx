@@ -33,6 +33,14 @@ import MemoryRevisionModal from './MemoryRevisionModal';
 import MemoryGrowthSection from './MemoryGrowthSection';
 import MemorySourceSection from './MemorySourceSection';
 import MemoryTidySection from './MemoryTidySection';
+import MemoryListViews, {
+  LIST_VIEW_GROUPED,
+  LIST_VIEW_TIMELINE,
+  readStoredListView,
+  storeListView
+} from './MemoryListViews';
+import MemoryBackToTop from './MemoryBackToTop';
+import { permanentlyDeleteMemories } from './memoryBulkService';
 
 import {
   MEMORY_CANDIDATE_PROPOSAL_LABELS,
@@ -65,6 +73,7 @@ import {
 } from './memoryEmotionCompoundService';
 
 import './memory.css';
+import './memoryViews.css';
 
 const EMPTY_FORM = {
   title: '',
@@ -231,6 +240,12 @@ export const MemoryApp = ({
   const [showOperitImportModal, setShowOperitImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
 
+  const [listView, setListView] = useState(readStoredListView);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [confirmingBulkDelete, setConfirmingBulkDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const [form, setForm] = useState(EMPTY_FORM);
 
   const selectedChat = useMemo(
@@ -393,6 +408,121 @@ export const MemoryApp = ({
     selectedType
   ]);
 
+const visibleMemoryIdSet = useMemo(
+    () => new Set(
+      visibleMemories
+        .map((memory) => memory.memoryId)
+        .filter(Boolean)
+    ),
+    [visibleMemories]
+  );
+
+  // 只统计当前还看得见的已选项：切换筛选条件后被筛掉的选中项
+  // 不算数，也不会被批量删除误伤。
+  const effectiveSelectedIds = useMemo(
+    () => selectedIds.filter((id) => visibleMemoryIdSet.has(id)),
+    [selectedIds, visibleMemoryIdSet]
+  );
+
+  const handleChangeListView = (nextView) => {
+    setListView(nextView);
+    storeListView(nextView);
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds([]);
+    setConfirmingBulkDelete(false);
+  };
+
+  const handleToggleSelectMode = () => {
+    if (selectMode) {
+      exitSelectMode();
+      return;
+    }
+
+    setSelectMode(true);
+    setSelectedIds([]);
+    setConfirmingBulkDelete(false);
+  };
+
+  const handleToggleSelect = (memory) => {
+    const memoryId = memory?.memoryId;
+
+    if (!memoryId) {
+      return;
+    }
+
+    setConfirmingBulkDelete(false);
+
+    setSelectedIds((current) => (
+      current.includes(memoryId)
+        ? current.filter((id) => id !== memoryId)
+        : [...current, memoryId]
+    ));
+  };
+
+  const handleToggleGroup = (groupIds, isAllSelected) => {
+    setConfirmingBulkDelete(false);
+
+    setSelectedIds((current) => (
+      isAllSelected
+        ? current.filter((id) => !groupIds.includes(id))
+        : Array.from(new Set([...current, ...groupIds]))
+    ));
+  };
+
+  const handleSelectAll = () => {
+    setConfirmingBulkDelete(false);
+    setSelectedIds(Array.from(visibleMemoryIdSet));
+  };
+
+  const handleClearSelection = () => {
+    setConfirmingBulkDelete(false);
+    setSelectedIds([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (
+      effectiveSelectedIds.length === 0 ||
+      isBulkDeleting
+    ) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    setErrorMessage('');
+    setNoticeMessage('');
+
+    try {
+      const deletedCount = await permanentlyDeleteMemories(
+        effectiveSelectedIds
+      );
+
+      if (
+        revisionMemory &&
+        effectiveSelectedIds.includes(revisionMemory.memoryId)
+      ) {
+        setRevisionMemory(null);
+      }
+
+      setSelectedIds([]);
+      setConfirmingBulkDelete(false);
+
+      setNoticeMessage(
+        `已永久删除 ${deletedCount} 条记忆及其修订记录。`
+      );
+
+      await loadMemoryData();
+    } catch (error) {
+      setErrorMessage(
+        error?.message || '批量删除失败。'
+      );
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const resetMessages = () => {
     setNoticeMessage('');
     setErrorMessage('');
@@ -408,7 +538,8 @@ export const MemoryApp = ({
     setSelectedChatId(chatId);
     setShowChatPicker(false);
     setShowCandidates(false);
-    setSelectedType('all');
+   setSelectedType('all');
+    exitSelectMode();
     setSelectedStatus('active');
     setSearchQuery('');
     closeEditor();
@@ -1083,10 +1214,122 @@ const handleDelete = async (memory) => {
                 </h2>
               </div>
 
+            <div className="memory-list-tools">
+                <div
+                  className="memory-view-switch"
+                  role="group"
+                  aria-label="切换列表视图"
+                >
+                  <button
+                    type="button"
+                    className={
+                      listView === LIST_VIEW_TIMELINE
+                        ? 'memory-view-switch-active'
+                        : ''
+                    }
+                    onClick={() => {
+                      handleChangeListView(LIST_VIEW_TIMELINE);
+                    }}
+                  >
+                    时间线
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      listView === LIST_VIEW_GROUPED
+                        ? 'memory-view-switch-active'
+                        : ''
+                    }
+                    onClick={() => {
+                      handleChangeListView(LIST_VIEW_GROUPED);
+                    }}
+                  >
+                    按类型
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className={[
+                    'memory-tool-button',
+                    selectMode ? 'memory-tool-button-primary' : ''
+                  ].filter(Boolean).join(' ')}
+                  onClick={handleToggleSelectMode}
+                >
+                  {selectMode ? '完成' : '选择'}
+                </button>
+              </div>
+
               <span className="memory-list-count">
                 {visibleMemories.length} 页
               </span>
             </div>
+
+            {selectMode && !confirmingBulkDelete && (
+              <div className="memory-select-strip">
+                <span className="memory-select-strip-count">
+                  SELECTED {String(effectiveSelectedIds.length).padStart(2, '0')} / {String(visibleMemories.length).padStart(2, '0')}
+                </span>
+
+                <div className="memory-select-strip-actions">
+                  <button
+                    type="button"
+                    className="memory-select-strip-ghost"
+                    onClick={handleSelectAll}
+                  >
+                    全选
+                  </button>
+
+                  <button
+                    type="button"
+                    className="memory-select-strip-ghost"
+                    onClick={handleClearSelection}
+                  >
+                    清空
+                  </button>
+
+                  <button
+                    type="button"
+                    className="memory-select-strip-danger"
+                    disabled={effectiveSelectedIds.length === 0}
+                    onClick={() => setConfirmingBulkDelete(true)}
+                  >
+                    删除选中
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectMode && confirmingBulkDelete && (
+              <div className="memory-select-strip memory-select-strip-confirm">
+                <span className="memory-select-strip-text">
+                  永久删除 {effectiveSelectedIds.length} 条记忆及其修订记录，无法恢复。
+                </span>
+
+                <div className="memory-select-strip-actions">
+                  <button
+                    type="button"
+                    className="memory-select-strip-ghost"
+                    onClick={() => setConfirmingBulkDelete(false)}
+                    disabled={isBulkDeleting}
+                  >
+                    取消
+                  </button>
+
+                  <button
+                    type="button"
+                    className="memory-select-strip-danger"
+                    onClick={() => {
+                      void handleBulkDelete();
+                    }}
+                    disabled={isBulkDeleting}
+                  >
+                    {isBulkDeleting ? '删除中...' : '永久删除'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {isLoading ? (
               <div className="memory-empty-state">
@@ -1107,19 +1350,27 @@ const handleDelete = async (memory) => {
                 </button>
               </div>
             ) : (
-              <div className="memory-list">
-                {visibleMemories.map((memory) => (
+                          <MemoryListViews
+                memories={visibleMemories}
+                view={listView}
+                selectMode={selectMode}
+                selectedIds={effectiveSelectedIds}
+                onToggleGroup={handleToggleGroup}
+                renderCard={(memory, variant) => (
                   <MemoryCard
-                    key={memory.memoryId || memory.id}
                     memory={memory}
+                    variant={variant}
+                    selectMode={selectMode}
+                    selected={effectiveSelectedIds.includes(memory.memoryId)}
+                    onToggleSelect={handleToggleSelect}
                     onEdit={openEditEditor}
                     onWithdraw={handleWithdraw}
-                                       onRestore={handleRestore}
+                    onRestore={handleRestore}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                     onResolveCompound={handleResolveCompound}
                     onViewRevisions={(item) => {
-                                          setRevisionMemory(item);
+                      setRevisionMemory(item);
                     }}
                     sourceMemories={
                       (memory.type === 'reflection' || memory.type === 'belief') && Array.isArray(memory.sourceMemoryIds)
@@ -1129,8 +1380,8 @@ const handleDelete = async (memory) => {
                         : undefined
                     }
                   />
-                ))}
-              </div>
+                )}
+              />
             )}
           </section>
 
@@ -1490,6 +1741,8 @@ const handleDelete = async (memory) => {
           }}
         />
       )}
+
+      <MemoryBackToTop />
 
       {revisionMemory && (
         <MemoryRevisionModal

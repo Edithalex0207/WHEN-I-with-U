@@ -216,7 +216,12 @@ export const MemoryCard = ({
   // 只有 type === 'reflection' 的记忆会用到：这条反思是综合自哪几条
   // 具体记忆，调用方（MemoryApp.jsx）按 memory.sourceMemoryIds 解析好
   // 标题后传进来，这里只负责展示，不做任何表查询。
-  sourceMemories = []
+  sourceMemories = [],
+  // 多选与视图相关，由 MemoryListViews 的 renderCard 传入
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+  variant = 'timeline'
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
@@ -309,11 +314,23 @@ export const MemoryCard = ({
       <article
         className={[
           'memory-card',
+          selected ? 'memory-card-selected' : '',
+          selectMode ? 'memory-card-selecting' : '',
+          variant === 'grouped' ? 'memory-card-in-group' : '',
           isInactive(memory.status) ? 'memory-card-inactive' : ''
         ].join(' ')}
       >
         <div className="memory-card-topline">
           <span className="memory-card-index">
+            {selectMode && (
+              <input
+                type="checkbox"
+                className="memory-select-check"
+                checked={selected}
+                onChange={() => onToggleSelect?.(memory)}
+                aria-label="选中这条记忆"
+              />
+            )}
             MEMORY / {String(memory.id || '').padStart(2, '0')}
           </span>
 
