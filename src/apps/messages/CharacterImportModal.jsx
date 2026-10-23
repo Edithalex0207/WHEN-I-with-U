@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Upload, FileJson, FileText, AlertCircle, Download } from 'lucide-react';
 import { parseCharacterImportJson, parseCharacterImportTxt } from './characterImportService';
 
@@ -148,8 +149,8 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in-up">
+    const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in-up">
       <div
         className="w-full max-w-sm max-h-[85vh] rounded-[2rem] flex flex-col text-left text-xs overflow-hidden"
         style={cardStyle}
@@ -262,6 +263,8 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CharacterImportModal;
