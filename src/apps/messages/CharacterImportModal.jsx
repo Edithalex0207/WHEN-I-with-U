@@ -1,6 +1,86 @@
 import React, { useState } from 'react';
-import { X, Upload, FileJson, FileText, AlertCircle } from 'lucide-react';
+import { X, Upload, FileJson, FileText, AlertCircle, Download } from 'lucide-react';
 import { parseCharacterImportJson, parseCharacterImportTxt } from './characterImportService';
+
+// 空白模板内容，内嵌在代码里，供"下载示例"按钮用——用户点一下就知道
+// 导入功能认什么格式，不用凭空猜字段名怎么写。
+const JSON_TEMPLATE = `{
+  "format": "wiwu-character-v1",
+  "name": "",
+  "bio": "",
+  "extraNotes": "",
+  "userPersona": "",
+  "statusList": [
+    "",
+    ""
+  ],
+  "worldBookEntries": [
+    {
+      "title": "",
+      "content": ""
+    }
+  ],
+  "knowledgeEntries": [
+    {
+      "title": "",
+      "content": ""
+    }
+  ]
+}
+`;
+
+const TXT_TEMPLATE = `【姓名】
+
+
+【简介】
+
+
+【补充说明】
+
+
+【我的人设】
+
+
+【待机状态】
+（每行一条，可以增删行数）
+
+
+
+【世界书】
+
+【条目】
+【内容】
+
+
+【条目】
+【内容】
+
+
+
+【知识库】
+
+【条目】
+【内容】
+
+
+【条目】
+【内容】
+
+`;
+
+const downloadTemplate = (type) => {
+  const content = type === 'json' ? JSON_TEMPLATE : TXT_TEMPLATE;
+  const filename = type === 'json' ? 'character-import-template.json' : 'character-import-template.txt';
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 // 角色导入弹窗：用户粘贴 json 或 txt 模板内容，纯本地确定性解析（不调用 AI），
 // 解析结果交给调用方（CharacterLibrary -> MessagesApp）直接当作 characterData
@@ -59,7 +139,7 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in-up">
       <div
-        className="w-full max-w-sm rounded-[2rem] p-6 space-y-4 text-left text-xs"
+        className="w-full max-w-sm rounded-[2rem] p-6 space-y-4 text-left text-xs max-h-[85vh] overflow-y-auto"
         style={{
           background: 'var(--card-bg-gradient)',
           border: '1px solid var(--card-border)',
@@ -68,8 +148,8 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
         }}
       >
         <div
-          className="flex items-center justify-between border-b pb-3"
-          style={{ borderColor: 'var(--divider)' }}
+          className="flex items-center justify-between border-b pb-3 sticky -top-6 pt-6 -mt-6"
+          style={{ borderColor: 'var(--divider)', background: 'var(--card-bg-gradient)' }}
         >
           <span className="font-bold text-sm">导入角色</span>
           <button
@@ -86,24 +166,45 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
           粘贴 json 或 txt 模板内容，也可以直接上传文件。解析后会先进入角色编辑页，你可以检查确认后再保存。
         </p>
 
-        <div className="flex items-center gap-2">
-          <label
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform"
-            style={controlStyle}
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>上传文件</span>
-            <input
-              type="file"
-              accept=".json,.txt"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </label>
-          <span className="opacity-50 flex items-center gap-1">
-            <FileJson className="w-3 h-3" /> / <FileText className="w-3 h-3" />
-          </span>
+        <div className="space-y-1.5">
+          <p className="opacity-50">不知道格式长什么样？先下载一份空白模板：</p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => downloadTemplate('txt')}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] active:scale-95 transition-transform"
+              style={controlStyle}
+            >
+              <Download className="w-3 h-3" />
+              <FileText className="w-3 h-3" />
+              <span>txt 模板</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadTemplate('json')}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] active:scale-95 transition-transform"
+              style={controlStyle}
+            >
+              <Download className="w-3 h-3" />
+              <FileJson className="w-3 h-3" />
+              <span>json 模板</span>
+            </button>
+          </div>
         </div>
+
+        <label
+          className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform w-fit"
+          style={controlStyle}
+        >
+          <Upload className="w-3.5 h-3.5" />
+          <span>上传已填好的文件</span>
+          <input
+            type="file"
+            accept=".json,.txt"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </label>
 
         <textarea
           value={rawText}
@@ -111,7 +212,7 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
             setRawText(e.target.value);
             setError('');
           }}
-          placeholder="在这里粘贴模板内容..."
+          placeholder="或者直接把填好的模板内容粘贴在这里..."
           rows={8}
           className="w-full rounded-xl p-3 outline-none resize-none text-xs leading-relaxed"
           style={controlStyle}
@@ -124,7 +225,10 @@ export const CharacterImportModal = ({ onClose, onImported }) => {
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 pt-1">
+        <div
+          className="flex items-center justify-end gap-2 pt-1 sticky -bottom-6 pb-6 -mb-6"
+          style={{ background: 'var(--card-bg-gradient)' }}
+        >
           <button
             type="button"
             onClick={onClose}
