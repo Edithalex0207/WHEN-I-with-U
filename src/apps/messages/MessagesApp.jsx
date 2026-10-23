@@ -617,8 +617,8 @@ export const MessagesApp = ({ onBackHub, onChatRoomStateChange }) => {
 
       {view === 'characters' && (
         <CharacterLibrary
-          onSelectCharacter={(char) => handleOpenCharEditor(char)}
-          onCreateNew={() => handleOpenCharEditor(null)}
+                   onSelectCharacter={(char) => handleOpenCharEditor(char)}
+          onCreateNew={(prefillData) => handleOpenCharEditor(prefillData || null)}
         />
       )}
 

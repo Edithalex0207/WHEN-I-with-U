@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, User, Edit3, Sparkles } from 'lucide-react';
+import { Plus, User, Edit3, Sparkles, Download } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import db from '../../db';
+import CharacterImportModal from './CharacterImportModal';
 
 export const CharacterLibrary = ({ onSelectCharacter, onCreateNew }) => {
   const [characters, setCharacters] = useState([]);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
       const loadCharacters = async () => {
@@ -19,20 +21,31 @@ export const CharacterLibrary = ({ onSelectCharacter, onCreateNew }) => {
     <div className="space-y-4 text-left">
       <div className="flex items-center justify-between">
         <h3 className="font-serif font-bold text-sm">角色库 (Characters)</h3>
-        <button
-          type="button"
-          onClick={onCreateNew}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-semibold text-xs active:scale-95 transition-all"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>新建角色</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full font-semibold text-xs active:scale-95 transition-all border"
+            style={{ borderColor: 'var(--divider)', color: 'var(--text-main)' }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>导入</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onCreateNew()}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-semibold text-xs active:scale-95 transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>新建角色</span>
+          </button>
+        </div>
       </div>
 
       {characters.length === 0 ? (
         <GlassCard className="py-10 text-center space-y-2 opacity-60">
           <User className="w-8 h-8 mx-auto opacity-40" />
-          <p className="text-xs">暂无任何角色，请点击上方“新建角色”开始配置。</p>
+          <p className="text-xs">暂无任何角色，请点击上方"新建角色"开始配置，或"导入"一个已有角色模板。</p>
         </GlassCard>
       ) : (
         <div className="grid grid-cols-1 gap-3">
@@ -70,6 +83,16 @@ export const CharacterLibrary = ({ onSelectCharacter, onCreateNew }) => {
             </GlassCard>
           ))}
         </div>
+      )}
+
+      {showImportModal && (
+        <CharacterImportModal
+          onClose={() => setShowImportModal(false)}
+          onImported={(parsedCharacter) => {
+            setShowImportModal(false);
+            onCreateNew(parsedCharacter);
+          }}
+        />
       )}
     </div>
   );
