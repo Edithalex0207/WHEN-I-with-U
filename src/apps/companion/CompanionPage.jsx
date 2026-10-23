@@ -83,6 +83,8 @@ import CompanionFriendPage from './friends/CompanionFriendPage';
 import CompanionFriendMealLetter from './friends/CompanionFriendMealLetter';
 import { takePendingFriendMealLetter } from './friends/companionFriendMealService';
 import CompanionFriendIcon from './friends/CompanionFriendIcon';
+  import CompanionChatModal from './chat/CompanionChatModal';
+  import CompanionChatIcon from './chat/CompanionChatIcon';
 import { getFriendDockBadgeCount, getCompanionSnapshot } from './friends/companionFriendService';
 import './companionPage.css';
 /*
@@ -284,6 +286,7 @@ const CompanionPage = ({ chatId, character, onBack }) => {
   const [schoolLetter, setSchoolLetter] = useState(null);
   // 好友广场 + 我的朋友
   const [showFriends, setShowFriends] = useState(false);
+    const [showChat, setShowChat] = useState(false);
     const [mealLetter, setMealLetter] = useState(null);
 
   // 每日任务：companion 对象每次更新（喂食/戳一戳/上学/……任何互动）
@@ -1334,6 +1337,17 @@ const CompanionPage = ({ chatId, character, onBack }) => {
               </span>
               托管
             </button>
+              <button
+    type="button"
+    onClick={() => setShowChat(true)}
+    className="cp-dock-btn"
+    aria-label="聊天"
+  >
+    <span className="cp-dock-ico">
+      <CompanionChatIcon />
+    </span>
+    聊天
+  </button>
             <button
               type="button"
               onClick={() => setShowFriends(true)}
@@ -1614,6 +1628,15 @@ const CompanionPage = ({ chatId, character, onBack }) => {
           onClose={() => setSchoolLetter(null)}
         />
       )}
+
+        {showChat && (
+    <CompanionChatModal
+      companion={companion}
+      character={character}
+      chatId={chatId}
+      onClose={() => setShowChat(false)}
+    />
+  )}
 
       {showFriends && (
         <CompanionFriendPage

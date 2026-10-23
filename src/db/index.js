@@ -5084,5 +5084,7 @@ db.version(99).stores({
   sweetShopStates: '++id, companionId, shopId, [companionId+shopId], updatedAt',
   sweetWorkSessions: '++id, companionId, chatId, status, startedAt, [companionId+status]',
 });
-
+db.version(100).stores({
+  companionMessages: '++id, companionId, timestamp, [companionId+timestamp]',
+});
 export default db;

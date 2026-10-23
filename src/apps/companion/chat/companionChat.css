@@ -1,0 +1,375 @@
+/*
+ * 和小伙伴聊天弹窗的样式（class 前缀 ccm-）——可爱版 v2。
+ *
+ * 渲染在 CompanionPage.jsx 的 .cp-root 里，复用 companionPage.css 的
+ * .cp-overlay.center / .cp-backdrop，颜色走 --cp-* 变量，
+ * 跟商店/任务/好友同源，不改 companionPage.css 本身。
+ *
+ * 装饰全部是纯 CSS（渐变圆点底纹 + 内联 SVG 背景图），不加额外 DOM、
+ * 不用 emoji（整站规则）。装饰层是 .ccm-stage::before，pointer-events
+ * 关闭，不挡点击。
+ *
+ * 本文件里 --ccm-* 是弹窗自己的小色板，只作用在 .ccm-stage 里，
+ * 不污染 --cp-* 变量；想整体换色只改这几个就行。
+ */
+
+.ccm-stage {
+  --ccm-butter: #FFF7DA;
+  --ccm-butter-edge: #F2DC93;
+  --ccm-butter-ink: #8A6A08;
+  --ccm-sky: #D3EAFF;
+  --ccm-sky-edge: #9CCBF4;
+  --ccm-mint: #D5F5EA;
+  --ccm-mint-edge: #9FDCC6;
+  --ccm-mint-ink: #25967A;
+  --ccm-pink: #FFEAEF;
+  --ccm-pink-edge: #FFB9C9;
+
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  height: min(600px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  background: var(--cp-bg);
+  border-radius: 26px;
+  border: 2.5px solid var(--cp-border);
+  box-shadow: 0 6px 0 var(--cp-border), 0 22px 40px -16px var(--cp-shadow);
+  overflow: hidden;
+  animation: ccm-in 0.36s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+
+/* 装饰层：右上小云朵、左下小星星、右下爱心、左中小圆圈 */
+.ccm-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 40'%3E%3Cpath d='M14 34a10 10 0 0 1 1-20 14 14 0 0 1 27-3 12 12 0 0 1 8 23z' fill='%23ffffff' stroke='%23cfe3f5' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3l3.6 8.2 8.9.8-6.7 5.9 2 8.7L16 21.9 8.2 26.6l2-8.7-6.7-5.9 8.9-.8z' fill='%23FFF0B3' stroke='%23F2DC93' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 27C5 19 4 12 8.5 8.5 12 6 15 8 16 11c1-3 4-5 7.5-2.5C28 12 27 19 16 27z' fill='%23FFD3DE' stroke='%23FFB9C9' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23cfe3f5' stroke-width='3' stroke-dasharray='5 5'/%3E%3C/svg%3E");
+  background-size: 62px 38px, 24px 24px, 26px 26px, 22px 22px;
+  background-position: right 14px top 70px, left 10px bottom 82px, right 12px bottom 86px, left 8px top 46%;
+  opacity: 0.9;
+}
+
+.ccm-stage > * { position: relative; z-index: 1; }
+
+@keyframes ccm-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- 头部：天空色底 + 扇贝形下沿 ---------- */
+.ccm-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 16px 14px;
+  background: linear-gradient(135deg, #DDEFFF 0%, #FFEAF1 100%);
+}
+
+.ccm-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 9px;
+  background:
+    radial-gradient(circle at 9px 0, #F8EEF8 8px, transparent 8.6px) repeat-x;
+  background-size: 18px 9px;
+  filter: drop-shadow(0 1px 0 var(--cp-border));
+  pointer-events: none;
+}
+
+.ccm-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ccm-title b {
+  align-self: flex-start;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 2px solid var(--ccm-pink-edge);
+  color: var(--cp-text);
+  font-size: 14px;
+  line-height: 1.35;
+}
+.ccm-title span { padding-left: 4px; color: var(--cp-sub); font-size: 11px; }
+
+.ccm-avatar-wrap { position: relative; flex: none; display: inline-flex; }
+
+.ccm-avatar {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #FFFFFF;
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 0 0 2px var(--ccm-sky-edge);
+}
+
+.ccm-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cp-accent);
+  font-weight: 800;
+  font-size: 16px;
+}
+
+/* 头像右下角的小爱心徽章 */
+.ccm-avatar-wrap.has-badge::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  width: 16px;
+  height: 16px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 27C5 19 4 12 8.5 8.5 12 6 15 8 16 11c1-3 4-5 7.5-2.5C28 12 27 19 16 27z' fill='%23FF86A0' stroke='%23ffffff' stroke-width='3' stroke-linejoin='round' paint-order='stroke'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.ccm-clear {
+  border: 2px solid var(--ccm-sky-edge);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: #FFFFFF;
+  color: var(--cp-sub);
+  font-size: 12px;
+  box-shadow: 0 2px 0 var(--ccm-sky-edge);
+}
+.ccm-clear:active { transform: translateY(2px); box-shadow: none; }
+.ccm-clear:disabled { opacity: 0.4; }
+.ccm-clear.is-confirm {
+  background: var(--ccm-pink);
+  border-color: var(--ccm-pink-edge);
+  box-shadow: 0 2px 0 var(--ccm-pink-edge);
+  color: var(--cp-heart);
+}
+
+.ccm-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--ccm-sky-edge);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  color: var(--cp-sub);
+  box-shadow: 0 2px 0 var(--ccm-sky-edge);
+}
+
+/* ---------- 聊天列表：圆点底纹 ---------- */
+.ccm-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-image: radial-gradient(circle at 1.5px 1.5px, rgba(61, 155, 234, 0.13) 1.3px, transparent 1.7px);
+  background-size: 18px 18px;
+}
+
+/* 每天清空的便利贴提醒：贴在列表最上面，随列表滚走 */
+.ccm-notice {
+  position: relative;
+  align-self: stretch;
+  margin: 4px 4px 10px;
+  padding: 9px 12px 9px 38px;
+  border-radius: 8px;
+  background: var(--ccm-butter);
+  border: 2px dashed var(--ccm-butter-edge);
+  color: var(--ccm-butter-ink);
+  font-size: 12px;
+  line-height: 1.55;
+  transform: rotate(-0.6deg);
+  box-shadow: 0 3px 0 rgba(242, 220, 147, 0.55);
+}
+.ccm-notice::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M24 20.5A11 11 0 0 1 11.5 8a11 11 0 1 0 12.5 12.5z' fill='%23FFE48A' stroke='%23D19A0A' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.ccm-notice::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 46px;
+  height: 14px;
+  margin-left: -23px;
+  border-radius: 3px;
+  background: rgba(255, 186, 201, 0.7);
+  transform: rotate(2deg);
+}
+.ccm-notice b { color: #B8830A; }
+
+.ccm-empty {
+  margin: auto;
+  padding-top: 50px;
+  color: var(--cp-sub);
+  font-size: 13px;
+  text-align: center;
+}
+.ccm-empty::before {
+  content: '';
+  display: block;
+  width: 70px;
+  height: 56px;
+  margin: 0 auto 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 56'%3E%3Cpath d='M16 46a12 12 0 0 1 1-24 16 16 0 0 1 31-4 14 14 0 0 1 9 28z' fill='%23ffffff' stroke='%239CCBF4' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M35 38C26 32 25 26 28.5 23.5 31.5 21.5 34 23 35 25.5c1-2.5 3.500-4 6.500-2 3.500 2.500 2.500 8.500-6.500 14.500z' fill='%23FF86A0'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* ---------- 消息行 ---------- */
+.ccm-row { display: flex; align-items: flex-end; gap: 8px; }
+.ccm-row.is-user { justify-content: flex-end; }
+.ccm-row .ccm-avatar { width: 30px; height: 30px; font-size: 13px; box-shadow: 0 0 0 1.5px var(--ccm-sky-edge); }
+/* 同一个小伙伴连续几个气泡，只有最后一个显示头像，其余留出等宽空位 */
+.ccm-row .ccm-avatar-spacer { flex: none; width: 30px; }
+
+.ccm-bubble {
+  position: relative;
+  max-width: 74%;
+  padding: 8px 13px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ccm-row.is-companion .ccm-bubble {
+  background: var(--ccm-butter);
+  color: var(--cp-text);
+  border: 2px solid var(--ccm-butter-edge);
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 3px 0 var(--ccm-butter-edge);
+}
+
+.ccm-row.is-user .ccm-bubble {
+  background: var(--ccm-sky);
+  color: var(--cp-text);
+  border: 2px solid var(--ccm-sky-edge);
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 3px 0 var(--ccm-sky-edge);
+}
+
+/* 一组回复的最后一个气泡右上角贴一颗小爱心贴纸 */
+.ccm-bubble.has-sticker::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  right: -7px;
+  width: 17px;
+  height: 17px;
+  transform: rotate(14deg);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 27C5 19 4 12 8.5 8.5 12 6 15 8 16 11c1-3 4-5 7.5-2.5C28 12 27 19 16 27z' fill='%23FF86A0' stroke='%23ffffff' stroke-width='3' stroke-linejoin='round' paint-order='stroke'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* 等待回复：三个跳动的小圆点 */
+.ccm-typing { display: inline-flex; align-items: center; gap: 5px; color: var(--ccm-butter-ink) !important; font-size: 12px !important; }
+.ccm-typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ccm-butter-edge);
+  animation: ccm-bounce 1s ease-in-out infinite;
+}
+.ccm-typing i:nth-child(2) { animation-delay: 0.15s; }
+.ccm-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ccm-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+/* ---------- 重 roll 按钮：跟在最后一组小伙伴回复下面 ---------- */
+.ccm-reroll-row { display: flex; padding-left: 38px; margin-top: 2px; }
+.ccm-reroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 2px solid var(--ccm-mint-edge);
+  border-radius: 999px;
+  padding: 3px 11px 3px 8px;
+  background: var(--ccm-mint);
+  color: var(--ccm-mint-ink);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 0 var(--ccm-mint-edge);
+}
+.ccm-reroll svg { width: 14px; height: 14px; }
+.ccm-reroll:active { transform: translateY(2px); box-shadow: none; }
+.ccm-reroll:disabled { opacity: 0.45; }
+.ccm-reroll.is-spinning svg { animation: ccm-spin 0.9s linear infinite; }
+@keyframes ccm-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 错误条 ---------- */
+.ccm-error {
+  margin: 0 12px 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--ccm-pink);
+  border: 2px dashed var(--ccm-pink-edge);
+  color: var(--cp-heart);
+  font-size: 12px;
+}
+
+/* ---------- 输入区 ---------- */
+.ccm-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: #FFFFFF;
+  border-top: 2px dashed var(--cp-border);
+}
+
+.ccm-input {
+  flex: 1;
+  min-width: 0;
+  max-height: 96px;
+  resize: none;
+  border: 2px solid var(--ccm-sky-edge);
+  border-radius: 18px;
+  padding: 8px 14px;
+  background: #F8FCFF;
+  color: var(--cp-text);
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+}
+.ccm-input::placeholder { color: var(--cp-muted); }
+.ccm-input:focus { border-color: var(--cp-accent); background: #FFFFFF; }
+
+.ccm-send {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border: 2px solid #FFFFFF;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #5DB0F2, #3D9BEA);
+  color: var(--cp-on-accent);
+  box-shadow: 0 3px 0 #2F86CC;
+}
+.ccm-send:active { transform: translateY(3px); box-shadow: none; }
+.ccm-send:disabled { opacity: 0.4; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ccm-stage, .ccm-typing i, .ccm-reroll.is-spinning svg { animation: none; }
+}
