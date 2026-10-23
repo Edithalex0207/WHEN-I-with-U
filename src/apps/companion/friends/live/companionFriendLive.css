@@ -1,0 +1,399 @@
+/*
+ * 小伙伴和朋友"真聊"弹窗的样式（class 前缀 cfl-）。
+ *
+ * 渲染在 CompanionPage.jsx 的 .cp-root 里，复用 companionPage.css 的
+ * .cp-overlay.center / .cp-backdrop，颜色走 --cp-* 变量。
+ * 装饰手法跟小伙伴聊天弹窗（companionChat.css，前缀 ccm-）同一套：
+ * 渐变圆点底纹 + 内联 SVG 背景图，不加额外 DOM、不用 emoji。
+ *
+ * user 在这里只是旁观者：没有输入框，底部是"开始 / 先停一下 / 接着聊 /
+ * 再聊一次"这一排操作栏。小伙伴的气泡在左边（奶黄色），朋友的气泡
+ * 在右边（薄荷色），每条气泡上方标说话人的名字。
+ */
+
+.cfl-stage {
+  --cfl-butter: #FFF7DA;
+  --cfl-butter-edge: #F2DC93;
+  --cfl-butter-ink: #8A6A08;
+  --cfl-sky: #D3EAFF;
+  --cfl-sky-edge: #9CCBF4;
+  --cfl-mint: #DDF7EE;
+  --cfl-mint-edge: #9FDCC6;
+  --cfl-mint-ink: #25967A;
+  --cfl-pink: #FFEAEF;
+  --cfl-pink-edge: #FFB9C9;
+
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  height: min(620px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  background: var(--cp-bg);
+  border-radius: 26px;
+  border: 2.5px solid var(--cp-border);
+  box-shadow: 0 6px 0 var(--cp-border), 0 22px 40px -16px var(--cp-shadow);
+  overflow: hidden;
+  animation: cfl-in 0.36s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+
+.cfl-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 40'%3E%3Cpath d='M14 34a10 10 0 0 1 1-20 14 14 0 0 1 27-3 12 12 0 0 1 8 23z' fill='%23ffffff' stroke='%23cfe3f5' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3l3.6 8.2 8.9.8-6.7 5.9 2 8.7L16 21.9 8.2 26.6l2-8.7-6.7-5.9 8.9-.8z' fill='%23FFF0B3' stroke='%23F2DC93' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 27C5 19 4 12 8.5 8.5 12 6 15 8 16 11c1-3 4-5 7.5-2.5C28 12 27 19 16 27z' fill='%23FFD3DE' stroke='%23FFB9C9' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 62px 38px, 22px 22px, 24px 24px;
+  background-position: right 12px top 92px, left 10px bottom 96px, right 12px bottom 100px;
+  opacity: 0.85;
+}
+
+.cfl-stage > * { position: relative; z-index: 1; }
+
+@keyframes cfl-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- 头部：两个头像 + 中间的小爱心 ---------- */
+.cfl-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 16px 14px;
+  background: linear-gradient(135deg, #DDEFFF 0%, #DDF7EE 100%);
+}
+
+.cfl-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 9px;
+  background: radial-gradient(circle at 9px 0, #E6F4F6 8px, transparent 8.6px) repeat-x;
+  background-size: 18px 9px;
+  filter: drop-shadow(0 1px 0 var(--cp-border));
+  pointer-events: none;
+}
+
+.cfl-pair { position: relative; display: inline-flex; align-items: center; flex: none; padding-right: 4px; }
+.cfl-pair .cfl-avatar + .cfl-avatar { margin-left: 14px; }
+.cfl-pair::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 17px;
+  height: 17px;
+  margin: -9px 0 0 -10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 27C5 19 4 12 8.5 8.5 12 6 15 8 16 11c1-3 4-5 7.5-2.5C28 12 27 19 16 27z' fill='%23FF86A0' stroke='%23ffffff' stroke-width='3' stroke-linejoin='round' paint-order='stroke'/%3E%3C/svg%3E") center / contain no-repeat;
+  z-index: 2;
+}
+
+.cfl-avatar {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 0 0 2px var(--cfl-sky-edge);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cfl-avatar.is-friend { box-shadow: 0 0 0 2px var(--cfl-mint-edge); }
+.cfl-avatar-letter { color: var(--cp-accent); font-weight: 800; font-size: 16px; }
+
+.cfl-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cfl-title b {
+  align-self: flex-start;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 2px solid var(--cfl-mint-edge);
+  color: var(--cp-text);
+  font-size: 13px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.cfl-title span { padding-left: 4px; color: var(--cp-sub); font-size: 11px; }
+
+.cfl-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--cfl-sky-edge);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  color: var(--cp-sub);
+  box-shadow: 0 2px 0 var(--cfl-sky-edge);
+}
+
+/* ---------- 列表：圆点底纹 ---------- */
+.cfl-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-image: radial-gradient(circle at 1.5px 1.5px, rgba(61, 155, 234, 0.13) 1.3px, transparent 1.7px);
+  background-size: 18px 18px;
+}
+
+/* 开场场景：这次聊天的起点 */
+.cfl-scene {
+  align-self: stretch;
+  margin: 2px 4px 4px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: #FFFFFF;
+  border: 2px dashed var(--cfl-sky-edge);
+  color: var(--cp-text);
+  font-size: 12.5px;
+  line-height: 1.55;
+  text-align: center;
+}
+.cfl-scene small {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--cp-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* 每天清空的小便利贴（比小伙伴聊天里的更小，只提醒一句） */
+.cfl-notice {
+  position: relative;
+  align-self: stretch;
+  margin: 2px 4px 8px;
+  padding: 7px 10px 7px 34px;
+  border-radius: 8px;
+  background: var(--cfl-butter);
+  border: 2px dashed var(--cfl-butter-edge);
+  color: var(--cfl-butter-ink);
+  font-size: 11.5px;
+  line-height: 1.5;
+  transform: rotate(-0.5deg);
+  box-shadow: 0 3px 0 rgba(242, 220, 147, 0.55);
+}
+.cfl-notice::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M24 20.5A11 11 0 0 1 11.5 8a11 11 0 1 0 12.5 12.5z' fill='%23FFE48A' stroke='%23D19A0A' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.cfl-notice b { color: #B8830A; }
+
+.cfl-empty {
+  margin: auto;
+  padding: 24px 18px;
+  color: var(--cp-sub);
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+}
+.cfl-empty::before {
+  content: '';
+  display: block;
+  width: 78px;
+  height: 50px;
+  margin: 0 auto 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 78 50'%3E%3Cpath d='M6 8h34a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H22l-8 7v-7H6a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z' fill='%23FFF7DA' stroke='%23F2DC93' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M38 22h34a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4h-8v7l-8-7H38a4 4 0 0 1-4-4V26a4 4 0 0 1 4-4z' fill='%23DDF7EE' stroke='%239FDCC6' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* ---------- 消息行 ---------- */
+.cfl-row { display: flex; align-items: flex-end; gap: 8px; }
+.cfl-row.is-friend { flex-direction: row-reverse; }
+.cfl-row .cfl-avatar { width: 30px; height: 30px; box-shadow: 0 0 0 1.5px var(--cfl-sky-edge); }
+.cfl-row.is-friend .cfl-avatar { box-shadow: 0 0 0 1.5px var(--cfl-mint-edge); }
+.cfl-row .cfl-avatar-letter { font-size: 13px; }
+
+.cfl-col { display: flex; flex-direction: column; gap: 2px; max-width: 74%; }
+.cfl-row.is-friend .cfl-col { align-items: flex-end; }
+.cfl-who { padding: 0 6px; color: var(--cp-muted); font-size: 10.5px; font-weight: 700; }
+
+.cfl-bubble {
+  padding: 8px 13px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--cp-text);
+}
+.cfl-row.is-pet .cfl-bubble {
+  background: var(--cfl-butter);
+  border: 2px solid var(--cfl-butter-edge);
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 3px 0 var(--cfl-butter-edge);
+}
+.cfl-row.is-friend .cfl-bubble {
+  background: var(--cfl-mint);
+  border: 2px solid var(--cfl-mint-edge);
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 3px 0 var(--cfl-mint-edge);
+}
+
+/* 一轮一次调用：下一轮的第一个发言人在"想"，显示三个跳动的小圆点 */
+.cfl-typing { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--cp-sub); }
+.cfl-typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cfl-butter-edge);
+  animation: cfl-bounce 1s ease-in-out infinite;
+}
+.cfl-row.is-friend .cfl-typing i { background: var(--cfl-mint-edge); }
+.cfl-typing i:nth-child(2) { animation-delay: 0.15s; }
+.cfl-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes cfl-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+/* 聊完之后的结果小标签：友谊值 +3 / 今天还剩几次 */
+.cfl-reward {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--cfl-pink);
+  border: 2px dashed var(--cfl-pink-edge);
+  color: var(--cp-heart);
+  font-size: 12px;
+  font-weight: 800;
+}
+.cfl-reward i { width: 13px; height: 13px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 27C5 19 4 12 8.5 8.5 12 6 15 8 16 11c1-3 4-5 7.5-2.5C28 12 27 19 16 27z' fill='%23FF86A0'/%3E%3C/svg%3E") center / contain no-repeat; }
+.cfl-reward span { color: var(--cp-sub); font-weight: 700; }
+
+/* ---------- 错误条 ---------- */
+.cfl-error {
+  margin: 0 12px 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--cfl-pink);
+  border: 2px dashed var(--cfl-pink-edge);
+  color: var(--cp-heart);
+  font-size: 12px;
+}
+
+/* ---------- 底部操作栏：user 是旁观者，没有输入框 ---------- */
+.cfl-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  background: #FFFFFF;
+  border-top: 2px dashed var(--cp-border);
+}
+
+.cfl-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cfl-rounds { display: inline-flex; align-items: center; gap: 5px; color: var(--cp-sub); font-size: 11px; font-weight: 700; }
+.cfl-rounds i { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--cfl-mint-edge); background: #FFFFFF; }
+.cfl-rounds i.done { background: var(--cfl-mint-edge); }
+.cfl-rounds i.now { border-color: var(--cp-accent); animation: cfl-pulse 1.1s ease-in-out infinite; }
+@keyframes cfl-pulse { 50% { transform: scale(1.35); } }
+.cfl-cost { color: var(--cp-muted); font-size: 10.5px; line-height: 1.35; }
+.cfl-quota { display: inline-flex; align-items: center; gap: 3px; color: var(--cp-muted); font-size: 10.5px; font-weight: 700; }
+.cfl-quota i { width: 6px; height: 6px; border-radius: 50%; background: var(--cp-border); }
+.cfl-quota i.used { background: var(--cp-accent); }
+
+.cfl-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #FFFFFF;
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #5DB0F2, #3D9BEA);
+  color: var(--cp-on-accent);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 3px 0 #2F86CC;
+}
+.cfl-btn svg { width: 15px; height: 15px; }
+.cfl-btn:active { transform: translateY(3px); box-shadow: none; }
+.cfl-btn:disabled { opacity: 0.45; }
+.cfl-btn.is-stop {
+  background: #FFFFFF;
+  color: var(--cp-sub);
+  border-color: var(--cfl-sky-edge);
+  box-shadow: 0 3px 0 var(--cfl-sky-edge);
+}
+.cfl-btn.is-resume {
+  background: var(--cfl-mint);
+  color: var(--cfl-mint-ink);
+  border-color: var(--cfl-mint-edge);
+  box-shadow: 0 3px 0 var(--cfl-mint-edge);
+}
+
+/* ---------- 成本确认：盖在弹窗底部的小面板 ---------- */
+.cfl-sheet { position: absolute; inset: 0; z-index: 5; display: flex; align-items: flex-end; }
+.cfl-sheet-scrim { position: absolute; inset: 0; background: rgba(36, 65, 90, 0.34); }
+.cfl-sheet-card {
+  position: relative;
+  width: 100%;
+  padding: 18px 16px 16px;
+  border-radius: 22px 22px 0 0;
+  background: #FFFFFF;
+  border-top: 2.5px solid var(--cfl-butter-edge);
+  box-shadow: 0 -4px 0 var(--cfl-butter);
+  animation: cfl-sheet-in 0.3s cubic-bezier(.3, 1.4, .5, 1) both;
+}
+@keyframes cfl-sheet-in { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cfl-sheet-card h4 { margin: 0 0 6px; color: var(--cp-text); font-size: 15px; }
+.cfl-sheet-card p { margin: 0 0 4px; color: var(--cp-sub); font-size: 12.5px; line-height: 1.6; }
+.cfl-sheet-card p b { color: var(--cfl-butter-ink); }
+.cfl-sheet-actions { display: flex; gap: 10px; margin-top: 14px; }
+.cfl-sheet-actions .cfl-btn { flex: 1; justify-content: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cfl-stage, .cfl-sheet-card, .cfl-typing i, .cfl-rounds i.now { animation: none; }
+}
+
+/* ---------- "我的朋友"卡片上的真聊入口（放在互动/送礼/串门那一排下面） ---------- */
+.cfl-entry {
+  position: relative;
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px dashed #9FDCC6;
+  border-radius: 14px;
+  padding: 8px 10px;
+  background: #DDF7EE;
+  color: #25967A;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.cfl-entry svg { width: 17px; height: 17px; }
+.cfl-entry small { font-size: 10px; font-weight: 700; color: var(--cp-muted); }
+.cfl-entry:disabled { opacity: 0.45; }

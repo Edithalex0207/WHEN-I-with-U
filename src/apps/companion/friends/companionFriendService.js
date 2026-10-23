@@ -418,7 +418,7 @@ export const isFriendSocialExhausted = (friend) => (
  * lastStory（已确认不存档，只留最新一条）。调用方已经自己处理完
  * "这次具体要做什么"（AI 短文/送礼扣背包），这里只管写数据。
  */
-const applyFriendSocialResult = async (companionId, friendId, { friendshipDelta, lastStory }) => {
+export const applyFriendSocialResult = async (companionId, friendId, { friendshipDelta, lastStory }) => {
   const companion = await db.companions.get(companionId);
   if (!companion) throw new Error('小伙伴不存在');
 

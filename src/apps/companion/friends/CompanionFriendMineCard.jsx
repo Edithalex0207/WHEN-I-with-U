@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import { DAILY_SOCIAL_QUOTA, FRIENDSHIP_DELTA, FRIEND_MEAL_THRESHOLD, isFriendSocialExhausted } from './companionFriendService';
+import { LIVE_CHAT_TOTAL_ROUNDS, hasFreshLiveChat } from './live/companionFriendLiveService';
 import CompanionFriendAvatarView from './CompanionFriendAvatarView';
 
 /*
@@ -11,7 +12,7 @@ import CompanionFriendAvatarView from './CompanionFriendAvatarView';
  * 送礼会展开背包物品选择；三个按钮共用 DAILY_SOCIAL_QUOTA 次额度，
  * 用完全部变灰。
  */
-const CompanionFriendMineCard = ({ friend, backpackItems, onInteract, onVisit, onGift, onFeedback }) => {
+const CompanionFriendMineCard = ({ friend, backpackItems, onInteract, onVisit, onGift, onLive, onFeedback }) => {
   const [busy, setBusy] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
 
@@ -19,6 +20,8 @@ const CompanionFriendMineCard = ({ friend, backpackItems, onInteract, onVisit, o
   const exhausted = isFriendSocialExhausted(friend);
   const left = Math.max(0, DAILY_SOCIAL_QUOTA - used);
   const unlocked = friend.friendship >= FRIEND_MEAL_THRESHOLD;
+  // 额度用完时，只有今天已经开了头的真聊还能进去看/接着聊；完全没聊过就不让进了。
+  const liveEntryDisabled = exhausted && !hasFreshLiveChat(friend);
 
   const run = async (fn) => {
     if (busy || exhausted) return;
@@ -80,6 +83,14 @@ const CompanionFriendMineCard = ({ friend, backpackItems, onInteract, onVisit, o
           串门<small>{`+${FRIENDSHIP_DELTA.visit}`}</small>
         </button>
       </div>
+
+      <button type="button" className="cfl-entry" disabled={liveEntryDisabled} onClick={() => onLive?.(friend)}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 5h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4 3v-3H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+          <path d="M19 9h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v3l-4-3h-3a2 2 0 0 1-2-2" />
+        </svg>
+        看它们聊聊天<small>{`+${FRIENDSHIP_DELTA.talk} 友谊 · 约 ${LIVE_CHAT_TOTAL_ROUNDS} 次 AI`}</small>
+      </button>
 
       {giftOpen && (
         <div className="gift-pick">

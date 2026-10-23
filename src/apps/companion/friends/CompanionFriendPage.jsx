@@ -15,6 +15,7 @@ import CompanionFriendMineCard from './CompanionFriendMineCard';
 import CompanionFriendInboxEntry from './CompanionFriendInboxEntry';
 import CompanionFriendInboxPage from './CompanionFriendInboxPage';
 import { rollInboxArrival } from './companionFriendInboxService';
+import CompanionFriendLiveModal from './live/CompanionFriendLiveModal';
 import './companionFriendPage.css';
 import './companionFriendCard.css';
 
@@ -29,7 +30,7 @@ import './companionFriendCard.css';
  *
  * 渲染在 CompanionPage.jsx 的 .cp-root 里，直接用 cp-overlay 的壳子。
  */
-const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) => {
+const CompanionFriendPage = ({ companion, character, backpackItems, onClose, onRefresh }) => {
   const [tab, setTab] = useState('plaza');
   const [view, setView] = useState('main'); // 'main' | 'inbox'（收到的信）
   const [loading, setLoading] = useState(false);
@@ -39,9 +40,11 @@ const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) =
   const [feedback, setFeedback] = useState('');
   const seenFriendCountRef = useRef(companion?.friends?.length || 0);
   const [hasNewFriend, setHasNewFriend] = useState(false);
+  const [liveFriendId, setLiveFriendId] = useState(null); // 正在"真聊"弹窗里的朋友 id
 
   const plaza = companion?.friendPlaza || [];
   const friends = companion?.friends || [];
+  const liveTargetFriend = liveFriendId ? friends.find((f) => f.id === liveFriendId) || null : null;
 
   // 第一次进来，广场还没有候选数据——初始化满 4 张（不是"自动刷新"）。
   useEffect(() => {
@@ -200,13 +203,14 @@ const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) =
             ) : (
               <div className="cfp-mine-list">
                 {friends.map((friend) => (
-                  <CompanionFriendMineCard
+                                    <CompanionFriendMineCard
                     key={friend.id}
                     friend={friend}
                     backpackItems={backpackItems || []}
                     onInteract={handleInteract}
                     onVisit={handleVisit}
                     onGift={handleGift}
+                    onLive={(f) => setLiveFriendId(f.id)}
                     onFeedback={showFeedback}
                   />
                 ))}
@@ -220,13 +224,23 @@ const CompanionFriendPage = ({ companion, backpackItems, onClose, onRefresh }) =
         {feedback && <div className="cfp-toast">{feedback}</div>}
       </div>
 
-      {noteTarget && (
+            {noteTarget && (
         <CompanionFriendNoteModal
           candidate={noteTarget.candidate}
           mode={noteTarget.mode}
           busy={noteBusy}
           onConfirm={handleConfirmNote}
           onClose={() => setNoteTarget(null)}
+        />
+      )}
+
+      {liveTargetFriend && (
+        <CompanionFriendLiveModal
+          companion={companion}
+          friend={liveTargetFriend}
+          character={character}
+          onClose={() => setLiveFriendId(null)}
+          onRefresh={onRefresh}
         />
       )}
     </div>

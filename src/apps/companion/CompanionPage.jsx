@@ -1638,9 +1638,10 @@ const CompanionPage = ({ chatId, character, onBack }) => {
     />
   )}
 
-      {showFriends && (
+            {showFriends && (
         <CompanionFriendPage
           companion={companion}
+          character={character}
           backpackItems={backpackItems}
           onRefresh={refreshCompanionForFriends}
           onClose={() => setShowFriends(false)}
