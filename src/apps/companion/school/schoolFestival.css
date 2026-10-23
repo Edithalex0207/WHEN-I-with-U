@@ -1,0 +1,240 @@
+/* =========================================================
+ * schoolFestival.css —— 「校园节日事件」的样式（入口横幅 + 底部抽屉 + 家长开放日）
+ * 前缀约定：od-（open day，不与 cp- / sd- / sh- / qz- / rc- / hw- 冲突）
+ * 颜色变量：复用 companionPage.css 里 .cp-root 的 --cp-*；抽屉不在
+ * .sd-root 里面，所以 school.css 里 .sd-root 才有的几个深一档变量
+ * 在这里补一份同值的。不引入新色系，没有点阵底纹。
+ * 同学的贴图用课间事件的 rc-sticker（样式在 schoolRecess.css）。
+ * 所有动画都带 prefers-reduced-motion 保护。
+ * ========================================================= */
+
+.od-sheet,
+.od-entry {
+  --sd-heart-deep: #D95F72;
+  --sd-blue-deep: #2B7FC9;
+  --sd-lav-bg: #EBE3FF;
+  --sd-lav-fg: #7B5FCF;
+}
+
+/* ---------------- 入口横幅（结算页，位置和课间横幅一样） ---------------- */
+.od-entry {
+  position: relative; width: 100%; margin-top: 12px; padding: 12px 14px 12px 12px;
+  display: flex; align-items: center; gap: 10px; text-align: left;
+  border-radius: 26px; border: 3px solid #fff;
+  background: linear-gradient(135deg, #FFF4C9, #FFEAEF);
+  box-shadow: 0 12px 20px -12px var(--cp-shadow), 0 5px 0 -1px #F7D9A8;
+  color: var(--cp-text); transform: rotate(-1deg);
+  font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.od-entry:active { transform: rotate(-1deg) scale(0.98); }
+.od-entry-mates { flex: none; display: flex; align-items: center; padding-left: 8px; }
+.od-entry-mates .rc-sticker + .rc-sticker { margin-left: -14px; }
+.od-entry-text { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 700; line-height: 1.5; }
+.od-entry-text b { display: block; font-family: var(--cp-font-display); font-weight: 400; font-size: 16px; color: var(--cp-butter-fg); }
+.od-entry-go {
+  flex: none; display: flex; align-items: center; gap: 4px; height: 36px; padding: 0 14px; border-radius: 18px;
+  background: var(--cp-accent); color: #fff; font-weight: 800; font-size: 13px;
+  box-shadow: 0 4px 0 -1px var(--sd-blue-deep);
+}
+.od-entry-dot { position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--cp-heart); border: 3px solid #fff; }
+
+/* ---------------- 底部抽屉：云朵波浪边 ---------------- */
+.od-sheet {
+  position: relative; z-index: 1; width: 100%; max-width: 430px; max-height: 90%;
+  display: flex; flex-direction: column;
+  padding: 30px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+  background: var(--cp-bg); color: var(--cp-text); font-family: var(--cp-font-body);
+  animation: cp-panel-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.od-sheet *, .od-sheet *::before, .od-sheet *::after { box-sizing: border-box; }
+.od-sheet svg { display: block; }
+:where(.od-sheet) button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+.od-sheet button:focus-visible { outline: 3px solid var(--cp-accent); outline-offset: 2px; }
+.od-sheet::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -17px; height: 34px; pointer-events: none;
+  background: radial-gradient(circle at 17px 17px, var(--cp-bg) 17px, transparent 17.5px) 0 0 / 34px 34px repeat-x;
+}
+@media (min-width: 640px) {
+  .od-sheet { border-radius: 0 0 32px 32px; }
+}
+
+/* ---------------- 四周的小装饰 ---------------- */
+.od-deco { position: absolute; z-index: 0; pointer-events: none; }
+.od-deco.d1 { left: 14px; top: -6px; }
+.od-deco.d2 { right: 64px; top: -12px; }
+.od-deco.d3 { right: 20px; top: 52px; }
+.od-float { animation: od-floaty 3.6s ease-in-out infinite; }
+.od-float.b { animation-delay: -1.4s; }
+.od-twinkle { animation: od-twinkle 2.4s ease-in-out infinite; }
+@keyframes od-floaty { 50% { transform: translateY(-6px) rotate(4deg); } }
+@keyframes od-twinkle { 50% { transform: scale(0.7) rotate(18deg); opacity: 0.6; } }
+@keyframes od-bob { 50% { transform: translateY(-4px); } }
+@keyframes od-pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes od-rise { 0% { transform: translateY(14px) scale(0.96); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes od-wait { 0%, 100% { transform: scale(0.7) rotate(0); opacity: 0.45; } 50% { transform: scale(1.1) rotate(20deg); opacity: 1; } }
+
+/* ---------------- 标题丝带 + 关闭泡泡 ---------------- */
+.od-head { position: relative; z-index: 1; flex: none; display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+.od-ribbon {
+  display: flex; align-items: center; gap: 8px; padding: 7px 28px 8px 18px;
+  background: var(--cp-butter-bg); color: var(--cp-butter-fg);
+  font-family: var(--cp-font-display); font-size: 19px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%);
+  box-shadow: inset 0 -3px 0 rgba(209, 154, 10, 0.18);
+}
+.od-x {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: #fff; border: 2px solid var(--cp-border); color: var(--cp-sub);
+  box-shadow: 0 4px 0 -1px var(--cp-border);
+}
+.od-x:active:not(:disabled) { transform: scale(0.86) rotate(-8deg); }
+.od-x:disabled { opacity: 0.5; }
+
+.od-body { position: relative; z-index: 1; flex: 1; min-height: 0; overflow-y: auto; padding: 8px 2px 4px; scrollbar-width: none; }
+.od-body::-webkit-scrollbar { display: none; }
+
+/* ---------------- 旁白气泡：虚线 + 胶带 + 小尾巴 ---------------- */
+.od-bubble {
+  position: relative; margin-top: 8px; padding: 14px 16px; border-radius: 24px;
+  background: #fff; border: 2.5px dashed #BFD8EE;
+  font-size: 13.5px; line-height: 1.7; font-weight: 700; color: var(--cp-text);
+}
+.od-bubble::after {
+  content: ""; position: absolute; left: 36px; bottom: -11px; width: 18px; height: 18px;
+  background: #fff; border-right: 2.5px dashed #BFD8EE; border-bottom: 2.5px dashed #BFD8EE;
+  transform: rotate(45deg); border-radius: 0 0 6px 0;
+}
+.od-tape { position: absolute; top: -9px; left: 24px; width: 46px; height: 16px; border-radius: 3px; background: rgba(255, 226, 122, 0.75); transform: rotate(-6deg); }
+.od-tape.is-r { left: auto; right: 24px; background: rgba(255, 170, 190, 0.65); transform: rotate(5deg); }
+
+/* ---------------- 舞台：小伙伴 + 几位同学 ---------------- */
+.od-stage { display: flex; justify-content: center; align-items: flex-end; gap: 6px; padding: 22px 0 6px; }
+.od-who { display: flex; flex-direction: column; align-items: center; gap: 4px; animation: od-bob 2.2s ease-in-out infinite; }
+.od-who:nth-child(2) { animation-delay: -0.6s; }
+.od-who:nth-child(3) { animation-delay: -1.2s; }
+.od-who:nth-child(4) { animation-delay: -1.8s; }
+.od-pet { width: 66px; height: 66px; display: grid; place-items: center; flex: none; }
+.od-pet img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 6px 10px -6px var(--cp-shadow); }
+.od-name {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  background: #fff; border: 2px solid var(--cp-border);
+  font-size: 11px; font-weight: 800; color: var(--cp-sub);
+}
+
+/* ---------------- 选职业 ---------------- */
+.od-ask { margin: 16px 0 8px; display: flex; align-items: center; gap: 8px; font-family: var(--cp-font-display); font-size: 16px; }
+.od-ask small { font-family: var(--cp-font-body); font-size: 11.5px; font-weight: 800; color: var(--cp-muted); }
+.od-jobs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px 8px; }
+.od-job {
+  position: relative; height: 40px; border-radius: 16px; border: 2.5px solid #fff;
+  background: var(--sd-t-bg); color: var(--sd-t-fg); font-weight: 800; font-size: 13.5px;
+  box-shadow: 0 4px 0 -1px rgba(60, 120, 180, 0.16); transform: rotate(var(--tilt, 0deg));
+}
+.od-job:nth-child(3n+1) { --tilt: -1.4deg; }
+.od-job:nth-child(3n+2) { --tilt: 1deg; }
+.od-job:nth-child(3n) { --tilt: -0.5deg; }
+.od-job.is-on {
+  border-color: var(--cp-accent); background: #fff; color: var(--sd-blue-deep);
+  transform: scale(1.06) rotate(0); box-shadow: 0 5px 0 -1px var(--sd-blue-deep); animation: od-pop 0.35s;
+}
+.od-job .od-tick { position: absolute; right: -6px; top: -8px; }
+.od-own {
+  margin-top: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px 8px 14px; border-radius: 20px;
+  background: #fff; border: 2.5px solid var(--cp-border);
+}
+.od-own:focus-within { border-color: var(--cp-accent); }
+.od-own .lbl { flex: none; font-size: 12.5px; font-weight: 800; color: var(--cp-sub); }
+.od-own input {
+  flex: 1; min-width: 0; height: 30px; border: 0; outline: 0; background: transparent;
+  font: 800 14px var(--cp-font-body); color: var(--cp-text);
+}
+.od-own input::placeholder { color: var(--cp-muted); }
+.od-own .cnt { flex: none; font-size: 11.5px; font-weight: 800; color: var(--cp-muted); }
+.od-hint { margin: 8px 4px 0; font-size: 12px; font-weight: 800; color: var(--sd-heart-deep); }
+.od-note {
+  margin-top: 12px; display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 14px;
+  background: var(--cp-accent-soft); color: var(--sd-blue-deep); font-size: 12px; font-weight: 800; line-height: 1.55;
+}
+.od-note svg { flex: none; margin-top: 2px; }
+
+/* ---------------- 按钮 ---------------- */
+.od-btn {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 54px; margin-top: 16px; border-radius: 27px; overflow: hidden;
+  background: var(--cp-accent); color: #fff; font-weight: 800; font-size: 16px;
+  box-shadow: 0 7px 0 -2px var(--sd-blue-deep), 0 14px 18px -8px var(--cp-shadow);
+}
+.od-btn::before { content: ""; position: absolute; left: 14px; right: 14px; top: 6px; height: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.28); }
+.od-btn.is-heart { background: var(--cp-heart); box-shadow: 0 7px 0 -2px var(--sd-heart-deep), 0 14px 18px -8px rgba(255, 134, 160, 0.5); }
+.od-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 3px 0 -2px var(--sd-blue-deep), 0 8px 12px -8px var(--cp-shadow); }
+.od-btn.is-heart:active:not(:disabled) { box-shadow: 0 3px 0 -2px var(--sd-heart-deep), 0 8px 12px -8px rgba(255, 134, 160, 0.5); }
+.od-btn:disabled { opacity: 0.55; }
+.od-link { display: block; margin: 12px auto 0; padding: 6px 12px; font-size: 13px; font-weight: 800; color: var(--cp-sub); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------------- 等 AI 写的时候 ---------------- */
+.od-waiting { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13px; font-weight: 800; color: var(--cp-sub); }
+.od-waiting .w { animation: od-wait 1.4s ease-in-out infinite; }
+.od-waiting .w:last-child { animation-delay: -0.7s; }
+
+/* ---------------- 同学的反应 ---------------- */
+.od-says { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; position: relative; }
+.od-open.is-settled .od-says { margin-top: 6px; }
+.od-stamp {
+  position: absolute; right: 6px; top: -14px; z-index: 2; padding: 4px 14px; border-radius: 16px;
+  background: #fff; color: var(--sd-blue-deep); border: 2.5px solid var(--cp-accent);
+  font-family: var(--cp-font-display); font-size: 15px; transform: rotate(5deg);
+  box-shadow: 0 4px 0 -1px var(--sd-blue-deep);
+}
+.od-stamp + .od-say { margin-top: 12px; } /* 给右上角的职业胶囊贴纸留位置，免得压住第一张气泡 */
+.od-say { display: flex; align-items: flex-end; gap: 8px; animation: od-rise 0.45s backwards; }
+.od-say:nth-child(2) { animation-delay: 0.15s; }
+.od-say:nth-child(3) { animation-delay: 0.3s; }
+.od-say:nth-child(4) { animation-delay: 0.45s; }
+.od-say.is-r { flex-direction: row-reverse; }
+.od-say .od-who { flex: none; animation: none; }
+.od-card {
+  position: relative; flex: 1; min-width: 0; padding: 18px 14px 12px; border-radius: 22px; background: #fff;
+  border: 2.5px dashed var(--sd-t-fg); transform: rotate(-0.8deg);
+}
+.od-say.is-r .od-card { transform: rotate(0.8deg); }
+.od-card .who {
+  position: absolute; top: -12px; left: 14px; padding: 2px 12px; border-radius: 12px;
+  background: var(--sd-t-bg); color: var(--sd-t-fg); border: 2px solid #fff; font-size: 11.5px; font-weight: 800;
+}
+.od-say.is-r .od-card .who { left: auto; right: 14px; }
+.od-card p { margin: 0; font-size: 13.5px; line-height: 1.65; font-weight: 700; color: var(--cp-text); }
+
+/* 小伙伴的自豪 */
+.od-proud {
+  margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 22px;
+  background: var(--cp-heart-soft); border: 3px solid #fff; box-shadow: 0 8px 14px -10px var(--cp-shadow);
+}
+.od-proud .od-pet { width: 44px; height: 44px; animation: od-bob 2s ease-in-out infinite; }
+.od-proud p { margin: 0; font-size: 13px; line-height: 1.6; font-weight: 700; color: var(--cp-text); }
+
+/* ---------------- 结果贴纸 / 提示 / 空状态 ---------------- */
+.od-result {
+  position: relative; margin-top: 20px; padding: 20px 16px 14px; border-radius: 24px;
+  background: var(--sd-t-bg); border: 3px solid #fff; box-shadow: 0 10px 16px -10px var(--cp-shadow);
+  animation: od-pop 0.4s;
+}
+.od-result p { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.65; color: var(--cp-text); }
+.od-gains { position: absolute; right: 10px; top: -15px; display: flex; gap: 6px; }
+.od-gain {
+  display: flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 16px;
+  background: var(--cp-heart); color: #fff; font-weight: 800; font-size: 13px;
+  border: 3px solid #fff; transform: rotate(4deg); box-shadow: 0 4px 0 -1px var(--sd-heart-deep);
+}
+.od-gain.is-mood { background: var(--cp-butter-fg); transform: rotate(-3deg); box-shadow: 0 4px 0 -1px #A87A06; }
+.od-notice {
+  margin: 12px 0 0; padding: 9px 14px; border-radius: 16px; background: var(--cp-heart-soft);
+  color: var(--sd-heart-deep); font-size: 12.5px; font-weight: 800; line-height: 1.5; text-align: center;
+}
+.od-empty { margin-top: 18px; text-align: center; }
+.od-empty p { margin: 0; font-size: 13px; font-weight: 700; color: var(--cp-sub); }
+
+@media (prefers-reduced-motion: reduce) {
+  .od-sheet, .od-float, .od-twinkle, .od-who, .od-say, .od-job.is-on, .od-result,
+  .od-waiting .w, .od-proud .od-pet { animation: none !important; }
+}

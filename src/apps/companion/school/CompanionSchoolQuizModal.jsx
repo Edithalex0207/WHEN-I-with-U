@@ -30,6 +30,12 @@
  * 出现"老师的嘱托"横幅。这里不显示任何东西，只是在命中后通过
  * onHomeworkRolled 通知上一层刷新；没中 / 出错都静默忽略。
  *
+ * 【校园节日】结算成功后还会再单独 roll 一次 rollSchoolFestival（见
+ * companionSchoolFestivalService.js），是第四次独立的 roll：命中后（比如家长
+ * 开放日）结算页多显示一条节日横幅，点了才打开 CompanionSchoolFestivalModal，
+ * 玩完才加心情和心心；不点或中途关掉算放弃，什么都不留，也不保存。没中 / 出错
+ * 都静默忽略。
+ *
  * Props:
  *   companion      object    —— 当前小伙伴
  *   mode           string    —— QUIZ_MODE 的取值（mixed / preset / custom / wrong）
@@ -51,10 +57,13 @@ import { startQuizSet, finishQuizSet } from './companionSchoolQuizService';
 import { rollCampusBreak } from './companionSchoolRecessService';
 import { rollHomeworkTask } from './companionSchoolHomeworkService';
 import { rollCollectibleCard } from './companionSchoolCardService';
+import { rollSchoolFestival, getFestival } from './companionSchoolFestivalService';
 import { CARD_RARITY_LABELS } from './companionSchoolCardCatalog';
 import CompanionSchoolCardStoryModal from './CompanionSchoolCardStoryModal';
 import CompanionSchoolRecessEntry from './CompanionSchoolRecessEntry';
 import CompanionSchoolRecessModal from './CompanionSchoolRecessModal';
+import CompanionSchoolFestivalEntry from './CompanionSchoolFestivalEntry';
+import CompanionSchoolFestivalModal from './CompanionSchoolFestivalModal';
 import { CloseGlyph, CheckGlyph, StarGlyph, PetFace, CardArt } from './SchoolArt';
 
 const CHEER_RIGHT = ['答对啦！你好厉害', '哇，答对了！', '太棒啦，这题对了！', '好厉害，一下就对了！'];
@@ -76,6 +85,9 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
   const [recess, setRecess] = useState(null); // 待玩的可互动课间事件（rollCampusBreak 的 recess），没中是 null
   const [recessOpen, setRecessOpen] = useState(false); // 课间事件小窗是否打开
   const [recessDone, setRecessDone] = useState(null); // 玩完并落库后的结果 { text, moodDelta }
+  const [festival, setFestival] = useState(null); // 待玩的校园节日事件（rollSchoolFestival 的返回值），没中是 null
+  const [festivalOpen, setFestivalOpen] = useState(false); // 节日小窗是否打开
+  const [festivalDone, setFestivalDone] = useState(null); // 玩完并落库后的结果 { text, moodDelta, hearts }
   const [cardDrop, setCardDrop] = useState(null); // rollCollectibleCard 的返回值，没中是 null
   const [storyOpen, setStoryOpen] = useState(false); // 抽到新卡时弹小故事
   const [resultLine] = useState(() => pickRandom(RESULT_LINES));
@@ -152,6 +164,13 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
           if (drop?.isNew) setStoryOpen(true);
         })
         .catch(() => setCardDrop(null));
+      // 「校园节日」：第四次独立 roll，跟上面几次互不影响，没中 / 出错都静默忽略
+      rollSchoolFestival(companion.id, {
+        stage: res.status?.record?.stage,
+        classId: res.status?.record?.classId,
+        teacherId: res.status?.record?.teacherId,
+        companionName: companion.name,
+      }).then((ev) => setFestival(ev || null)).catch(() => setFestival(null));
     } catch (err) {
       setErrorMsg(err?.message || '结算没有成功，再试一次吧');
     } finally {
@@ -274,6 +293,24 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
               </div>
             )}
 
+            {festival && !festivalDone && (
+              <CompanionSchoolFestivalEntry event={festival} onOpen={() => setFestivalOpen(true)} />
+            )}
+
+            {festivalDone && (
+              <div className="qz-activity sd-tone-butter">
+                <span className="qz-activity-ico"><StarGlyph size={16} /></span>
+                <div>
+                  <h6>{getFestival(festival?.festivalId)?.title || '校园节日'}</h6>
+                  <p>
+                    {festivalDone.text}
+                    {festivalDone.moodDelta > 0 && <b> +{festivalDone.moodDelta} 心情</b>}
+                    {festivalDone.hearts > 0 && <b> +{festivalDone.hearts} 心心</b>}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {cardDrop && (
               <div className={`qz-card-drop sd-tone-${cardDrop.card.rarity === 'hidden' ? 'lavender' : cardDrop.card.rarity === 'rare' ? 'heart' : 'sky'}`}>
                 <CardArt card={cardDrop.card} size={52} />
@@ -310,6 +347,18 @@ const CompanionSchoolQuizModal = ({ companion, mode, subjectIds = [], onClose, o
             event={recess}
             onClose={() => setRecessOpen(false)}
             onSettled={(settled) => setRecessDone({ text: settled.text, moodDelta: settled.moodDelta })}
+          />
+        )}
+        {festivalOpen && festival && !festivalDone && (
+          <CompanionSchoolFestivalModal
+            companion={companion}
+            event={festival}
+            onClose={() => setFestivalOpen(false)}
+            onSettled={(settled) => setFestivalDone({
+              text: settled.text,
+              moodDelta: settled.moodDelta,
+              hearts: settled.hearts,
+            })}
           />
         )}
       </div>
