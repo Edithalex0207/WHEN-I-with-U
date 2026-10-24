@@ -18,6 +18,7 @@ import ChatPokeNotice from '../interactions/ChatPokeNotice';
 import MoodUpdateNotice from '../mood/MoodUpdateNotice';
 import ChatDiyUpdateNotice from '../diy/ChatDiyUpdateNotice';
 import ChallengeCompletionNotice from '../../challenges/ChallengeCompletionNotice';
+import PixelDollGiftNotice from '../../pixelDoll/PixelDollGiftNotice';
 import TextGameResultNotice from '../../textgames/TextGameResultNotice';
 import ChatParcelArrivedNotice from '../parcel/ChatParcelArrivedNotice';
 import ChatParallelOrbitNotice from './ChatParallelOrbitNotice';
@@ -306,6 +307,12 @@ const MessageRow = ({
   // 系统提示行，不可点击跳转，具体进度去打卡板面板里看。
   if (msg.type === 'challenge_complete') {
     return <ChallengeCompletionNotice message={msg} />;
+  }
+
+  // 像素衣橱——送礼/角色回应/角色主动送礼留在聊天记录里的痕迹，同样是
+  // 居中系统提示行，不可点击，具体穿戴情况去"像素衣橱"面板里看。
+  if (msg.type === 'pixel_doll_gift') {
+    return <PixelDollGiftNotice message={msg} />;
   }
 
   // 文字游戏大厅——跟角色对弈完一局之后留在聊天记录里的痕迹，同样

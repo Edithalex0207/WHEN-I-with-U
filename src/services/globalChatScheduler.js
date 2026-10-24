@@ -39,6 +39,7 @@ import { checkAlmanacPortraitAutoGeneration } from '../apps/almanac/services/alm
 import { runChallengeScheduler } from '../apps/challenges/challengeScheduler';
 import { checkCompanionMoods } from '../apps/companion/mood/companionMoodScheduler';
 import { checkCompanionStatusAlerts } from '../apps/companion/companionStatusAlertService';
+import { runPixelDollScheduler } from '../apps/pixelDoll/pixelDollScheduler';
 
 const BASE_TICK_MS = 3 * 60 * 1000;
 
@@ -55,12 +56,15 @@ const REGISTRATIONS = [
   { name: 'companionMood', intervalMs: 3 * 60 * 1000, run: checkCompanionMoods },
   // #4 状态不佳卡片：检查本身也很便宜（没养小伙伴/还在冷却就立刻
   // return），3 分钟间隔足够及时，不会错过状态刚掉下阈值的时机。
+
   { name: 'companionStatusAlert', intervalMs: 3 * 60 * 1000, run: checkCompanionStatusAlerts },
+  // 像素衣橱——角色自主判断要不要主动送一件礼物，没有冷却，跟 challenge
+  // 同一个"不在启动瞬间自动扫描"处理，60 分钟一次。
+  { name: 'pixelDoll', intervalMs: 60 * 60 * 1000, run: runPixelDollScheduler },
 ];
 
 // 原本就不在启动瞬间立即检查一次的调度器，见文件顶部说明。
-const SKIP_IMMEDIATE_RUN_ON_START = new Set(['call', 'parallelOrbit', 'challenge']);
-
+const SKIP_IMMEDIATE_RUN_ON_START = new Set(['call', 'parallelOrbit', 'challenge', 'pixelDoll']);
 let baseTimer = null;
 let lastRunAt = new Map();
 
@@ -114,7 +118,7 @@ export const startGlobalChatScheduler = () => {
     void runDueSchedulers();
   }, BASE_TICK_MS);
 
-    console.log('[globalChatScheduler] 已启动，基准 tick 3 分钟，合并 rhythm/call/snapshotGlobal/almanacGreeting/almanacPortrait/parallelOrbit/challenge/companionMood/companionStatusAlert。');
+    console.log('[globalChatScheduler] 已启动，基准 tick 3 分钟，合并 rhythm/call/snapshotGlobal/almanacGreeting/almanacPortrait/parallelOrbit/challenge/companionMood/companionStatusAlert/pixelDoll。');
 };
 
 export const stopGlobalChatScheduler = () => {

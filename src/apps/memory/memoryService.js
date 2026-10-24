@@ -891,6 +891,9 @@ export const destroyChatWithMemories = async (chatId) => {
     db.memoryRevisions,
     db.memoryJobs,
     db.scheduledMessages,
+    db.pixelDollProfiles,
+    db.pixelDollParts,
+    db.pixelDollGifts,
     async () => {
       await db.messages
         .where('chatId')
@@ -915,6 +918,24 @@ export const destroyChatWithMemories = async (chatId) => {
         .delete();
 
       await db.scheduledMessages
+        .where('chatId')
+        .equals(chatId)
+        .delete();
+
+      // 像素衣橱的三张表：档案、礼物记录都是按 chatId 一条/一批，直接删；
+      // 自定义部件只删这个聊天专属的（scopeChatId === chatId，身形），
+      // scopeChatId === 0 的全局发型/眼睛/衣着是跨聊天共用的，不能删。
+      await db.pixelDollProfiles
+        .where('chatId')
+        .equals(chatId)
+        .delete();
+
+      await db.pixelDollParts
+        .where('scopeChatId')
+        .equals(chatId)
+        .delete();
+
+      await db.pixelDollGifts
         .where('chatId')
         .equals(chatId)
         .delete();

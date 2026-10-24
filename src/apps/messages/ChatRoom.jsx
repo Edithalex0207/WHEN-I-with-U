@@ -31,8 +31,9 @@ Phone,
   Trash2,
   Package,
   Stamp,
-  Mic,
+    Mic,
   Hand,
+  Shirt,
 } from 'lucide-react';
 
 import {
@@ -41,7 +42,7 @@ import {
 } from 'lucide-animated';
 
 
-import Dexie from 'dexie';
+import Dexie, { liveQuery } from 'dexie';
 import db from '../../db';
 import { clearPhotoMessageMedia } from './chatMediaCleanupService';
 import { releasePhotoObjectUrl } from './components/cards/PhotoCard';
@@ -241,6 +242,15 @@ const ParcelPage = lazy(() => import('./parcel/ParcelPage'));
 // 资料卡是个小浮层，不是整页，但同样没必要在首屏体积里常驻
 const ProfileCard = lazy(() => import('./profile/ProfileCard'));
 
+// 像素衣橱，同样只有用户点开 🐾 更多入口里的入口才加载——ChatRoom.jsx
+// 自己不静态 import pixelDoll 文件夹里的任何东西，详见 pixelDollService.js
+// 顶部的说明。
+const PixelClosetPage = lazy(() => import('../pixelDoll/PixelClosetPage'));
+// 聊天窗挂件：默认关闭，只有这个聊天的 pixelDollProfiles.widgetEnabled 为
+// true 时才会挂载（挂载判断本身不 import 这个文件夹，见下面的 useEffect），
+// 同样懒加载。
+const PixelDollWidget = lazy(() => import('../pixelDoll/PixelDollWidget'));
+
 export const ChatRoom = ({
   chatId,
   onBack,
@@ -347,7 +357,12 @@ const [showCompanionPage, setShowCompanionPage] = useState(false);
   const [showMemoirPage, setShowMemoirPage] = useState(false);
   const [showCharacterDiy, setShowCharacterDiy] = useState(false);
   const [showParcelPage, setShowParcelPage] = useState(false);
-  const [showChallengeBoard, setShowChallengeBoard] = useState(false);
+   const [showChallengeBoard, setShowChallengeBoard] = useState(false);
+  const [showPixelCloset, setShowPixelCloset] = useState(false);
+  // 挂件要不要出现：只读 pixelDollProfiles.widgetEnabled 这一个字段（见下面
+  // 的 useEffect），不 import pixelDoll 文件夹，所以这个聊天没开通衣橱时
+  // 完全没有额外开销。
+  const [pixelDollWidgetEnabled, setPixelDollWidgetEnabled] = useState(false);
   // 长按头像打开的资料卡：浮层弹出，不是整页替换，所以不走上面
 // showMemoirPage/showCharacterDiy 那种"整个组件提前 return"的写法，
 // 就近跟 showChatSettings 这类弹层模态共用同一种条件渲染方式。
@@ -983,6 +998,29 @@ forceScrollMessageIdRef.current = stickerMsgId;
         midnightCheckInFlightRef.current = false;
       });
   }, [chat?.id, chat?.lastMidnightEggDate]);
+
+  // 像素衣橱挂件要不要出现：只订阅 pixelDollProfiles 这一张表的
+  // widgetEnabled 字段，不 import pixelDoll 文件夹里的任何东西（db 是
+  // 全局的，不算这个文件夹的一部分）。这个聊天从没开过衣橱时，
+  // pixelDollProfiles 里没有这一行，查询结果就是 undefined，挂件不出现。
+  useEffect(() => {
+    if (!chatId) {
+      setPixelDollWidgetEnabled(false);
+      return undefined;
+    }
+
+    const subscription = liveQuery(() => (
+      db.pixelDollProfiles.where('chatId').equals(chatId).first()
+    )).subscribe({
+      next: (profile) => setPixelDollWidgetEnabled(Boolean(profile?.widgetEnabled)),
+      error: (error) => {
+        console.error('[ChatRoom] 像素衣橱挂件状态订阅失败:', error);
+        setPixelDollWidgetEnabled(false);
+      },
+    });
+
+    return () => subscription.unsubscribe();
+  }, [chatId]);
 
   const closePendingMcpApproval = useCallback((result) => {
     const resolver = mcpApprovalResolverRef.current;
@@ -2086,6 +2124,21 @@ const handleCancelAiResponse = () => {
   );
 }
 
+  if (showPixelCloset) {
+  return (
+    <Suspense fallback={null}>
+      <PixelClosetPage
+        chatId={chatId}
+        character={character}
+        onBack={() => {
+  hasScrolledToLatestRef.current = false;
+  setShowPixelCloset(false);
+}}
+      />
+    </Suspense>
+  );
+}
+
   if (showMemoirPage) {
   return (
     <Suspense fallback={null}>
@@ -2389,8 +2442,20 @@ const handleCancelAiResponse = () => {
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs opacity-85 transition-opacity hover:opacity-100"
                       >
-                                                <CompanionHeartIcon className="h-4 w-4" />
+                                                                     <CompanionHeartIcon className="h-4 w-4" />
                         <span>小伙伴</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowTopMenu(false);
+                          setShowPixelCloset(true);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs opacity-85 transition-opacity hover:opacity-100"
+                      >
+                        <Shirt className="h-4 w-4" />
+                        <span>像素衣橱施工中</span>
                       </button>
 
                       <button
@@ -2850,7 +2915,17 @@ const handleCancelAiResponse = () => {
           </div>
         )}
 
-        <HeartbeatPulse pulseKey={heartbeatPulseKey} />
+               <HeartbeatPulse pulseKey={heartbeatPulseKey} />
+
+        {pixelDollWidgetEnabled && (
+          <Suspense fallback={null}>
+            <PixelDollWidget
+              chatId={chatId}
+              character={character}
+              onOpen={() => setShowPixelCloset(true)}
+            />
+          </Suspense>
+        )}
 
               <div
           className="chat-input-bar relative flex items-center gap-2 rounded-full px-3 py-2 shadow-2xl backdrop-blur-2xl transition-all duration-300"

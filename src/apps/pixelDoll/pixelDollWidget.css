@@ -1,0 +1,29 @@
+/* 像素衣橱——聊天窗悬浮挂件 */
+
+.pixel-doll-widget {
+  position: fixed;
+  right: 14px;
+  bottom: 104px;
+  z-index: 25;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 5px 6px;
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  background: var(--control-soft-bg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform 0.15s ease;
+}
+
+.pixel-doll-widget:active {
+  transform: scale(0.93);
+}
+
+.pixel-doll-widget-canvas {
+  width: 26px;
+  height: auto;
+}

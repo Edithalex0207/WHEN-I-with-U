@@ -656,6 +656,29 @@ export const formatMsgContentForPrompt = (msg, options = {}) => {
     return `[你自己给聊天气泡写了一套样式「${msg.metadata?.name || ''}」，${statusText}]`;
   }
 
+  if (msg.type === 'pixel_doll_gift') {
+    // 像素衣橱的礼物消息：只读消息自带的 metadata（giftId, label, direction,
+    // status, accepted），不 import pixelDoll 文件夹——跟衣橱那边的约定一致，
+    // 见 pixelDollService.js 顶部的说明。
+    const label = msg.metadata?.label || '';
+    const direction = msg.metadata?.direction;
+
+    if (direction === 'user_to_char') {
+      return `[用户在"像素衣橱"里给你的像素小人送了一件礼物：「${label}」，穿不穿由你自己决定]`;
+    }
+
+    if (direction === 'char_reply') {
+      const accepted = msg.metadata?.accepted;
+      return `[关于用户送的礼物「${label}」，你${accepted ? '已经穿上了' : '婉拒了，先收着'}，你当时说的话是: ${msg.content || ''}]`;
+    }
+
+    if (direction === 'char_to_user') {
+      return `[你在"像素衣橱"里主动送了用户的像素小人一件礼物：「${label}」，你当时说的话是: ${msg.content || ''}]`;
+    }
+
+    return `[像素衣橱里的一件礼物：「${label}」]`;
+  }
+
   if (msg.type === 'challenge_complete') {
     return `[用户完成了你在"异地任务挑战"里布置的任务「${
       msg.metadata?.taskContent || ''
