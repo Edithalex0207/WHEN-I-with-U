@@ -6,8 +6,9 @@ import {
   CheckCircle2,
   ChevronRight,
   Cpu,
-  Database,
+    Database,
   Download,
+  Globe,
   HardDrive,
   Heart,
   ImageOff,
@@ -174,7 +175,16 @@ const [newCategoryQuoteInputs, setNewCategoryQuoteInputs] = useState({});
   // 只在填了 baseUrl + apiKey 时才生效，不需要额外开关。目前只覆盖
   // 主聊天（messages）和 offline 线下场景邀约，两者共用同一段底层
   // 请求代码（aiService.js 的 performFetchAiCompletionWithTools）。
-  const [apiConfigBackup, setApiConfigBackup] = useState({
+    const [apiConfigBackup, setApiConfigBackup] = useState({
+    baseUrl: '',
+    apiKey: '',
+    model: '',
+  });
+
+  // 联网搜索：跟主 API / 备用 API 完全独立的第三份 OpenAI 兼容配置，角色
+  // 自主决定要不要用（webSearchTool.js），不填就相当于没有这个功能，
+  // 不影响现有任何使用。
+  const [webSearchApiConfig, setWebSearchApiConfig] = useState({
     baseUrl: '',
     apiKey: '',
     model: '',
@@ -207,8 +217,11 @@ const [isCompanionLoading, setIsCompanionLoading] = useState(true);
   const [apiStatus, setApiStatus] = useState('idle');
   // 备用 API 自己的一份模型列表/连通状态，跟主 API 的 models/apiStatus 分开，
   // 互不影响。
-  const [modelsBackup, setModelsBackup] = useState([]);
+   const [modelsBackup, setModelsBackup] = useState([]);
   const [apiStatusBackup, setApiStatusBackup] = useState('idle');
+  // 联网搜索自己的一份模型列表/连通状态，跟主 API、备用 API 都互不影响。
+  const [modelsWebSearch, setModelsWebSearch] = useState([]);
+  const [apiStatusWebSearch, setApiStatusWebSearch] = useState('idle');
   const [storageInfo, setStorageInfo] = useState({
     supported: true,
     usage: 0,
@@ -435,13 +448,23 @@ const [isCompanionLoading, setIsCompanionLoading] = useState(true);
           }));
         }
 
-        if (
+                if (
           settingMap.apiConfigBackup &&
           typeof settingMap.apiConfigBackup === 'object'
         ) {
           setApiConfigBackup((previous) => ({
             ...previous,
             ...settingMap.apiConfigBackup,
+          }));
+        }
+
+        if (
+          settingMap.webSearchApiConfig &&
+          typeof settingMap.webSearchApiConfig === 'object'
+        ) {
+          setWebSearchApiConfig((previous) => ({
+            ...previous,
+            ...settingMap.webSearchApiConfig,
           }));
         }
 
@@ -851,8 +874,9 @@ const handleDeletePreloaderQuote = (categoryId, quoteIndex) => {
           { key: 'snapshotCharacterAutoPostEnabled', value: characterAutoPost },
           { key: 'parallelOrbitAutoScheduleEnabled', value: parallelOrbitAutoSchedule },
           { key: 'quietHours', value: quietHours },
-                   { key: 'apiConfig', value: apiConfig },
+                                    { key: 'apiConfig', value: apiConfig },
           { key: 'apiConfigBackup', value: apiConfigBackup },
+          { key: 'webSearchApiConfig', value: webSearchApiConfig },
           {
   key: 'preloaderQuoteConfig',
   value: cleanPreloaderQuoteConfig,
@@ -972,7 +996,7 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
         ? resData.data.map((item) => item.id)
         : [];
 
-      setModelsBackup(list);
+            setModelsBackup(list);
       setApiStatusBackup('success');
 
       if (list.length > 0 && !list.includes(apiConfigBackup.model)) {
@@ -984,6 +1008,49 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
     } catch (error) {
       console.error('Backup API connection failed:', error);
       setApiStatusBackup('error');
+    }
+  };
+
+  // 跟 testApiConnection 逻辑完全一样，只是读写联网搜索自己的一份状态。
+  const testApiConnectionWebSearch = async () => {
+    if (!webSearchApiConfig.baseUrl || !webSearchApiConfig.apiKey) {
+      setApiStatusWebSearch('error');
+      return;
+    }
+
+    setApiStatusWebSearch('testing');
+
+    try {
+      const cleanUrl = webSearchApiConfig.baseUrl.replace(/\/+$/, '');
+      const response = await fetch(`${cleanUrl}/models`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${webSearchApiConfig.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const resData = await response.json();
+      const list = Array.isArray(resData.data)
+        ? resData.data.map((item) => item.id)
+        : [];
+
+      setModelsWebSearch(list);
+      setApiStatusWebSearch('success');
+
+      if (list.length > 0 && !list.includes(webSearchApiConfig.model)) {
+        setWebSearchApiConfig((previous) => ({
+          ...previous,
+          model: list[0],
+        }));
+      }
+    } catch (error) {
+      console.error('Web search API connection failed:', error);
+      setApiStatusWebSearch('error');
     }
   };
 
@@ -2156,6 +2223,126 @@ setPreloaderQuoteConfig(cleanPreloaderQuoteConfig);
                 className="w-full rounded-lg bg-black/5 p-2 outline-none dark:bg-white/10"
               >
                 {modelsBackup.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </GlassCard>
+       {/* 4c. 联网搜索：跟主 API / 备用 API 完全独立的第三份 OpenAI 兼容
+          配置。角色自己判断要不要查，查完会在回复下面带一张搜索过程的
+          小卡片，正文里角色自己转述结果。不填就相当于没有这个功能，
+          不需要开关，不影响现有任何使用。 */}
+      <GlassCard className="space-y-4 text-left">
+        <div className="flex items-center gap-2 text-sm font-bold">
+          <Globe className="h-4 w-4" />
+          <span>联网搜索 (Web Search)</span>
+        </div>
+ 
+        <p className="text-[10px] leading-relaxed opacity-50">
+          给角色接一个单独的联网搜索能力，角色会自己判断什么时候要查（不限制调用次数），查完用自己的语气转述给你，回复下面会带一张小卡片展示搜了什么。
+          可以填一个本身自带联网搜索能力的模型（例如 Perplexity 的 sonar 系列），也可以填任何 OpenAI 兼容的检索网关。留空则完全不影响现有使用。
+        </p>
+ 
+        <div className="space-y-3.5 text-xs">
+          <div>
+            <label className="mb-1 block opacity-60">搜索 Base URL</label>
+            <input
+              type="text"
+              placeholder="e.g. https://api.perplexity.ai"
+              value={webSearchApiConfig.baseUrl}
+              onChange={(event) =>
+                setWebSearchApiConfig((previous) => ({
+                  ...previous,
+                  baseUrl: event.target.value,
+                }))
+              }
+              className="w-full rounded-xl bg-black/5 p-3 outline-none focus:bg-black/10 dark:bg-white/10"
+            />
+          </div>
+ 
+          <div>
+            <label className="mb-1 block opacity-60">搜索 API Key</label>
+            <input
+              type="password"
+              placeholder="pplx-... / sk-..."
+              value={webSearchApiConfig.apiKey}
+              onChange={(event) =>
+                setWebSearchApiConfig((previous) => ({
+                  ...previous,
+                  apiKey: event.target.value,
+                }))
+              }
+              className="w-full rounded-xl bg-black/5 p-3 outline-none focus:bg-black/10 dark:bg-white/10"
+            />
+          </div>
+ 
+          {webSearchApiConfig.model && (
+            <div>
+              <label className="mb-1 block opacity-60">Model (当前使用)</label>
+              <input
+                type="text"
+                placeholder="sonar"
+                value={webSearchApiConfig.model}
+                onChange={(event) =>
+                  setWebSearchApiConfig((previous) => ({
+                    ...previous,
+                    model: event.target.value,
+                  }))
+                }
+                className="w-full rounded-xl bg-black/5 p-3 outline-none focus:bg-black/10 dark:bg-white/10"
+              />
+            </div>
+          )}
+ 
+          <div className="flex items-center justify-between gap-4 border-t border-black/5 pt-3 dark:border-white/5">
+            <button
+              type="button"
+              onClick={testApiConnectionWebSearch}
+              disabled={apiStatusWebSearch === 'testing' || !webSearchApiConfig.baseUrl || !webSearchApiConfig.apiKey}
+              className="flex items-center gap-2 rounded-xl bg-black px-4 py-2.5 font-semibold text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black"
+            >
+              {apiStatusWebSearch === 'testing' ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              )}
+              <span>{apiStatusWebSearch === 'testing' ? '正在连接' : '测试连通性'}</span>
+            </button>
+ 
+            {apiStatusWebSearch === 'success' && (
+              <span className="flex items-center gap-1 font-semibold text-emerald-500">
+                <CheckCircle2 className="h-4 w-4" />
+                连通正常
+              </span>
+            )}
+ 
+            {apiStatusWebSearch === 'error' && (
+              <span className="flex items-center gap-1 font-semibold text-rose-500">
+                <XCircle className="h-4 w-4" />
+                连接失败
+              </span>
+            )}
+          </div>
+ 
+          {modelsWebSearch.length > 0 && (
+            <div>
+              <label className="mb-1 block opacity-60">Select Model</label>
+ 
+              <select
+                value={webSearchApiConfig.model}
+                onChange={(event) =>
+                  setWebSearchApiConfig((previous) => ({
+                    ...previous,
+                    model: event.target.value,
+                  }))
+                }
+                className="w-full rounded-lg bg-black/5 p-2 outline-none dark:bg-white/10"
+              >
+                {modelsWebSearch.map((model) => (
                   <option key={model} value={model}>
                     {model}
                   </option>

@@ -66,6 +66,7 @@ import LuckinCoffeeCard from './cards/LuckinCoffeeCard';
 import NeteaseMusicCard from './cards/NeteaseMusicCard';
 import { DidiRideCard } from './cards/DidiRideCard';
 import WeatherCard from './cards/WeatherCard';
+import WebSearchResultCard from './cards/WebSearchResultCard';
 
 // 长按多久才算"长按"、弹出反应面板。太短容易跟正常点击冲突，
 // 太长又会显得迟钝，420ms 是比较常见的手感。
@@ -757,7 +758,10 @@ const MessageRow = ({
   <WeatherCard card={messageOrderCard} />
 )}
 
-
+{/* 联网搜索专属卡片 */}
+{!isUser && messageOrderCard?.kind === 'web_search' && (
+  <WebSearchResultCard card={messageOrderCard} />
+)}
 
         </div>
 

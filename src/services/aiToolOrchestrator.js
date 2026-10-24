@@ -16,6 +16,12 @@ import {
   runSavedInfoLookup,
 } from './savedInfoTool';
 import {
+  WEB_SEARCH_PROMPT_RULE,
+  WEB_SEARCH_TOOL_NAME,
+  buildWebSearchToolDefinition,
+  runWebSearchCall,
+} from './webSearchTool';
+import {
   callMcpToolRuntime,
 } from './mcp/mcpRuntimeService';
 import { extractMcpCard } from './mcp/mcpCardRegistry';
@@ -493,8 +499,19 @@ export const runAiToolOrchestrator = async ({
   console.log('[MCP] 传给 AI 的工具定义数量:', tools.length);
   console.log('[MCP] 传给 AI 的工具:', tools);
 
+  const savedInfoTool = await buildSavedInfoToolDefinition();
+  let savedInfoLookupCount = 0;
+
+  // 联网搜索是独立配置的第三份 OpenAI 兼容 API（db.settings 里的
+  // webSearchApiConfig），跟 MCP 工具、常用信息查阅完全独立——用户哪怕
+  // 一个 MCP 服务器都没接，只要配置了这个也要能用，所以下面判断"要不要
+  // 完全走原有普通请求"时必须把它也算进"有没有可用工具"，不能只看
+  // MCP 工具数量（这也顺带修了一个既有小问题：原来 savedInfoTool 同样
+  // 被这个判断挡住了，没接 MCP 的用户即使保存过常用信息也用不上）。
+  const webSearchTool = await buildWebSearchToolDefinition();
+
   // 没有任何已启用工具时，完全沿用原有普通 AI 请求。
-  if (tools.length === 0) {
+  if (tools.length === 0 && !savedInfoTool && !webSearchTool) {
     return requestAiCompletion({
       systemPrompt,
       messages: historyContext,
@@ -503,18 +520,26 @@ export const runAiToolOrchestrator = async ({
     });
   }
 
-  const savedInfoTool = await buildSavedInfoToolDefinition();
-  let savedInfoLookupCount = 0;
-
   if (savedInfoTool) {
     tools.push(savedInfoTool);
   }
 
+  if (webSearchTool) {
+    tools.push(webSearchTool);
+  }
+
+  const extraPromptNotes = [
+    savedInfoTool ? SAVED_INFO_PROMPT_RULE : '',
+    webSearchTool ? WEB_SEARCH_PROMPT_RULE : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
   const messages = [
     {
       role: 'system',
-      content: savedInfoTool
-        ? `${systemPrompt}\n${SAVED_INFO_PROMPT_RULE}`
+      content: extraPromptNotes
+        ? `${systemPrompt}\n${extraPromptNotes}`
         : systemPrompt,
     },
     ...historyContext,
@@ -605,10 +630,33 @@ export const runAiToolOrchestrator = async ({
           };
         }
 
-        messages.push({
+                messages.push({
           role: 'tool',
           tool_call_id: toolCall?.id || '',
           content: await runSavedInfoLookup(toolCall?.function?.arguments),
+        });
+
+        continue;
+      }
+
+      // 联网搜索：不走 executeMcpToolCall 那一整套 MCP 审批/连接/频率
+      // 保护（跟常用信息查阅一样，本来就不是 MCP 工具），也不设调用
+      // 次数上限——用户明确要求"先不设限"，跟戳一戳/换气泡同一套"相信
+      // 模型自己判断"的约定。runWebSearchCall 内部已经 try/catch 过，
+      // 失败也只是返回一段"没查到"的工具结果文本，不会抛出去打断循环。
+      if (toolCall?.function?.name === WEB_SEARCH_TOOL_NAME) {
+        const { toolContent, card } = await runWebSearchCall(
+          toolCall?.function?.arguments,
+        );
+
+        if (card) {
+          latestMcpCard = card;
+        }
+
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCall?.id || '',
+          content: toolContent,
         });
 
         continue;
