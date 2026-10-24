@@ -13,11 +13,12 @@ import {
 import {
   deletePlace,
   listPlaces,
-   renamePlace,
+  renamePlace,
   updatePlaceNote,
 } from './placeService';
 import PlaceMemorySection from './PlaceMemorySection';
 import { formatChatPatternText } from './placePatternService';
+import CharacterPlaceBooklet from './CharacterPlaceBooklet'; // [改动1] 新增入口组件
 
 const MAP_IMAGE_URL = 'https://u2.fukit.cn/yYmWOHrYc';
 const SVG_WIDTH = 1000;
@@ -77,6 +78,7 @@ const formatDate = (value) => {
 };
 
 const PlaceBooklet = ({ chatId, character, onBack }) => {
+  const [viewMode, setViewMode] = useState('user'); // [改动2] 视图切换状态
   const [places, setPlaces] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -206,6 +208,17 @@ const PlaceBooklet = ({ chatId, character, onBack }) => {
     .join(' ');
 
   const canSave = Boolean(String(draftName || '').trim()) && !isSaving;
+
+  // [改动3] 整页切换分支（放在所有 Hook 之后，符合 Hooks 规则）
+  if (viewMode === 'character') {
+    return (
+      <CharacterPlaceBooklet
+        chatId={chatId}
+        character={character}
+        onBack={() => setViewMode('user')}
+      />
+    );
+  }
 
   return (
     <div className="place-booklet">
@@ -413,6 +426,33 @@ const PlaceBooklet = ({ chatId, character, onBack }) => {
           border-radius: 50%;
           background: var(--place-ink);
           opacity: .35;
+        }
+
+        /* [改动5] 切换到 TA 的地方：胶囊按钮样式（纯新增） */
+        .place-switch-pill {
+          display: inline-flex;
+          margin-top: 18px;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 14px 7px 15px;
+          border: 1px solid rgba(17,17,15,.16);
+          border-radius: 999px;
+          background: transparent;
+          color: var(--place-ink);
+          cursor: pointer;
+          transition: background .3s ease, transform .35s var(--place-ease);
+        }
+
+        .place-switch-pill span {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
+          line-height: 1 !important;
+        }
+
+        .place-switch-pill:hover {
+          background: rgba(17,17,15,.06);
+          transform: translateX(2px);
         }
 
         .place-stamp {
@@ -991,6 +1031,16 @@ const PlaceBooklet = ({ chatId, character, onBack }) => {
               <span>PLACES WE KEPT</span>
             </div>
 
+            {/* [改动4] 切换到 TA 的地方 */}
+            <button
+              type="button"
+              className="place-switch-pill"
+              onClick={() => setViewMode('character')}
+            >
+              <span>看看 {character?.name || 'TA'} 的地方</span>
+              <span aria-hidden="true">→</span>
+            </button>
+
             <div className="place-stamp">
               WANDER
               <br />
@@ -1267,7 +1317,7 @@ const PlaceBooklet = ({ chatId, character, onBack }) => {
                       <p className="truncate font-serif text-[17px] text-[#11110f]">
                         {place.name || '未命名地点'}
                       </p>
-                                            <p className="mt-0.5 truncate text-[9px] font-bold tracking-wide text-[#77766f]">
+                      <p className="mt-0.5 truncate text-[9px] font-bold tracking-wide text-[#77766f]">
                         到访 {place.visitCount || 1} 次 · 最近一次 {formatDate(place.lastVisitAt)}
                       </p>
                       {formatChatPatternText(place, character?.name) && (
@@ -1294,7 +1344,7 @@ const PlaceBooklet = ({ chatId, character, onBack }) => {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                                   </div>
+                  </div>
                 ))}
               </div>
 

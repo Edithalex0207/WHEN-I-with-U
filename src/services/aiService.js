@@ -45,6 +45,8 @@ import { applyPlaceNoteDirective } from '../apps/location/placeMemoryService';
 import { getCompanionOfferNote, applyCompanionOfferDirective } from '../apps/companion/companionOfferService';
 import { buildCompanionStatusPromptBlock } from '../apps/companion/companionStatusPrompt';
 import { buildBubbleStylePromptNote, applyBubbleStyleDirective } from '../apps/messages/bubbleStyleDirective';
+import { buildCharacterPlacePromptNote, applyCharacterPlaceDirective } from '../apps/location/characterPlaceDirective';
+import { runCharacterPlaceSession } from '../apps/location/characterPlaceSession';
 import {
   buildScreenEffectPromptNote,
   applyScreenEffectDirective,
@@ -2603,6 +2605,10 @@ const companionOfferNote = options.ignoreAway
 // 限制（跟小伙伴邀请不同），只在 ignoreAway 时跟其它"可选行为"一样收起。
 const bubbleStyleNote = options.ignoreAway ? '' : buildBubbleStylePromptNote();
 
+// 分享地方：跟气泡风格同一套"不设限制"的约定，角色任何一次回复都能
+// 自主决定分享一个地方，只在 ignoreAway 时跟其它"可选行为"一样收起。
+const characterPlaceNote = options.ignoreAway ? '' : buildCharacterPlacePromptNote();
+
 // #3 全屏特效：氛围动画走"角色先写 [SCREEN_WANT]，系统再单独问一次"，
 // 名单和暗号规则只在那一次里给；专注文字不需要暗号，直接留在主提示词。
 const screenEffectNote = options.ignoreAway ? '' : buildScreenEffectPromptNote(chat);
@@ -2661,6 +2667,8 @@ const userReturnContext = `${buildUserReturnContext(recentMsgs)}${
   companionOfferNote ? `\n\n${companionOfferNote}` : ''
 }${
   bubbleStyleNote ? `\n\n${bubbleStyleNote}` : ''
+}${
+  characterPlaceNote ? `\n\n${characterPlaceNote}` : ''
 }${
   screenEffectNote ? `\n\n${screenEffectNote}` : ''
 }${
@@ -2836,13 +2844,20 @@ const { content: contentAfterBubbleStyle, wantsChange: wantsBubbleChange } = awa
   content: contentAfterScreenEffect,
 });
 
+// 取出角色的 [SHARE_PLACE...] 标签（一律从正文去掉）；跟气泡风格同一套
+// "不设限制"的约定，只负责摘标签并告诉调用方"角色想分享一个地方"，
+// 真正的挑选/写入在回复落库之后由 runCharacterPlaceSession 单独完成。
+const { content: contentAfterCharacterPlace, wantsShare: wantsCharacterPlace } = applyCharacterPlaceDirective({
+  content: contentAfterBubbleStyle,
+});
+
 // 取出角色的 [SWITCH_BACKGROUND: ...] 标签（一律从正文去掉）；标签里写的
 // 注释只要能匹配上这个聊天窗图库里的某一条就直接把它设为当前背景，不需要
 // 额外的"是否交出过选项"校验（这个功能本身就不设限制，参见
 // backgroundSwitchDirective.js 顶部注释）。
 const { content: contentAfterBackgroundSwitch } = await applyBackgroundSwitchDirective({
   chatId,
-  content: contentAfterBubbleStyle,
+  content: contentAfterCharacterPlace,
   backgrounds: chat.backgrounds,
 });
 
@@ -3219,6 +3234,16 @@ for (const [messageIndex, msgData] of safeParsedMessages.entries()) {
 
       if (wantsBubbleChange && messageIds.length > 0) {
         void runBubbleStyleSession({
+          chatId,
+          character,
+          triggerReply: safeParsedMessages.find((message) => message.type === 'text')?.content || '',
+        });
+      }
+
+      // 角色想分享一个地方：回复已经写入后，再单独补一次调用去挑选/落库，
+      // 跟气泡风格同一套做法，不等待结果，失败也不影响已经保存的回复。
+      if (wantsCharacterPlace && messageIds.length > 0) {
+        void runCharacterPlaceSession({
           chatId,
           character,
           triggerReply: safeParsedMessages.find((message) => message.type === 'text')?.content || '',

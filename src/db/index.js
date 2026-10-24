@@ -5087,4 +5087,25 @@ db.version(99).stores({
 db.version(100).stores({
   companionMessages: '++id, companionId, timestamp, [companionId+timestamp]',
 });
+db.version(101).stores({
+  characterPlaces: `
+    ++id,
+    chatId,
+    characterId,
+    name,
+    visitCount,
+    firstVisitAt,
+    lastVisitAt,
+    createdAt,
+    [chatId+name]
+  `,
+  characterPlaceMemories: `
+    ++id,
+    chatId,
+    placeId,
+    author,
+    createdAt,
+    [placeId+createdAt]
+  `,
+});
 export default db;
