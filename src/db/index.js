@@ -5108,4 +5108,13 @@ db.version(101).stores({
     [placeId+createdAt]
   `,
 });
+// 像素衣橱（src/apps/pixelDoll/）：每个聊天一行档案（chatId 唯一），
+// 自定义部件库（scopeChatId = 0 全局共用，否则只属于那个聊天），
+// 礼物记录（每个聊天只保留最近 60 条，在 pixelDollService.js 里物理删除）。
+db.version(102).stores({
+  pixelDollProfiles: '++id, &chatId, updatedAt',
+  pixelDollParts: '++id, scopeChatId, category, [scopeChatId+category+partId], createdAt',
+  pixelDollGifts: '++id, chatId, status, createdAt, [chatId+createdAt]',
+});
+
 export default db;
