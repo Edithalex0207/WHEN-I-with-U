@@ -448,6 +448,7 @@
 
 .fic-root .fic-p-free-input::placeholder {
   color: var(--fic-muted);
+  font-size: 13px;
 }
 
 .fic-root .fic-p-free-input:focus-visible {

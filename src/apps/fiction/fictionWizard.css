@@ -108,6 +108,7 @@
 .fic-root .fic-w-input::placeholder,
 .fic-root .fic-w-textarea::placeholder {
   color: var(--fic-muted);
+  font-size: 13px; /* 只缩小提示语；输入框本身仍是 16px，iOS 不会自动放大 */
 }
 
 .fic-root .fic-w-meta {
