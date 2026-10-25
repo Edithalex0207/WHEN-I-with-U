@@ -17,8 +17,12 @@
 // actionKey 相同的是重 roll 版本，不算分支。
 //
 // 第 4B 轮：存档点（setSavePoint / clearSavePoint）只改节点上的标记。
+//
+// 第 5A 轮：总结（summaryText）也只是挂在节点上的一段文本，不新建表、
+// 不用动 db 版本号——节点早就带着这个字段（见 createNode），只是一直是空的。
 
 import db from '../../db';
+import { collectSummaryBatches, findPendingSummaryBatch } from './fictionPromptAssembler';
 
 export const FICTION_MODES = {
   CHOICE: 'choice',
@@ -271,6 +275,41 @@ export const clearSavePoint = (nodeId) => (
   db.fictionNodes.update(nodeId, { isSavePoint: false, savePointName: '' })
 );
 
+// ---------- 总结（第 5A 轮） ----------
+//
+// 总结挂在「这一批最后一段」对应的节点上（算法见 fictionPromptAssembler.js
+// 的 collectSummaryBatches / findPendingSummaryBatch）。这两个函数只读，
+// 这里的 getSummaryStatus 把「当前路径」取出来喂给它们，saveSummary /
+// clearSummary 负责写。
+
+// 当前存档的总结情况：已经做好的总结（按顺序）+ 当前待总结的区间（没有就是
+// null）。总结总览页和游玩页右上角的提示入口都读这个。
+export const getSummaryStatus = async (saveId) => {
+  const save = await getSave(saveId);
+
+  if (!save?.currentNodeId) return { pathNodes: [], batches: [], pending: null };
+
+  const pathNodes = await getPathToNode(save.currentNodeId);
+
+  return {
+    pathNodes,
+    batches: collectSummaryBatches(pathNodes),
+    pending: findPendingSummaryBatch(pathNodes),
+  };
+};
+
+export const saveSummary = async (nodeId, text) => {
+  const clean = String(text || '').trim();
+
+  if (!clean) throw new Error('总结内容不能为空');
+
+  await db.fictionNodes.update(nodeId, { summaryText: clean });
+
+  return clean;
+};
+
+export const clearSummary = (nodeId) => db.fictionNodes.update(nodeId, { summaryText: '' });
+
 // 兜底：把存档的 segmentCount / branchCount 按全部节点重新算一遍。
 // 平时不用调用（增量更新就够了）；删除节点或数据对不上时用。
 export const recomputeSaveCounters = (saveId) => (
@@ -341,6 +380,9 @@ export default {
   SAVE_POINT_NAME_MAX,
   setSavePoint,
   clearSavePoint,
+  getSummaryStatus,
+  saveSummary,
+  clearSummary,
   recomputeSaveCounters,
   listSaveSummaries,
 };

@@ -14,6 +14,9 @@
 //   - 右上角分支按钮 → 故事线（整棵剧情树；点节点可以另开分支、命名存档点）
 //   - 点每一段的「第 N 段」标题 → 回看（当时的选项、数值变化、你选了哪个）
 //   - 另开分支 = 回到那一段（jumpTo），再选一个不同的行动就是一条新分支
+// 第 5A 轮：
+//   - 右上角（分支按钮下面）常驻一个「总结」入口；有满一批却还没总结的内容时
+//     带一个小红点。点开是总结总览页（FictionSummaryOverview），不影响游玩页本身。
 // 配图在后面几轮。
 //
 // 生成函数都在 fictionAiService.js 里：写库发生在 AI 返回之后，
@@ -26,6 +29,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GitBranch,
+  NotebookText,
   RotateCcw,
 } from 'lucide-react';
 
@@ -43,9 +47,10 @@ import {
   rerollNode,
 } from './fictionAiService';
 import { PARSE_WARNING, normalizeStatDefs } from './fictionParser';
-import { ACTION_TYPES } from './fictionPromptAssembler';
+import { ACTION_TYPES, findPendingSummaryBatch } from './fictionPromptAssembler';
 import FictionStoryline from './FictionStoryline';
 import FictionReveal from './FictionReveal';
+import FictionSummaryOverview from './FictionSummaryOverview';
 import './fictionPlay.css';
 
 const FREE_TEXT_MAX = 300;
@@ -97,6 +102,8 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
   // 4B：盖在上面的两层。回看可以盖在故事线上面，关掉回看还能回到故事线。
   const [storylineOpen, setStorylineOpen] = useState(false);
   const [reveal, setReveal] = useState(null); // { nodeId, chosenChildId, number }
+  // 5A：总结总览页；是否有待总结的内容只影响入口按钮上的小红点，不影响能不能生成下一段。
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const abortRef = useRef(null);
   const busyRef = useRef(null);
@@ -168,6 +175,8 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
   const isLeaf = explored.size === 0;
   const versionIndex = current ? versions.findIndex((item) => item.id === current.id) : -1;
   const showPager = isLeaf && versions.length > 1 && versionIndex !== -1;
+  // path 里每个节点都带着自己的 summaryText，不用额外查库就能知道有没有待总结的批次。
+  const summaryPending = useMemo(() => Boolean(findPendingSummaryBatch(path)), [path]);
 
   // 换了当前节点，就重新读一遍它的版本和后续。
   useEffect(() => {
@@ -657,6 +666,19 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
         </button>
       )}
 
+      {loaded && save && current && (
+        <button
+          type="button"
+          className="fic-btn-reset fic-round-btn fic-p-summary-btn"
+          aria-label={summaryPending ? '总结（有待总结的内容）' : '总结'}
+          disabled={Boolean(busy)}
+          onClick={() => setSummaryOpen(true)}
+        >
+          <NotebookText size={18} strokeWidth={1.6} aria-hidden="true" />
+          {summaryPending && <span className="fic-p-summary-dot" aria-hidden="true" />}
+        </button>
+      )}
+
       {loaded && save && (
         <>
           <div className="fic-p-top">
@@ -695,6 +717,13 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
           onClose={() => setReveal(null)}
           onReturn={closeOverlays}
           onBranch={jumpTo}
+        />
+      )}
+
+      {summaryOpen && save && (
+        <FictionSummaryOverview
+          save={save}
+          onClose={() => setSummaryOpen(false)}
         />
       )}
     </div>

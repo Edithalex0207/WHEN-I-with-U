@@ -13,6 +13,8 @@
 //                                                     直接回到已有的那一段，不重新生成（返回 reused: true）
 //   rerollNode(saveId, nodeId, { signal })            重 roll 一个「还没有后续」的节点：在它旁边新增一个
 //                                                     同父同 actionKey 的新版本，旧版本原样保留
+//   generateSummaryDraft(saveId, { from, to, signal }) 第 5A 轮：给当前路径第 from-to 段生成一份总结草稿，
+//                                                     只返回文本，不写库——存不存、改不改由用户在总结总览页决定
 //
 // 数值在这里结算：点选项 = 父节点快照 + 该选项的增减量；自由输入 = 父节点
 // 快照 + AI 在 [DELTA] 里给的增减量；都截断到 [min, max]。快照用数值 id 做 key。
@@ -34,6 +36,7 @@ import {
   ACTION_TYPES,
   buildActionKey,
   buildFictionRequest,
+  describeActionForHistory,
 } from './fictionPromptAssembler';
 import {
   PARSE_WARNING,
@@ -212,6 +215,8 @@ const logRequest = (label, request, result) => {
     systemChars: request.meta.systemChars,
     historySegments: request.meta.historySegments,
     historyOmitted: request.meta.historyOmitted,
+    summaryBatches: request.meta.summaryBatches,
+    summarizedTo: request.meta.summarizedTo,
     maxTokens: request.maxTokens,
     finishReason: result.finishReason,
     usage: result.usage,
@@ -242,7 +247,6 @@ const runGeneration = async ({ save, parentNode, action, signal, label }) => {
     statsSnapshot: promptSnapshot,
     stylePrompt: buildStylePrompt(save),
     worldBookText: '',
-    summaryText: '',
   });
 
   const result = await callFictionApi({
@@ -421,10 +425,63 @@ export const rerollNode = async (saveId, nodeId, { signal } = {}) => {
   return { node: await getNode(newId), warnings };
 };
 
+// ---------------- 总结草稿（第 5A 轮） ----------------
+//
+// 和主生成流程分开：不走「写节点」的那一套，只是单独问一次 AI「帮我把这几段
+// 总结一下」，把文本原样返回。要不要存、存之前要不要改，交给总结总览页
+// （FictionSummaryOverview.jsx）处理，这里不碰数据库。
+
+const SUMMARY_MAX_TOKENS = 1200;
+
+const str = (value) => String(value ?? '').trim();
+
+const buildSummaryRequest = ({ nodes, from, to }) => {
+  const segments = nodes.map((node, index) => {
+    const position = from + index;
+    const heading = `【第 ${position} 段】`;
+    const actionLine = describeActionForHistory(node.userAction);
+
+    return [heading, actionLine ? `（${actionLine}）` : '', str(node.text)].filter(Boolean).join('\n');
+  }).join('\n\n');
+
+  const systemPrompt = [
+    '你是一名故事总结助手，要把下面这段互动小说的剧情浓缩成一份前情提要，供之后继续写故事时参考（不会给玩家看）。',
+    '写清楚：按时间顺序发生了哪些关键事件、人物之间的关系和情绪怎么变化、留下了什么悬念或承诺。用流畅的叙述段落，不要分点列举，不要逐段复述，用自己的话概括；大致 400-600 字。',
+    `## 需要总结的剧情（第 ${from}-${to} 段）`,
+    segments,
+  ].join('\n\n');
+
+  return { systemPrompt, userMessage: '请给出这段剧情的总结。' };
+};
+
+export const generateSummaryDraft = async (saveId, { from, to, signal } = {}) => {
+  const save = await loadPlayableSave(saveId);
+
+  if (!save.currentNodeId) throw fail(FICTION_ERROR.BAD_STATE, '这份存档还没有任何剧情。');
+
+  const pathNodes = await getPathToNode(save.currentNodeId);
+  const slice = pathNodes.slice(from - 1, to);
+
+  if (slice.length === 0) {
+    throw fail(FICTION_ERROR.BAD_STATE, `找不到第 ${from}-${to} 段，当前路径只有 ${pathNodes.length} 段。`);
+  }
+
+  const { systemPrompt, userMessage } = buildSummaryRequest({ nodes: slice, from, to });
+  const result = await callFictionApi({ systemPrompt, userMessage, maxTokens: SUMMARY_MAX_TOKENS, signal });
+
+  console.info('[Fiction]', `总结草稿 第${from}-${to}段`, {
+    systemChars: systemPrompt.length,
+    finishReason: result.finishReason,
+    usage: result.usage,
+  });
+
+  return result.content.trim();
+};
+
 // 控制台调试入口：在页面控制台里直接试，例如
 //   await __fictionAi.generateOpening(存档id)
 if (typeof window !== 'undefined') {
-  window.__fictionAi = { generateOpening, generateNext, rerollNode };
+  window.__fictionAi = { generateOpening, generateNext, rerollNode, generateSummaryDraft };
 }
 
 export default {
@@ -432,4 +489,5 @@ export default {
   generateOpening,
   generateNext,
   rerollNode,
+  generateSummaryDraft,
 };

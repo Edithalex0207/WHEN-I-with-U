@@ -12,9 +12,15 @@
 
 import { buildInitialSnapshot, normalizeStatDefs } from './fictionParser';
 
-// 当前路径最多带多少段原文。超出的更早剧情等「总结」功能（第 5 轮）接上之后
-// 由总结代替；在那之前，超出的部分直接不带，并在提示词里注明有省略。
+// 当前路径最多带多少段原文（上限，防止总结一直没做、原文窗口无限变大）。
 export const FULL_TEXT_SEGMENTS = 50;
+
+// 第 5A 轮：每满这么多段就算一「批」，总结之后整批原文都可以不带了。
+export const SUMMARY_BATCH_SIZE = 50;
+
+// 即使某一段已经被总结覆盖，最近这几段仍然带原文，保证和总结之间衔接自然，
+// 不会让 AI 在「总结句子」后面硬接下一段。
+export const RECENT_FULL_SEGMENTS = 4;
 
 // 角色人设每个字段最多带多少字，防止一份很长的设定把提示词撑爆。
 export const CAST_FIELD_MAX = 2500;
@@ -57,8 +63,9 @@ export const buildActionKey = (action) => {
   }
 };
 
-// 写进历史原文里的一行「玩家做了什么」。
-const describeActionForHistory = (action) => {
+// 写进历史原文里的一行「玩家做了什么」。总结草稿（fictionAiService.js）也要用，
+// 所以导出。
+export const describeActionForHistory = (action) => {
   if (!action) return '';
 
   switch (action.type) {
@@ -235,32 +242,95 @@ const buildFormatRules = ({ save, stats, isFreeAction }) => {
   return lines.join('\n');
 };
 
+// ---------------- 前情总结（第 5A 轮） ----------------
+//
+// 总结挂在「这一批最后一段」对应的节点上：比如总结 1-50 段，就存在路径上
+// 第 50 个节点的 summaryText 里。不同分支走的是不同节点，天然各自独立。
+// 回 roll / 另开分支不会动旧节点的 summaryText，所以已经做好的总结不会失效；
+// 分支出去的新路径如果比原来短，单纯是还没走到那一段，不影响已有总结。
+
+// 从当前路径里，按顺序收集「已经做好的总结」。
+export const collectSummaryBatches = (pathNodes) => {
+  const nodes = Array.isArray(pathNodes) ? pathNodes : [];
+  const batches = [];
+  let from = 1;
+
+  nodes.forEach((node, index) => {
+    const position = index + 1;
+    const text = str(node.summaryText);
+
+    if (text) {
+      batches.push({ from, to: position, text, nodeId: node.id });
+      from = position + 1;
+    }
+  });
+
+  return batches;
+};
+
+// 当前路径里最早一个「已经满一批却还没有总结」的区间；没有就返回 null。
+// 总结要按顺序做——这样「前情总结」永远是连续的，不会中间空一段。
+export const findPendingSummaryBatch = (pathNodes) => {
+  const nodes = Array.isArray(pathNodes) ? pathNodes : [];
+  const batches = collectSummaryBatches(nodes);
+  const coveredTo = batches.length > 0 ? batches[batches.length - 1].to : 0;
+  const nextBoundary = coveredTo + SUMMARY_BATCH_SIZE;
+
+  if (nodes.length < nextBoundary) return null;
+
+  return { from: coveredTo + 1, to: nextBoundary };
+};
+
+// 算一次「原文窗口」从哪段开始：从「已总结到」的下一段开始；但至少留
+// RECENT_FULL_SEGMENTS 段做衔接，同时封顶 FULL_TEXT_SEGMENTS 段（总结一直
+// 没做时，退回到原来「最近 50 段」的省略提示）。buildHistoryBlock 和
+// buildFictionRequest 的 meta 统计共用这一个函数，口径不会对不上。
+const planHistoryWindow = (pathNodes) => {
+  const nodes = Array.isArray(pathNodes) ? pathNodes : [];
+  const total = nodes.length;
+  const batches = collectSummaryBatches(nodes);
+  const coveredTo = batches.length > 0 ? batches[batches.length - 1].to : 0;
+
+  const rawStart = total === 0 ? 1 : Math.min(
+    Math.max(coveredTo + 1, total - FULL_TEXT_SEGMENTS + 1, 1),
+    Math.max(total - RECENT_FULL_SEGMENTS + 1, 1),
+  );
+  const omittedCount = Math.max(0, rawStart - 1 - coveredTo);
+
+  return { batches, coveredTo, rawStart, omittedCount };
+};
+
 // ---------------- 前情 ----------------
 
-const buildHistoryBlock = (pathNodes, summaryText) => {
+const buildHistoryBlock = (pathNodes) => {
   const nodes = Array.isArray(pathNodes) ? pathNodes : [];
-
-  if (nodes.length === 0 && !str(summaryText)) return '';
-
   const total = nodes.length;
-  const slice = nodes.slice(-FULL_TEXT_SEGMENTS);
-  const offset = total - slice.length;
+
+  if (total === 0) return '';
+
+  const { batches, coveredTo, rawStart, omittedCount } = planHistoryWindow(nodes);
   const parts = [];
 
-  if (str(summaryText)) {
-    parts.push(`## 前情总结\n${str(summaryText)}`);
+  if (batches.length > 0) {
+    const summaryBlock = batches
+      .map((batch) => `【第 ${batch.from}-${batch.to} 段总结】\n${batch.text}`)
+      .join('\n\n');
+
+    parts.push(`## 前情总结\n${summaryBlock}`);
   }
+
+  const slice = nodes.slice(rawStart - 1);
 
   if (slice.length > 0) {
     const segments = slice.map((node, index) => {
-      const heading = `【第 ${offset + index + 1} 段】`;
+      const heading = `【第 ${rawStart + index} 段】`;
       const actionLine = describeActionForHistory(node.userAction);
 
       return [heading, actionLine ? `（${actionLine}）` : '', str(node.text)].filter(Boolean).join('\n');
     });
 
-    const omitted = offset > 0 && !str(summaryText)
-      ? `（更早的 ${offset} 段剧情已省略，请以下面的内容为准。）\n\n`
+    const omitted = omittedCount > 0
+      ? `（第 ${coveredTo + 1}-${rawStart - 1} 段剧情已省略且还没有总结，请以下面的内容为准。）\n\n`
       : '';
 
     parts.push(`## 此前的剧情（按时间顺序，最后一段是刚刚发生的）\n${omitted}${segments.join('\n\n')}`);
@@ -316,8 +386,7 @@ const buildUserMessage = ({ action, formatReminder }) => {
  * @param action         这一轮的行动 { type, text, optionKey }；写开场时可以不传
  * @param statsSnapshot  传给 AI 看的「当前数值」（点选项时应该是已经加上该选项增减量之后的值）
  * @param stylePrompt    已经拼好的文风描述（预设 + 自定义）
- * @param worldBookText  命中的世界书文本（第 5 轮接入，现在传空）
- * @param summaryText    前情总结文本（第 5 轮接入，现在传空）
+ * @param worldBookText  命中的世界书文本（第 5B 轮接入，现在传空）
  * @returns { systemPrompt, userMessage, maxTokens, meta }  meta 里是日志用的统计
  */
 export const buildFictionRequest = ({
@@ -327,7 +396,6 @@ export const buildFictionRequest = ({
   statsSnapshot = null,
   stylePrompt = '',
   worldBookText = '',
-  summaryText = '',
 }) => {
   const stats = save.stats || [];
   const snapshot = statsSnapshot || buildInitialSnapshot(stats);
@@ -366,7 +434,7 @@ export const buildFictionRequest = ({
     buildPersonaBlock(save),
     str(worldBookText),
     buildStatsBlock(stats, snapshot),
-    buildHistoryBlock(pathNodes, summaryText),
+    buildHistoryBlock(pathNodes),
   ].filter((block) => str(block));
 
   const systemPrompt = blocks.join('\n\n');
@@ -375,24 +443,33 @@ export const buildFictionRequest = ({
     formatReminder: `（记得按格式输出：先 [STORY]…[/STORY]${mode === 'choice' ? '，再 [OPTIONS]…[/OPTIONS]' : ''}${isFreeAction && normalizeStatDefs(stats).length > 0 ? '，最后 [DELTA]…[/DELTA]' : ''}，正文不少于 ${wordMin} 字。）`,
   });
 
+  const { batches, rawStart, omittedCount } = planHistoryWindow(pathNodes);
+
   return {
     systemPrompt,
     userMessage,
     maxTokens: estimateMaxTokens(wordMin),
     meta: {
       systemChars: systemPrompt.length,
-      historySegments: Math.min(pathNodes.length, FULL_TEXT_SEGMENTS),
-      historyOmitted: Math.max(0, pathNodes.length - FULL_TEXT_SEGMENTS),
+      historySegments: Math.max(0, pathNodes.length - rawStart + 1),
+      historyOmitted: omittedCount,
+      summaryBatches: batches.length,
+      summarizedTo: batches.length > 0 ? batches[batches.length - 1].to : 0,
     },
   };
 };
 
 export default {
   FULL_TEXT_SEGMENTS,
+  SUMMARY_BATCH_SIZE,
+  RECENT_FULL_SEGMENTS,
   CAST_FIELD_MAX,
   ACTION_TYPES,
   buildActionKey,
+  describeActionForHistory,
   resolveCast,
   estimateMaxTokens,
+  collectSummaryBatches,
+  findPendingSummaryBatch,
   buildFictionRequest,
 };

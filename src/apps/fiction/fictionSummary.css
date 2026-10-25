@@ -1,0 +1,126 @@
+/* src/apps/fiction/fictionSummary.css
+ *
+ * 第 5A 轮：总结总览页（fic-sum-）。盖在游玩页上面的一层，结构和配色
+ * 跟故事线/回看共用（fic-s-layer / fic-s-head / fic-s-solid，见 fictionStory.css），
+ * 这里只补总结卡片本身的样式。
+ */
+
+.fic-root .fic-sum-layer {
+  /* 复用 .fic-s-layer 的整层定位，这里不用再写一遍 */
+}
+
+.fic-root .fic-sum-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 24px calc(32px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--fic-line);
+  scrollbar-width: none;
+}
+
+.fic-root .fic-sum-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.fic-root .fic-sum-empty {
+  margin: 0;
+  padding: 40px 8px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fic-muted);
+}
+
+.fic-root .fic-sum-error {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--fic-wine) 12%, transparent);
+  color: var(--fic-wine-text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.fic-root .fic-sum-card {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--fic-line);
+  background: var(--fic-sheet);
+}
+
+.fic-root .fic-sum-card.is-pending {
+  border-style: dashed;
+  border-color: var(--fic-wine-text);
+}
+
+.fic-root .fic-sum-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fic-root .fic-sum-range {
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-sum-link {
+  min-height: 32px;
+  padding: 0 4px;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-sum-text {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.95;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--fic-ink);
+}
+
+.fic-root .fic-sum-hint {
+  margin: 10px 0 14px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-sum-textarea {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--fic-line);
+  background: var(--fic-soft);
+  color: var(--fic-ink);
+  font-family: var(--fic-serif);
+  font-size: 14px;
+  line-height: 1.8;
+  resize: vertical;
+  outline: none;
+}
+
+.fic-root .fic-sum-textarea:focus {
+  border-color: var(--fic-ink);
+}
+
+.fic-root .fic-sum-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.fic-root .fic-sum-actions .fic-sheet-btn {
+  flex: none;
+  min-width: 96px;
+}
