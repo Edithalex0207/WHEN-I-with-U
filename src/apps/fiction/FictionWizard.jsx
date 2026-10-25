@@ -1,13 +1,14 @@
 // src/apps/fiction/FictionWizard.jsx
 //
 // 新建向导的容器：三步、进度条、保存草稿、退出确认。
-// 这一批只有第 1 步是真内容，第 2、3 步是占位，下一批接上。
 // 不用 position: fixed，返回按钮、底栏、抽屉都相对 .fic-col 定位。
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 import WizardStepPremise from './WizardStepPremise';
+import WizardStepCast from './WizardStepCast';
+import WizardStepRules from './WizardStepRules';
 import {
   WIZARD_STEPS,
   WIZARD_STEP_COUNT,
@@ -17,15 +18,7 @@ import {
   validateWizardStep,
 } from './fictionWizardService';
 import './fictionWizard.css';
-
-const StepPlaceholder = ({ zh }) => (
-  <div className="fic-w-placeholder">
-    <div className="fic-w-placeholder-hand">「{zh}」下一批开放。</div>
-    <p className="fic-w-placeholder-text">
-      这一步的内容还在路上，现在可以先点「下一步」走完流程，或者保存为草稿。
-    </p>
-  </div>
-);
+import './fictionWizardCast.css';
 
 const FictionWizard = ({ draftId = null, onExit }) => {
   const [form, setForm] = useState(buildDefaultWizardForm);
@@ -189,7 +182,11 @@ const FictionWizard = ({ draftId = null, onExit }) => {
       return <WizardStepPremise form={form} onChange={patchForm} onToast={showToast} />;
     }
 
-    return <StepPlaceholder zh={current.zh} />;
+    if (step === 1) {
+      return <WizardStepCast form={form} onChange={patchForm} onToast={showToast} />;
+    }
+
+    return <WizardStepRules form={form} onChange={patchForm} onToast={showToast} />;
   };
 
   return (

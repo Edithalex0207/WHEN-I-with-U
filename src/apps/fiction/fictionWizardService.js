@@ -1,11 +1,15 @@
 // src/apps/fiction/fictionWizardService.js
 //
-// 新建向导的数据层：默认表单、文风预设、校验、草稿的读写。
+// 新建向导的数据层：默认表单、文风预设、校验、角色副本、草稿的读写。
 // 草稿就是 fictionSaves 里一条 isDraft: true 的记录，草稿和正式存档用同一张表，
 // 向导里填的字段名和存档字段名一一对应，保存时不用转换。
 //
-// 第二批（第 2、3 步）会在这里补：主角色必填的校验、角色副本的生成。
+// 主角色的存法（第 3 轮组装提示词时按这个解析）：
+//   { source: 'imported', importedId }  指向 importedCharacters 里某个副本的 localId
+//   { source: 'custom', name, bio, extraNotes }  存档里新建的角色
+// 这样导入的角色在「当主角」和「当 NPC」之间切换时，人设只有一份，不会各改各的。
 
+import db from '../../db';
 import {
   FICTION_IMAGE_MODES,
   FICTION_MODES,
@@ -18,6 +22,18 @@ export const WIZARD_STEP_COUNT = 3;
 export const DRAFT_FALLBACK_TITLE = '未命名草稿';
 export const STYLE_CUSTOM_MAX = 4000;
 export const TEXT_FIELD_MAX = 4000;
+
+export const MAX_IMPORTED = 3;
+export const MAX_NPCS = 10;
+export const MAX_STATS = 8;
+export const MAX_LOCAL_ENTRIES = 30;
+
+export const WORD_MIN_RANGE = { min: 500, max: 4000, step: 100 };
+export const OPTION_MIN_RANGE = { min: 3, max: 6 };
+
+// 数值名称会出现在 AI 的输出里（「好感度:+2,金钱:-10」），
+// 这些符号和空白会破坏解析，所以不允许。
+export const STAT_NAME_FORBIDDEN = /[:：,，、|[\]\s]/;
 
 export const WIZARD_STEPS = [
   { id: 'premise', kicker: 'New Story', en: 'Premise', zh: '故事基础' },
@@ -53,6 +69,168 @@ export const getStylePreset = (presetId) => (
   FICTION_STYLE_PRESETS.find((preset) => preset.id === presetId) || null
 );
 
+const str = (value) => String(value ?? '').trim();
+
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
+const clampInt = (value, min, max, fallback) => {
+  const number = Math.round(Number(value));
+
+  if (!Number.isFinite(number)) return fallback;
+
+  return Math.min(max, Math.max(min, number));
+};
+
+export const makeId = (prefix) => (
+  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+);
+
+// 世界书条目的关键词：用逗号、顿号、分号或换行分隔（不按空格拆，英文词组里有空格）。
+export const parseKeywords = (text) => (
+  String(text || '')
+    .split(/[,，、;；\n]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+);
+
+export const formatKeywords = (keywords) => asArray(keywords).join('、');
+
+// ---------- 头像：从相册选图，居中裁成正方形，压到 256px 以内 ----------
+
+export const fileToAvatarDataUrl = (file, size = 256) => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(file);
+  const image = new Image();
+
+  image.onload = () => {
+    try {
+      const side = Math.min(image.width, image.height);
+      const out = Math.max(1, Math.min(size, side));
+      const canvas = document.createElement('canvas');
+
+      canvas.width = out;
+      canvas.height = out;
+
+      const context = canvas.getContext('2d');
+
+      context.drawImage(
+        image,
+        (image.width - side) / 2,
+        (image.height - side) / 2,
+        side,
+        side,
+        0,
+        0,
+        out,
+        out,
+      );
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    } catch (error) {
+      reject(error);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  image.onerror = () => {
+    URL.revokeObjectURL(url);
+    reject(new Error('图片读取失败'));
+  };
+
+  image.src = url;
+});
+
+// ---------- 导入角色：复制成存档里的副本 ----------
+
+// 聊天专用的字段不带进文游：头像先不复制、「用户对这个角色的设定」文游里有自己的「我的设定」、
+// 自动消息和总结频率只对聊天有意义。
+const CHAT_ONLY_KEYS = new Set([
+  'id',
+  'handle',
+  'avatar',
+  'userPersona',
+  'userAvatar',
+  'summaryFrequency',
+  'isAutoMessageActive',
+]);
+
+const EDITABLE_KEYS = ['name', 'bio', 'extraNotes'];
+
+const isHeavyValue = (value) => (
+  typeof value === 'function'
+  || (typeof Blob !== 'undefined' && value instanceof Blob)
+  || value instanceof ArrayBuffer
+  || ArrayBuffer.isView(value)
+  || (typeof value === 'string' && value.startsWith('data:'))
+);
+
+export const importCharacterCopy = (character) => {
+  const copy = {};
+
+  Object.keys(character || {}).forEach((key) => {
+    if (CHAT_ONLY_KEYS.has(key)) return;
+
+    const value = character[key];
+
+    if (isHeavyValue(value)) return;
+
+    copy[key] = typeof value === 'object' && value !== null
+      ? JSON.parse(JSON.stringify(value))
+      : value;
+  });
+
+  const name = String(character?.name ?? '');
+  const bio = String(character?.bio ?? '');
+  const extraNotes = String(character?.extraNotes ?? '');
+
+  return {
+    ...copy,
+    localId: makeId('ic'),
+    sourceCharacterId: character?.id ?? null,
+    sourceName: name,
+    name,
+    bio,
+    extraNotes,
+    // 原始人设：用来数「已微调几处」，也用来「恢复原人设」
+    original: { name, bio, extraNotes },
+  };
+};
+
+export const countImportedEdits = (copy) => {
+  const original = copy?.original || {};
+
+  return EDITABLE_KEYS.filter((key) => str(copy?.[key]) !== str(original[key])).length;
+};
+
+export const resetImportedCopy = (copy) => {
+  const original = copy?.original || {};
+
+  return {
+    ...copy,
+    name: original.name ?? '',
+    bio: original.bio ?? '',
+    extraNotes: original.extraNotes ?? '',
+  };
+};
+
+// 选择器用：只取列表要显示的几项。
+export const listImportableCharacters = async () => {
+  const rows = await db.characters.toArray();
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: str(row.name) || '未命名角色',
+    bio: str(row.bio),
+  }));
+};
+
+export const importCharactersByIds = async (ids) => {
+  const rows = await db.characters.bulkGet(asArray(ids).map(Number));
+
+  return rows.filter(Boolean).map(importCharacterCopy);
+};
+
+// ---------- 表单 ----------
+
 export const buildDefaultWizardForm = () => ({
   title: '',
   mode: FICTION_MODES.CHOICE,
@@ -73,20 +251,89 @@ export const buildDefaultWizardForm = () => ({
   imageMode: FICTION_IMAGE_MODES.OFF,
 });
 
-const str = (value) => String(value ?? '').trim();
+const normalizeImported = (list) => (
+  asArray(list).filter((item) => item && item.localId).slice(0, MAX_IMPORTED)
+);
 
-const clampInt = (value, min, max, fallback) => {
-  const number = Math.round(Number(value));
+const normalizeNpcs = (list) => (
+  asArray(list)
+    .filter((item) => item && str(item.name))
+    .slice(0, MAX_NPCS)
+    .map((item) => ({
+      id: item.id || makeId('npc'),
+      name: str(item.name),
+      desc: str(item.desc),
+    }))
+);
 
-  if (!Number.isFinite(number)) return fallback;
+const normalizeStats = (list) => {
+  const seen = new Set();
+  const result = [];
 
-  return Math.min(max, Math.max(min, number));
+  asArray(list).forEach((item) => {
+    if (!item || result.length >= MAX_STATS) return;
+
+    const name = str(item.name);
+    const min = Math.round(Number(item.min));
+    const max = Math.round(Number(item.max));
+    const initial = Math.round(Number(item.initial));
+
+    if (!name || STAT_NAME_FORBIDDEN.test(name) || seen.has(name.toLowerCase())) return;
+    if (![min, max, initial].every(Number.isFinite) || min >= max) return;
+
+    seen.add(name.toLowerCase());
+    result.push({
+      id: item.id || makeId('st'),
+      name,
+      initial: Math.min(max, Math.max(min, initial)),
+      min,
+      max,
+      desc: str(item.desc),
+    });
+  });
+
+  return result;
 };
 
-const asArray = (value) => (Array.isArray(value) ? value : []);
+const normalizeEntries = (list) => (
+  asArray(list)
+    .filter((item) => item && str(item.content))
+    .slice(0, MAX_LOCAL_ENTRIES)
+    .map((item) => ({
+      id: item.id || makeId('le'),
+      keywords: asArray(item.keywords).map(str).filter(Boolean),
+      content: str(item.content),
+      enabled: item.enabled !== false,
+    }))
+);
+
+const normalizeMain = (main, imported) => {
+  if (!main) return null;
+
+  if (main.source === 'imported') {
+    return imported.some((item) => item.localId === main.importedId)
+      ? { source: 'imported', importedId: main.importedId }
+      : null;
+  }
+
+  if (main.source === 'custom') {
+    const name = str(main.name);
+
+    if (!name) return null;
+
+    return {
+      source: 'custom',
+      name,
+      bio: str(main.bio),
+      extraNotes: str(main.extraNotes),
+    };
+  }
+
+  return null;
+};
 
 // 把向导表单整理成可以写进 fictionSaves 的字段，所有字段都在这里兜底。
-const pickFormFields = (form) => {
+const pickFormFields = (form, finish) => {
   const persona = form.persona || {};
   const personaClean = {
     name: str(persona.name),
@@ -101,24 +348,28 @@ const pickFormFields = (form) => {
 
   const style = form.style || {};
   const presetId = getStylePreset(style.presetId) ? style.presetId : '';
+  const mode = form.mode === FICTION_MODES.NOVEL ? FICTION_MODES.NOVEL : FICTION_MODES.CHOICE;
+  const imported = normalizeImported(form.importedCharacters);
 
   return {
     title: str(form.title),
-    mode: form.mode === FICTION_MODES.NOVEL ? FICTION_MODES.NOVEL : FICTION_MODES.CHOICE,
+    mode,
     background: str(form.background),
     outline: str(form.outline),
     style: { presetId, custom: str(style.custom) },
     persona: personaEmpty ? null : personaClean,
-    mainCharacter: form.mainCharacter || null,
-    importedCharacters: asArray(form.importedCharacters),
-    npcs: asArray(form.npcs),
+    mainCharacter: normalizeMain(form.mainCharacter, imported),
+    importedCharacters: imported,
+    npcs: normalizeNpcs(form.npcs),
     worldBookIds: asArray(form.worldBookIds),
-    localEntries: asArray(form.localEntries),
-    wordMin: clampInt(form.wordMin, 500, 4000, 2000),
-    optionMin: clampInt(form.optionMin, 2, 6, 3),
+    localEntries: normalizeEntries(form.localEntries),
+    wordMin: clampInt(form.wordMin, WORD_MIN_RANGE.min, WORD_MIN_RANGE.max, 2000),
+    optionMin: clampInt(form.optionMin, OPTION_MIN_RANGE.min, OPTION_MIN_RANGE.max, 3),
     allowFreeInput: form.allowFreeInput !== false,
     showDeltas: Boolean(form.showDeltas),
-    stats: asArray(form.stats),
+    // 纯小说式没有选项，数值系统用不上。草稿里保留，正式创建时清掉，
+    // 这样书架上不会给小说式存档标「有数值」。
+    stats: finish && mode === FICTION_MODES.NOVEL ? [] : normalizeStats(form.stats),
     imageMode: Object.values(FICTION_IMAGE_MODES).includes(form.imageMode)
       ? form.imageMode
       : FICTION_IMAGE_MODES.OFF,
@@ -132,7 +383,11 @@ export const validateWizardStep = (stepIndex, form) => {
     if (!str(form.background)) return '背景是必填的，写几句就行';
   }
 
-  // 第二批：stepIndex === 1 时检查主角色是否已设置。
+  if (stepIndex === 1) {
+    const main = normalizeMain(form.mainCharacter, normalizeImported(form.importedCharacters));
+
+    if (!main) return '主角色是必填的：导入一个已有角色，或新建一个';
+  }
 
   return '';
 };
@@ -152,6 +407,11 @@ export const loadWizardForm = async (saveId) => {
 
   form.style = { ...base.style, ...(save.style || {}) };
   form.persona = { ...base.persona, ...(save.persona || {}) };
+  form.importedCharacters = asArray(form.importedCharacters);
+  form.npcs = asArray(form.npcs);
+  form.stats = asArray(form.stats);
+  form.localEntries = asArray(form.localEntries);
+  form.worldBookIds = asArray(form.worldBookIds);
 
   if (form.title === DRAFT_FALLBACK_TITLE) form.title = '';
 
@@ -184,7 +444,7 @@ export const saveWizardForm = async ({
     }
   }
 
-  const fields = pickFormFields(form);
+  const fields = pickFormFields(form, finish);
   const patch = {
     ...fields,
     title: fields.title || DRAFT_FALLBACK_TITLE,
@@ -209,4 +469,13 @@ export default {
   validateWizardStep,
   loadWizardForm,
   saveWizardForm,
+  importCharacterCopy,
+  importCharactersByIds,
+  listImportableCharacters,
+  countImportedEdits,
+  resetImportedCopy,
+  fileToAvatarDataUrl,
+  parseKeywords,
+  formatKeywords,
+  makeId,
 };
