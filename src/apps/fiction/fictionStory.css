@@ -1,0 +1,520 @@
+/* src/apps/fiction/fictionStory.css
+ *
+ * 故事线（fic-s-）和回看（fic-r-）。
+ * 都是盖在游玩页上面的一层：absolute 铺满 .fic-p-col，不用 position: fixed
+ * （宽屏上 fixed 会跑出中间那条窄栏）。变量全部来自 fiction.css 的 .fic-root。
+ */
+
+/* ---------- 共用：整层 + 顶部标题 ---------- */
+
+.fic-root .fic-s-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--fic-paper);
+}
+
+.fic-root .fic-s-head {
+  flex: none;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 76px 10px;
+  text-align: center;
+}
+
+.fic-root .fic-s-eyebrow {
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-s-title {
+  margin-top: 2px;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  line-height: 1.3;
+}
+
+.fic-root .fic-s-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--fic-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fic-root .fic-s-solid {
+  background: var(--fic-ink);
+  color: var(--fic-paper);
+}
+
+/* ---------- 故事线：树 ---------- */
+
+.fic-root .fic-s-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  border-top: 1px solid var(--fic-line);
+}
+
+.fic-root .fic-s-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.fic-root .fic-s-canvas {
+  position: relative;
+  margin-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+}
+
+.fic-root .fic-s-lines {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.fic-root .fic-s-line {
+  fill: none;
+  stroke: var(--fic-muted);
+  stroke-width: 1;
+}
+
+.fic-root .fic-s-line.is-path {
+  stroke: var(--fic-ink);
+  stroke-width: 1.5;
+}
+
+.fic-root .fic-s-line.is-dash {
+  stroke-dasharray: 3 3;
+}
+
+.fic-root .fic-s-node,
+.fic-root .fic-s-next {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 4px;
+}
+
+.fic-root .fic-s-dot {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--fic-muted);
+  background: var(--fic-paper);
+}
+
+.fic-root .fic-s-dot.is-dash {
+  border-style: dashed;
+  background: transparent;
+}
+
+.fic-root .fic-s-node.is-path .fic-s-dot {
+  border-color: var(--fic-ink);
+  background: var(--fic-ink);
+}
+
+.fic-root .fic-s-node.is-current .fic-s-dot {
+  border-color: var(--fic-wine);
+  background: var(--fic-wine);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--fic-wine) 22%, transparent);
+}
+
+.fic-root .fic-s-node.is-selected .fic-s-dot {
+  outline: 2px solid var(--fic-wine-text);
+  outline-offset: 3px;
+}
+
+.fic-root .fic-s-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.fic-root .fic-s-no {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--fic-muted);
+  white-space: nowrap;
+}
+
+.fic-root .fic-s-no svg {
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-s-ver {
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.fic-root .fic-s-label {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--fic-sub);
+  word-break: break-all;
+}
+
+.fic-root .fic-s-node.is-path .fic-s-label {
+  color: var(--fic-ink);
+}
+
+.fic-root .fic-s-flag-name {
+  overflow: hidden;
+  font-family: var(--fic-hand);
+  font-size: 15px;
+  line-height: 1.3;
+  color: var(--fic-wine-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fic-root .fic-s-next-text {
+  font-family: var(--fic-hand);
+  font-size: 14px;
+  color: var(--fic-muted);
+}
+
+.fic-root .fic-s-empty {
+  margin: 0;
+  padding: 40px 32px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fic-muted);
+}
+
+/* ---------- 故事线：点开一个节点的抽屉 ---------- */
+
+.fic-root .fic-s-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 31;
+  background: rgba(28, 24, 20, 0.28);
+  cursor: default;
+}
+
+.fic-root .fic-s-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 32;
+  padding: 0 24px calc(22px + env(safe-area-inset-bottom, 0px));
+  border-radius: 26px 26px 0 0;
+  border-top: 1px solid var(--fic-border);
+  background: var(--fic-sheet);
+  box-shadow: 0 -10px 30px rgba(28, 24, 20, 0.14);
+  animation: fic-rise 0.3s var(--fic-ease);
+}
+
+.fic-root .fic-s-grab {
+  width: 36px;
+  height: 3px;
+  margin: 10px auto 0;
+  border-radius: 2px;
+  background: var(--fic-border);
+}
+
+.fic-root .fic-s-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  margin-top: 4px;
+}
+
+.fic-root .fic-s-sheet-title {
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--fic-wine-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fic-root .fic-s-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+}
+
+.fic-root .fic-s-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fic-root .fic-s-pills:empty {
+  display: none;
+}
+
+.fic-root .fic-s-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--fic-line);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-s-pill.is-current {
+  border-color: var(--fic-wine);
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-s-excerpt {
+  margin: 12px 0 16px;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: var(--fic-sub);
+  word-break: break-word;
+}
+
+.fic-root .fic-s-message {
+  margin: -6px 0 12px;
+  font-size: 12.5px;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-s-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.fic-root .fic-s-actions .fic-sheet-btn {
+  flex: 1;
+  width: auto;
+  letter-spacing: 0.12em;
+}
+
+.fic-root .fic-s-links {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.fic-root .fic-s-link {
+  min-height: 44px;
+  padding: 0 8px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-s-name-input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  margin-bottom: 12px;
+  padding: 0 18px;
+  border-radius: 24px;
+  border: 1px solid var(--fic-line);
+  background: var(--fic-soft);
+  color: var(--fic-ink);
+  font-family: var(--fic-hand);
+  font-size: 18px;
+  outline: none;
+}
+
+.fic-root .fic-s-name-input:focus {
+  border-color: var(--fic-ink);
+}
+
+/* ---------- 回看 ---------- */
+
+.fic-root .fic-r-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 24px 24px;
+  border-top: 1px solid var(--fic-line);
+  scrollbar-width: none;
+}
+
+.fic-root .fic-r-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.fic-root .fic-r-empty {
+  margin: 0;
+  padding: 40px 8px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fic-muted);
+}
+
+.fic-root .fic-r-card {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--fic-line);
+  background: var(--fic-sheet);
+}
+
+.fic-root .fic-r-excerpt {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.95;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fic-root .fic-r-toggle {
+  min-height: 44px;
+  margin-bottom: -10px;
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-r-label {
+  margin: 22px 0 8px;
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-r-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fic-root .fic-r-option {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--fic-line);
+}
+
+.fic-root .fic-r-option.is-chosen {
+  border-color: var(--fic-wine);
+  background: color-mix(in srgb, var(--fic-wine) 7%, var(--fic-sheet));
+}
+
+.fic-root .fic-r-key {
+  flex: none;
+  width: 22px;
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-r-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.fic-root .fic-r-text {
+  font-size: 14px;
+  line-height: 1.8;
+  word-break: break-word;
+}
+
+.fic-root .fic-r-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.fic-root .fic-r-pill {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--fic-line);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-r-mark {
+  margin-top: 10px;
+  font-family: var(--fic-hand);
+  font-size: 17px;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-r-changes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 4px;
+}
+
+.fic-root .fic-r-change {
+  font-size: 12.5px;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-r-change b {
+  font-family: var(--fic-display);
+  font-weight: 700;
+  color: var(--fic-ink);
+}
+
+.fic-root .fic-r-also {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--fic-muted);
+}
+
+.fic-root .fic-r-hand {
+  margin: 18px 0 0;
+  font-family: var(--fic-hand);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--fic-blue-text);
+}
+
+.fic-root .fic-r-foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 24px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--fic-line);
+  background: var(--fic-paper);
+}
+
+/* 回看盖在故事线上面时，要比故事线的抽屉还高 */
+.fic-root .fic-r-layer {
+  z-index: 40;
+}

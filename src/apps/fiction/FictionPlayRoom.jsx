@@ -10,7 +10,11 @@
 //   - 重 roll 保留旧版本：抽屉标题行有「‹ 2/3 ›」，只对最后一段（还没有后续的那段）
 //     出现，可以在各个版本之间切换
 //   - 选过的选项带「走过」标记；回退之后再点它，直接回到已有的那一段，不重新生成
-// 回看、故事线、从任意节点另开分支（4B）、配图在后面几轮。
+// 第 4B 轮：
+//   - 右上角分支按钮 → 故事线（整棵剧情树；点节点可以另开分支、命名存档点）
+//   - 点每一段的「第 N 段」标题 → 回看（当时的选项、数值变化、你选了哪个）
+//   - 另开分支 = 回到那一段（jumpTo），再选一个不同的行动就是一条新分支
+// 配图在后面几轮。
 //
 // 生成函数都在 fictionAiService.js 里：写库发生在 AI 返回之后，
 // 所以中途取消或失败不会留下半截节点。
@@ -21,6 +25,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  GitBranch,
   RotateCcw,
 } from 'lucide-react';
 
@@ -39,6 +44,8 @@ import {
 } from './fictionAiService';
 import { PARSE_WARNING, normalizeStatDefs } from './fictionParser';
 import { ACTION_TYPES } from './fictionPromptAssembler';
+import FictionStoryline from './FictionStoryline';
+import FictionReveal from './FictionReveal';
 import './fictionPlay.css';
 
 const FREE_TEXT_MAX = 300;
@@ -87,6 +94,9 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
   const [versions, setVersions] = useState([]);
   // 当前这一段后面已经走过的行动（children 的 actionKey）；空 = 这一段还没有后续
   const [explored, setExplored] = useState(() => new Set());
+  // 4B：盖在上面的两层。回看可以盖在故事线上面，关掉回看还能回到故事线。
+  const [storylineOpen, setStorylineOpen] = useState(false);
+  const [reveal, setReveal] = useState(null); // { nodeId, chosenChildId, number }
 
   const abortRef = useRef(null);
   const busyRef = useRef(null);
@@ -295,6 +305,37 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
     }
   };
 
+  // 另开分支 / 回到某一段：把当前位置挪到那个节点，回到游玩页。
+  // 数值不用额外处理，每个节点自己存着数值快照。
+  const jumpTo = async (nodeId) => {
+    if (busyRef.current) return;
+
+    try {
+      await setCurrentNode(saveId, nodeId);
+
+      const nodes = await getPathToNode(nodeId);
+
+      if (!mountedRef.current) return;
+
+      setPath(nodes);
+      setError(null);
+      setFreeText('');
+    } catch (jumpError) {
+      console.warn('[Fiction] 跳转失败：', jumpError);
+      if (mountedRef.current) setError({ message: '跳转失败，请再试一次。', retry: null });
+    } finally {
+      if (mountedRef.current) {
+        setStorylineOpen(false);
+        setReveal(null);
+      }
+    }
+  };
+
+  const closeOverlays = () => {
+    setStorylineOpen(false);
+    setReveal(null);
+  };
+
   const handleCancel = () => {
     if (abortRef.current) abortRef.current.abort();
   };
@@ -370,11 +411,21 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
         }}
         className={`fic-p-seg ${isLast && busy === 'regen' ? 'is-dim' : ''}`}
       >
-        <div className="fic-p-seg-head">
+        <button
+          type="button"
+          className="fic-btn-reset fic-p-seg-head is-link"
+          aria-label={`回看第 ${index + 1} 段`}
+          onClick={() => setReveal({
+            nodeId: node.id,
+            chosenChildId: path[index + 1]?.id ?? null,
+            number: index + 1,
+          })}
+        >
           <span className="fic-p-seg-no">第 {index + 1} 段</span>
           <span className="fic-p-seg-line" />
-        </div>
-        {note && <div className="fic-p-act">{note}</div>}
+          <span className="fic-p-seg-peek">回看</span>
+        </button>
+        {note &&<div className="fic-p-act">{note}</div>}
         {splitParagraphs(node.text).map((paragraph, paragraphIndex) => (
           // eslint-disable-next-line react/no-array-index-key
           <p key={paragraphIndex} className="fic-p-para">{paragraph}</p>
@@ -594,6 +645,18 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
         <ArrowLeft size={18} strokeWidth={1.6} aria-hidden="true" />
       </button>
 
+      {loaded && save && current && (
+        <button
+          type="button"
+          className="fic-btn-reset fic-round-btn fic-p-branch-btn"
+          aria-label="故事线"
+          disabled={Boolean(busy)}
+          onClick={() => setStorylineOpen(true)}
+        >
+          <GitBranch size={18} strokeWidth={1.6} aria-hidden="true" />
+        </button>
+      )}
+
       {loaded && save && (
         <>
           <div className="fic-p-top">
@@ -610,6 +673,29 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
 
           {renderSheet()}
         </>
+      )}
+
+      {storylineOpen && save && current && (
+        <FictionStoryline
+          save={save}
+          currentNodeId={current.id}
+          onClose={() => setStorylineOpen(false)}
+          onJump={jumpTo}
+          onReveal={setReveal}
+        />
+      )}
+
+      {reveal && save && (
+        <FictionReveal
+          save={save}
+          nodeId={reveal.nodeId}
+          chosenChildId={reveal.chosenChildId}
+          number={reveal.number}
+          busy={busy}
+          onClose={() => setReveal(null)}
+          onReturn={closeOverlays}
+          onBranch={jumpTo}
+        />
       )}
     </div>
   );

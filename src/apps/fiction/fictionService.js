@@ -15,6 +15,8 @@
 // 操作（新增节点、切换当前节点）都要在同一个事务里更新这两个数字。
 // 分支数算法：同一父节点下「不同 actionKey」的个数减一，累加；
 // actionKey 相同的是重 roll 版本，不算分支。
+//
+// 第 4B 轮：存档点（setSavePoint / clearSavePoint）只改节点上的标记。
 
 import db from '../../db';
 
@@ -248,6 +250,27 @@ export const setCurrentNode = (saveId, nodeId) => (
   })
 );
 
+// ---------- 存档点（第 4B 轮） ----------
+//
+// 存档点只是节点上的一个标记（isSavePoint + savePointName），故事线里会插一面小旗。
+// 不复制任何数据：回到存档点就是 setCurrentNode 到那个节点。
+
+export const SAVE_POINT_NAME_MAX = 12;
+
+export const setSavePoint = async (nodeId, name) => {
+  const clean = String(name || '').trim().slice(0, SAVE_POINT_NAME_MAX);
+
+  if (!clean) throw new Error('存档点要有个名字');
+
+  await db.fictionNodes.update(nodeId, { isSavePoint: true, savePointName: clean });
+
+  return clean;
+};
+
+export const clearSavePoint = (nodeId) => (
+  db.fictionNodes.update(nodeId, { isSavePoint: false, savePointName: '' })
+);
+
 // 兜底：把存档的 segmentCount / branchCount 按全部节点重新算一遍。
 // 平时不用调用（增量更新就够了）；删除节点或数据对不上时用。
 export const recomputeSaveCounters = (saveId) => (
@@ -315,6 +338,9 @@ export default {
   getPathToNode,
   appendNode,
   setCurrentNode,
+  SAVE_POINT_NAME_MAX,
+  setSavePoint,
+  clearSavePoint,
   recomputeSaveCounters,
   listSaveSummaries,
 };

@@ -131,6 +131,22 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+  min-height: 44px; /* 4B：整行可点，进入回看 */
+}
+
+.fic-root .fic-p-seg-peek {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--fic-muted);
+}
+
+/* 4B：右上角的故事线按钮，和左边的返回按钮对称 */
+.fic-root .fic-p-branch-btn {
+  position: absolute;
+  right: 24px;
+  top: calc(24px + env(safe-area-inset-top, 0px));
+  z-index: 20;
 }
 
 .fic-root .fic-p-seg-no {
