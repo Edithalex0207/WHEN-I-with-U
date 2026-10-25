@@ -1,10 +1,7 @@
 // src/apps/fiction/FictionApp.jsx
 //
-// 互动文游（第 1 轮：骨架）。只有存档书架：空状态、存档列表、「最近游玩」大卡、
-// 每份存档的更多操作（删除，带二次确认）。新建向导和游玩页后面几轮再接。
-//
-// 版式照 textgame-visual-preview.html 的「存档书架」画板；颜色全部走
-// fiction.css 里从 themes.css 映射来的变量，不在这里写死。
+// 互动文游。书架页：空状态、存档列表、「最近游玩」大卡、更多操作（删除，带二次确认）。
+// 第 2 轮：「新建存档」进入新建向导；草稿存档点开后回到向导继续填。游玩页下一轮接。
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, MoreHorizontal, Plus } from 'lucide-react';
@@ -12,16 +9,12 @@ import { ArrowLeft, MoreHorizontal, Plus } from 'lucide-react';
 import {
   FICTION_IMAGE_MODES,
   FICTION_MODES,
-  createSave,
   deleteSave,
   listSaveSummaries,
 } from './fictionService';
+import { WIZARD_STEP_COUNT } from './fictionWizardService';
+import FictionWizard from './FictionWizard';
 import './fiction.css';
-
-// 第 1 轮验收只要求「新建存档」弹提示。但这样书架里永远没有存档，
-// 列表和删除都没法试。想测的时候把它改成 true：点「新建存档」会直接插入一份空白存档。
-// 第 2 轮接上向导之后，这个开关和相关分支一起删掉。
-const DEV_CREATE_BLANK_SAVE = false;
 
 const FILTERS = {
   ALL: 'all',
@@ -56,6 +49,12 @@ const formatRelative = (timestamp) => {
 };
 
 const buildMetaLine = (save) => {
+  if (save.isDraft) {
+    const stepNo = Math.min(Number(save.draftStep) || 0, WIZARD_STEP_COUNT - 1) + 1;
+
+    return `草稿 · 第 ${stepNo}/${WIZARD_STEP_COUNT} 步 · ${formatRelative(save.updatedAt)}`;
+  }
+
   const parts = [MODE_LABEL[save.mode] || '选择式'];
 
   if (save.segmentCount > 0) {
@@ -72,6 +71,7 @@ const buildMetaLine = (save) => {
 const buildTags = (save) => {
   const tags = [];
 
+  if (save.isDraft) tags.push('草稿');
   if (save.branchCount > 0) tags.push(`${save.branchCount} 条分支`);
   if (Array.isArray(save.stats) && save.stats.length > 0) tags.push('有数值');
   if (IMAGE_LABEL[save.imageMode]) tags.push(IMAGE_LABEL[save.imageMode]);
@@ -87,6 +87,8 @@ const FictionApp = ({ onBackHub }) => {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState('');
+  // null = 书架；{ draftId } = 新建向导（draftId 为 null 表示全新开始）
+  const [wizard, setWizard] = useState(null);
 
   const toastTimerRef = useRef(null);
 
@@ -119,8 +121,8 @@ const FictionApp = ({ onBackHub }) => {
 
   const counts = useMemo(() => ({
     [FILTERS.ALL]: saves.length,
-    [FILTERS.CHOICE]: saves.filter((save) => save.mode === FICTION_MODES.CHOICE).length,
-    [FILTERS.NOVEL]: saves.filter((save) => save.mode === FICTION_MODES.NOVEL).length,
+    [FILTERS.CHOICE]: saves.filter((save) => save.mode === FILTERS.CHOICE).length,
+    [FILTERS.NOVEL]: saves.filter((save) => save.mode === FILTERS.NOVEL).length,
   }), [saves]);
 
   const visibleSaves = useMemo(
@@ -129,26 +131,27 @@ const FictionApp = ({ onBackHub }) => {
   );
 
   // listSaveSummaries 已经按 updatedAt 倒序，第一份就是最近游玩的。
-  // 只有真正开始过的存档才配当「继续」大卡。
-  const latestSave = saves.find((save) => save.segmentCount > 0) || null;
+  // 草稿和还没开始的存档都不配当「继续」大卡。
+  const latestSave = saves.find((save) => !save.isDraft && save.segmentCount > 0) || null;
 
-  const handleNew = async () => {
-    if (!DEV_CREATE_BLANK_SAVE) {
-      showToast('新建向导下一轮开放');
+  const handleNew = () => {
+    setWizard({ draftId: null });
+  };
+
+  const handleOpenSave = (save) => {
+    if (save?.isDraft) {
+      setWizard({ draftId: save.id });
       return;
     }
 
-    try {
-      await createSave({ title: `测试存档 ${pad2(saves.length + 1)}` });
-      await reload();
-    } catch (error) {
-      console.warn('[Fiction] 新建存档失败：', error);
-      showToast('新建失败，请再试一次');
-    }
+    showToast('游玩页下一轮开放');
   };
 
-  const handleOpenSave = () => {
-    showToast('游玩页下一轮开放');
+  const handleWizardExit = async (result = {}) => {
+    setWizard(null);
+    await reload();
+
+    if (result.message) showToast(result.message);
   };
 
   const closeMenu = () => {
@@ -182,6 +185,14 @@ const FictionApp = ({ onBackHub }) => {
     { id: FILTERS.CHOICE, label: '选择式' },
     { id: FILTERS.NOVEL, label: '小说式' },
   ];
+
+  if (wizard) {
+    return (
+      <div className="fic-root">
+        <FictionWizard draftId={wizard.draftId} onExit={handleWizardExit} />
+      </div>
+    );
+  }
 
   return (
     <div className="fic-root">
@@ -239,7 +250,11 @@ const FictionApp = ({ onBackHub }) => {
                 {MODE_LABEL[latestSave.mode]} · 第 {latestSave.segmentCount} {latestSave.mode === FICTION_MODES.NOVEL ? '节' : '段'}
                 {latestSave.branchCount > 0 ? ` · ${latestSave.branchCount} 条分支` : ''}
               </div>
-              <button type="button" className="fic-btn-reset fic-resume-btn" onClick={handleOpenSave}>
+              <button
+                type="button"
+                className="fic-btn-reset fic-resume-btn"
+                onClick={() => handleOpenSave(latestSave)}
+              >
                 继续
               </button>
             </section>
@@ -262,7 +277,11 @@ const FictionApp = ({ onBackHub }) => {
                 return (
                   <li key={save.id} className="fic-row">
                     <span className="fic-row-no">{pad2(index + 1)}</span>
-                    <button type="button" className="fic-btn-reset fic-row-main" onClick={handleOpenSave}>
+                    <button
+                      type="button"
+                      className="fic-btn-reset fic-row-main"
+                      onClick={() => handleOpenSave(save)}
+                    >
                       <span className="fic-row-name">{save.title}</span>
                       <span className="fic-row-meta">{buildMetaLine(save)}</span>
                       {tags.length > 0 && (
@@ -318,7 +337,7 @@ const FictionApp = ({ onBackHub }) => {
                     className="fic-btn-reset fic-sheet-btn is-danger"
                     onClick={() => setConfirming(true)}
                   >
-                    删除存档
+                    {menuSave.isDraft ? '删除草稿' : '删除存档'}
                   </button>
                   <button type="button" className="fic-btn-reset fic-sheet-btn" onClick={closeMenu}>
                     取消
@@ -329,7 +348,9 @@ const FictionApp = ({ onBackHub }) => {
               {confirming && (
                 <>
                   <p className="fic-sheet-warn">
-                    会同时删掉这份存档的全部剧情、分支和配图，删除后无法恢复。
+                    {menuSave.isDraft
+                      ? '草稿里已填的内容会一起删掉，删除后无法恢复。'
+                      : '会同时删掉这份存档的全部剧情、分支和配图，删除后无法恢复。'}
                   </p>
                   <div className="fic-sheet-actions">
                     <button
