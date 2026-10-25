@@ -18,13 +18,13 @@
 
 .fic-root .fic-p-top {
   flex: none;
-  min-height: calc(68px + env(safe-area-inset-top, 0px));
-  padding: calc(24px + env(safe-area-inset-top, 0px)) 76px 0;
+  min-height: calc(62px + env(safe-area-inset-top, 0px));
+  padding: calc(22px + env(safe-area-inset-top, 0px)) 68px 0;
   text-align: center;
 }
 
 .fic-root .fic-p-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   letter-spacing: 0.08em;
   line-height: 1.3;
@@ -50,7 +50,7 @@
   align-items: center;
   gap: 22px;
   min-height: 40px;
-  margin: 4px 24px 0;
+  margin: 4px 20px 0;
   overflow-x: auto;
   border-bottom: 1px solid var(--fic-line);
   scrollbar-width: none;
@@ -106,7 +106,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 24px 28px;
+  padding: 0 20px 28px;
   scrollbar-width: none;
 }
 
@@ -132,7 +132,7 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: 44px; /* 4B：整行可点，进入回看 */
+  min-height: 40px; /* 4B：整行可点，进入回看 */
 }
 
 .fic-root .fic-p-seg-peek {
@@ -144,16 +144,16 @@
 /* 4B：右上角的故事线按钮，和左边的返回按钮对称 */
 .fic-root .fic-p-branch-btn {
   position: absolute;
-  right: 24px;
-  top: calc(24px + env(safe-area-inset-top, 0px));
+  right: 20px;
+  top: calc(22px + env(safe-area-inset-top, 0px));
   z-index: 20;
 }
 
 /* 5A：总结入口，叠在故事线按钮正下面；有待总结内容时右上角一个小红点 */
 .fic-root .fic-p-summary-btn {
   position: absolute;
-  right: 24px;
-  top: calc(24px + 44px + 10px + env(safe-area-inset-top, 0px));
+  right: 20px;
+  top: calc(22px + 38px + 8px + env(safe-area-inset-top, 0px));
   z-index: 20;
 }
 
@@ -171,7 +171,7 @@
 .fic-root .fic-p-seg-no {
   font-family: var(--fic-display);
   font-style: italic;
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.08em;
   color: var(--fic-wine-text);
 }
@@ -186,7 +186,7 @@
 .fic-root .fic-p-act {
   margin-top: 10px;
   font-family: var(--fic-hand);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--fic-blue-text);
   word-break: break-word;
@@ -194,15 +194,15 @@
 
 .fic-root .fic-p-para {
   margin: 12px 0 0;
-  font-size: 15.5px;
-  line-height: 2;
+  font-size: 14.5px;
+  line-height: 1.95;
   color: var(--fic-ink);
   word-break: break-word;
 }
 
 .fic-root .fic-p-pending-text {
   margin: 14px 0 0;
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 2;
   color: var(--fic-muted);
 }
@@ -242,7 +242,7 @@
 
 .fic-root .fic-p-intro-title {
   margin: 10px 0 0;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
   line-height: 1.25;
   letter-spacing: 0.05em;
@@ -253,7 +253,7 @@
   margin: 14px 0 0;
   padding-top: 14px;
   border-top: 1.5px solid var(--fic-ink);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 2;
   color: var(--fic-sub);
   white-space: pre-wrap;
@@ -274,7 +274,7 @@
   display: flex;
   flex-direction: column;
   max-height: 64%;
-  padding: 0 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px));
   border-radius: 26px 26px 0 0;
   background: var(--fic-sheet);
   border-top: 1px solid var(--fic-border);
@@ -299,14 +299,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 44px;
+  height: 38px;
   margin-top: 4px;
 }
 
 .fic-root .fic-p-sheet-title {
   font-family: var(--fic-display);
   font-style: italic;
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   color: var(--fic-wine-text);
 }
@@ -320,9 +320,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-right: -10px;
+  width: 38px;
+  height: 38px;
+  margin-right: -8px;
   color: var(--fic-ink);
 }
 
@@ -337,7 +337,7 @@
   align-items: center;
   justify-content: center;
   width: 32px;
-  height: 44px;
+  height: 38px;
   color: var(--fic-ink);
 }
 
@@ -370,18 +370,18 @@
 .fic-root .fic-p-option {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
-  min-height: 56px;
-  padding: 10px 0;
+  min-height: 48px;
+  padding: 8px 0;
   border-bottom: 1px solid var(--fic-ink);
 }
 
 .fic-root .fic-p-option-key {
-  width: 28px;
+  width: 24px;
   flex-shrink: 0;
   font-family: var(--fic-display);
-  font-size: 26px;
+  font-size: 22px;
   font-style: italic;
   color: var(--fic-wine-text);
 }
@@ -393,8 +393,8 @@
 
 .fic-root .fic-p-option-text {
   display: block;
-  font-size: 14.5px;
-  line-height: 1.7;
+  font-size: 13.5px;
+  line-height: 1.65;
   word-break: break-word;
 }
 
@@ -419,7 +419,7 @@
   padding: 2px 9px;
   border-radius: 999px;
   border: 1px solid var(--fic-line);
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--fic-wine-text);
 }
 
@@ -429,17 +429,17 @@
   flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .fic-root .fic-p-free-input {
   flex: 1;
   min-width: 0;
-  height: 48px;
-  padding: 0 18px;
+  height: 42px;
+  padding: 0 16px;
   border: 1px solid var(--fic-ink);
-  border-radius: 24px;
+  border-radius: 21px;
   background: transparent;
   color: var(--fic-ink);
   font: inherit;
@@ -463,8 +463,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--fic-btn-bg);
@@ -479,21 +479,21 @@
 }
 
 .fic-root .fic-p-gen-text {
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.12em;
 }
 
 .fic-root .fic-p-gen-hint {
   margin-top: 6px;
   font-family: var(--fic-hand);
-  font-size: 16px;
+  font-size: 15px;
   color: var(--fic-blue-text);
 }
 
 .fic-root .fic-p-link {
-  min-height: 44px;
+  min-height: 36px;
   padding: 0 8px;
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -537,12 +537,12 @@
   justify-content: center;
   gap: 2px;
   width: 100%;
-  height: 54px;
-  border-radius: 27px;
+  height: 46px;
+  border-radius: 23px;
   background: var(--fic-btn-bg);
   color: var(--fic-btn-fg);
   text-align: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.26em;
 }
