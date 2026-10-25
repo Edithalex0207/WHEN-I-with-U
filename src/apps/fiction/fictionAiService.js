@@ -9,8 +9,10 @@
 //
 // 对外三个入口，都返回 { node, warnings }，失败抛出带 code 的 Error：
 //   generateOpening(saveId, { signal })               生成开场，写入开场节点
-//   generateNext(saveId, parentNodeId, action, ...)   在某个节点后续写一段
-//   regenerateNode(saveId, nodeId, { signal })        重新生成一个「还没有后续」的节点（覆盖原内容）
+//   generateNext(saveId, parentNodeId, action, ...)   在某个节点后续写一段；这个行动之前走过的话，
+//                                                     直接回到已有的那一段，不重新生成（返回 reused: true）
+//   rerollNode(saveId, nodeId, { signal })            重 roll 一个「还没有后续」的节点：在它旁边新增一个
+//                                                     同父同 actionKey 的新版本，旧版本原样保留
 //
 // 数值在这里结算：点选项 = 父节点快照 + 该选项的增减量；自由输入 = 父节点
 // 快照 + AI 在 [DELTA] 里给的增减量；都截断到 [min, max]。快照用数值 id 做 key。
@@ -23,9 +25,9 @@ import {
   getPathToNode,
   getRootNode,
   hasChildren,
+  findExistingChild,
   appendNode,
-  updateNode,
-  touchSave,
+  setCurrentNode,
 } from './fictionService';
 import { getStylePreset } from './fictionWizardService';
 import {
@@ -342,6 +344,17 @@ export const generateNext = async (saveId, parentNodeId, action, { signal } = {}
   }
 
   const fullAction = resolveAction(parentNode, action);
+
+  // 这个行动之前走过（回退之后又选了同一个选项、或写了同一句话）：
+  // 直接回到已有的那一段，不重新生成，也不花一次请求。
+  const existing = await findExistingChild(saveId, parentNode.id, buildActionKey(fullAction));
+
+  if (existing) {
+    await setCurrentNode(saveId, existing.id);
+
+    return { node: existing, warnings: existing.parseWarnings || [], reused: true };
+  }
+
   const { fields, warnings } = await runGeneration({
     save,
     parentNode,
@@ -367,11 +380,14 @@ export const generateNext = async (saveId, parentNodeId, action, { signal } = {}
 };
 
 /**
- * 简单的「重新生成」：用同样的行动再请求一次，直接覆盖这个节点的内容。
- * 只允许对「还没有后续」的节点用——有后续的话，后续是接着旧内容写的，
- * 覆盖会让剧情对不上。真正保留旧版本、可以左右切换的重 roll 在第 4 轮做。
+ * 重 roll：用同样的行动再请求一次，结果作为一个新版本写在原节点旁边
+ * （同父、同 actionKey），并切换为当前节点；旧版本原样保留，可以切回去。
+ * 只允许对「还没有后续」的节点用——有后续的话，后续是接着这个版本写的，
+ * 另起一个版本会让剧情对不上。
+ *
+ * 版本不算分支：appendNode 看到 actionKey 相同，不会增加 branchCount。
  */
-export const regenerateNode = async (saveId, nodeId, { signal } = {}) => {
+export const rerollNode = async (saveId, nodeId, { signal } = {}) => {
   const save = await loadPlayableSave(saveId);
   const node = await getNode(nodeId);
 
@@ -391,24 +407,29 @@ export const regenerateNode = async (saveId, nodeId, { signal } = {}) => {
     parentNode,
     action,
     signal,
-    label: '重新生成',
+    label: '重 roll',
   });
 
-  await updateNode(nodeId, fields);
-  await touchSave(saveId);
+  const newId = await appendNode(saveId, {
+    parentId: node.parentId,
+    userAction: node.userAction,
+    actionKey: node.actionKey,
+    chapter: node.chapter || 1,
+    ...fields,
+  });
 
-  return { node: await getNode(nodeId), warnings };
+  return { node: await getNode(newId), warnings };
 };
 
 // 控制台调试入口：在页面控制台里直接试，例如
 //   await __fictionAi.generateOpening(存档id)
 if (typeof window !== 'undefined') {
-  window.__fictionAi = { generateOpening, generateNext, regenerateNode };
+  window.__fictionAi = { generateOpening, generateNext, rerollNode };
 }
 
 export default {
   FICTION_ERROR,
   generateOpening,
   generateNext,
-  regenerateNode,
+  rerollNode,
 };

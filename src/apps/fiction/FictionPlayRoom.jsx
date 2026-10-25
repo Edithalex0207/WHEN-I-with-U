@@ -6,20 +6,36 @@
 //   - 顶部数值条；底部「Your move」抽屉：选项、自由输入、重新生成
 //   - 生成期间显示「正在生成中」，可以取消（取消不会写入任何东西）
 //   - 解析不出选项 / 输出被截断时给提示，可以重新生成
-// 回看、故事线、真正的重 roll（保留旧版本）、配图在后面几轮。
+// 第 4A 轮：
+//   - 重 roll 保留旧版本：抽屉标题行有「‹ 2/3 ›」，只对最后一段（还没有后续的那段）
+//     出现，可以在各个版本之间切换
+//   - 选过的选项带「走过」标记；回退之后再点它，直接回到已有的那一段，不重新生成
+// 回看、故事线、从任意节点另开分支（4B）、配图在后面几轮。
 //
 // 生成函数都在 fictionAiService.js 里：写库发生在 AI 返回之后，
 // 所以中途取消或失败不会留下半截节点。
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+} from 'lucide-react';
 
-import { getPathToNode, getSave } from './fictionService';
+import {
+  getPathToNode,
+  getSave,
+  listChildren,
+  listLeafVersions,
+  setCurrentNode,
+} from './fictionService';
 import {
   FICTION_ERROR,
   generateNext,
   generateOpening,
-  regenerateNode,
+  rerollNode,
 } from './fictionAiService';
 import { PARSE_WARNING, normalizeStatDefs } from './fictionParser';
 import { ACTION_TYPES } from './fictionPromptAssembler';
@@ -66,8 +82,11 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(null); // null | 'opening' | 'next' | 'regen'
   const [error, setError] = useState(null); // { message, retry }
-  const [confirmRegen, setConfirmRegen] = useState(false);
   const [freeText, setFreeText] = useState('');
+  // 当前这一段的各个「还没有后续」的版本（重 roll 出来的），按创建顺序
+  const [versions, setVersions] = useState([]);
+  // 当前这一段后面已经走过的行动（children 的 actionKey）；空 = 这一段还没有后续
+  const [explored, setExplored] = useState(() => new Set());
 
   const abortRef = useRef(null);
   const busyRef = useRef(null);
@@ -135,6 +154,43 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
   const noOptions = Boolean(current) && save?.mode === 'choice' && options.length === 0;
   const truncated = warnings.some((warning) => warning.code === PARSE_WARNING.TRUNCATED);
   const generating = busy === 'opening' || busy === 'next';
+  // 只有「还没有后续」的最后一段才能重 roll、切版本
+  const isLeaf = explored.size === 0;
+  const versionIndex = current ? versions.findIndex((item) => item.id === current.id) : -1;
+  const showPager = isLeaf && versions.length > 1 && versionIndex !== -1;
+
+  // 换了当前节点，就重新读一遍它的版本和后续。
+  useEffect(() => {
+    if (!current) {
+      setVersions([]);
+      setExplored(new Set());
+      return undefined;
+    }
+
+    let alive = true;
+
+    const loadAround = async () => {
+      try {
+        const [children, leafVersions] = await Promise.all([
+          listChildren(saveId, current.id),
+          listLeafVersions(current),
+        ]);
+
+        if (!alive) return;
+
+        setExplored(new Set(children.map((child) => child.actionKey)));
+        setVersions(leafVersions);
+      } catch (loadError) {
+        console.warn('[Fiction] 读取版本失败：', loadError);
+      }
+    };
+
+    void loadAround();
+
+    return () => {
+      alive = false;
+    };
+  }, [saveId, current?.id]);
 
   // 新一段出现（或重新生成覆盖了内容）时，滚到这一段的开头。
   useEffect(() => {
@@ -164,7 +220,6 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
     abortRef.current = controller;
     setBusy(kind);
     setError(null);
-    setConfirmRegen(false);
 
     try {
       const { node } = await task(controller.signal);
@@ -205,17 +260,39 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
     );
   };
 
+  // 重 roll：写出一个新版本并切过去，旧版本还在，用「‹ 2/3 ›」切回。
   const handleRegenerate = () => {
-    if (!current) return;
+    if (!current || !isLeaf) return;
 
     const targetId = current.id;
 
     execute(
       'regen',
-      (signal) => regenerateNode(saveId, targetId, { signal }),
-      (node) => setPath((previous) => previous.map((item) => (item.id === node.id ? node : item))),
+      (signal) => rerollNode(saveId, targetId, { signal }),
+      (node) => setPath((previous) => [...previous.slice(0, -1), node]),
       handleRegenerate,
     );
+  };
+
+  // 切到上一个 / 下一个版本。只是读写数据库，不调用 AI。
+  const handleSwitchVersion = async (step) => {
+    if (busyRef.current || !current) return;
+
+    const target = versions[versionIndex + step];
+
+    if (!target) return;
+
+    try {
+      await setCurrentNode(saveId, target.id);
+
+      if (mountedRef.current) {
+        setPath((previous) => [...previous.slice(0, -1), target]);
+        setError(null);
+      }
+    } catch (switchError) {
+      console.warn('[Fiction] 切换版本失败：', switchError);
+      if (mountedRef.current) setError({ message: '切换版本失败，请再试一次。', retry: null });
+    }
   };
 
   const handleCancel = () => {
@@ -319,9 +396,11 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
   const renderError = () => error && (
     <div className="fic-p-error" role="alert">
       <p>{error.message}</p>
-      <button type="button" className="fic-btn-reset fic-sheet-btn" onClick={error.retry}>
-        重试
-      </button>
+      {error.retry && (
+        <button type="button" className="fic-btn-reset fic-sheet-btn" onClick={error.retry}>
+          重试
+        </button>
+      )}
     </div>
   );
 
@@ -345,6 +424,9 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
             <span className="fic-p-option-key">{option.key}</span>
             <span className="fic-p-option-body">
               <span className="fic-p-option-text">{option.text}</span>
+              {explored.has(`opt:${option.key}`) && (
+                <span className="fic-p-seen">走过 · 点一下回到那一段</span>
+              )}
               {pills.length > 0 && (
                 <span className="fic-p-pills">
                   {pills.map((pill) => <span key={pill} className="fic-p-pill">{pill}</span>)}
@@ -381,34 +463,10 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
       );
     }
 
-    if (confirmRegen) {
-      return (
-        <div className="fic-p-confirm">
-          <p>重新生成会覆盖这一段，选项也会一起换掉，旧的内容找不回来。</p>
-          <div className="fic-sheet-actions">
-            <button
-              type="button"
-              className="fic-btn-reset fic-sheet-btn is-danger"
-              onClick={handleRegenerate}
-            >
-              覆盖重写
-            </button>
-            <button
-              type="button"
-              className="fic-btn-reset fic-sheet-btn"
-              onClick={() => setConfirmRegen(false)}
-            >
-              取消
-            </button>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <>
         {renderError()}
-        {noOptions && (
+        {noOptions && isLeaf && (
           <div className="fic-p-note">
             <span>选项没生成出来，可以重新生成。</span>
             <button type="button" className="fic-btn-reset fic-p-link" onClick={handleRegenerate}>
@@ -416,7 +474,7 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
             </button>
           </div>
         )}
-        {truncated && (
+        {truncated && isLeaf && (
           <div className="fic-p-note">
             <span>这一段可能被截断了（输出长度不够）。</span>
             <button type="button" className="fic-btn-reset fic-p-link" onClick={handleRegenerate}>
@@ -456,15 +514,40 @@ const FictionPlayRoom = ({ saveId, onExit }) => {
         <div className="fic-p-sheet-grab" />
         <div className="fic-p-sheet-head">
           <span className="fic-p-sheet-title">Your move</span>
-          <button
-            type="button"
-            className="fic-btn-reset fic-p-icon-btn"
-            aria-label="重新生成这一段"
-            disabled={Boolean(busy)}
-            onClick={() => setConfirmRegen((value) => !value)}
-          >
-            <RotateCcw size={19} strokeWidth={1.6} aria-hidden="true" />
-          </button>
+          <div className="fic-p-sheet-tools">
+            {showPager && (
+              <div className="fic-p-pager" role="group" aria-label="切换版本">
+                <button
+                  type="button"
+                  className="fic-btn-reset fic-p-pager-btn"
+                  aria-label="上一个版本"
+                  disabled={Boolean(busy) || versionIndex <= 0}
+                  onClick={() => handleSwitchVersion(-1)}
+                >
+                  <ChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
+                </button>
+                <span className="fic-p-pager-count">{versionIndex + 1} / {versions.length}</span>
+                <button
+                  type="button"
+                  className="fic-btn-reset fic-p-pager-btn"
+                  aria-label="下一个版本"
+                  disabled={Boolean(busy) || versionIndex >= versions.length - 1}
+                  onClick={() => handleSwitchVersion(1)}
+                >
+                  <ChevronRight size={16} strokeWidth={1.8} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className="fic-btn-reset fic-p-icon-btn"
+              aria-label="重新生成这一段（旧版本会保留）"
+              disabled={Boolean(busy) || !isLeaf}
+              onClick={handleRegenerate}
+            >
+              <RotateCcw size={19} strokeWidth={1.6} aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         <div className="fic-p-sheet-body">{renderSheetBody()}</div>

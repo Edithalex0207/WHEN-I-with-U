@@ -147,6 +147,39 @@ export const getRootNode = async (saveId) => {
   return roots.sort((a, b) => a.id - b.id)[0] || null;
 };
 
+// ---------- 版本（重 roll） ----------
+//
+// 同一个父节点下 actionKey 相同的节点互为「版本」：重 roll 就是在原节点旁边
+// 新增一个同父同 actionKey 的节点，旧版本原样保留。
+
+const sameAction = (a, b) => (a.actionKey || '') === (b.actionKey || '');
+
+// 这个节点的所有「还没有后续」的版本，按创建顺序排。节点自己即使有后续
+// 也会留在列表里，这样调用方总能找到自己的位置。
+// 有后续的版本是已经被接着玩过的，它们属于另一条分支，在故事线里看，不进这个列表。
+export const listLeafVersions = async (node) => {
+  const siblings = await listChildren(node.saveId, node.parentId);
+  const versions = siblings.filter((item) => sameAction(item, node)).sort((a, b) => a.id - b.id);
+  const hasKids = await Promise.all(versions.map((item) => hasChildren(item.saveId, item.id)));
+
+  return versions.filter((item, index) => !hasKids[index] || item.id === node.id);
+};
+
+// 在 parentId 下找「已经走过的这个行动」对应的节点。有好几个版本时，
+// 优先取被接着玩过的那个（那才是玩家真正走过的路），否则取最新的版本。
+export const findExistingChild = async (saveId, parentId, actionKey) => {
+  const siblings = (await listChildren(saveId, parentId))
+    .filter((item) => (item.actionKey || '') === (actionKey || ''))
+    .sort((a, b) => a.id - b.id);
+
+  if (siblings.length === 0) return null;
+
+  const hasKids = await Promise.all(siblings.map((item) => hasChildren(item.saveId, item.id)));
+  const played = siblings.filter((item, index) => hasKids[index]);
+
+  return played.length > 0 ? played[played.length - 1] : siblings[siblings.length - 1];
+};
+
 // 从某个节点一路往上走到开场，返回从开场到该节点的顺序数组。
 // 提示词组装、故事线、回看都靠它取「当前路径」。
 export const getPathToNode = async (nodeId) => {
@@ -277,6 +310,8 @@ export default {
   listChildren,
   hasChildren,
   getRootNode,
+  listLeafVersions,
+  findExistingChild,
   getPathToNode,
   appendNode,
   setCurrentNode,

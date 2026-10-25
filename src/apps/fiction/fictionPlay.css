@@ -276,6 +276,11 @@
   color: var(--fic-wine-text);
 }
 
+.fic-root .fic-p-sheet-tools {
+  display: flex;
+  align-items: center;
+}
+
 .fic-root .fic-p-icon-btn {
   display: flex;
   align-items: center;
@@ -284,6 +289,31 @@
   height: 44px;
   margin-right: -10px;
   color: var(--fic-ink);
+}
+
+/* 版本切换：‹ 2 / 3 › */
+.fic-root .fic-p-pager {
+  display: flex;
+  align-items: center;
+}
+
+.fic-root .fic-p-pager-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 44px;
+  color: var(--fic-ink);
+}
+
+.fic-root .fic-p-pager-count {
+  min-width: 44px;
+  text-align: center;
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--fic-sub);
 }
 
 /* 选项多的时候只滚选项这一块，自由输入栏始终在底部 */
@@ -331,6 +361,16 @@
   font-size: 14.5px;
   line-height: 1.7;
   word-break: break-word;
+}
+
+/* 这个选项之前选过：回退之后再点它，会直接回到已有的那一段 */
+.fic-root .fic-p-seen {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--fic-hand);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fic-blue-text);
 }
 
 .fic-root .fic-p-pills {
@@ -452,17 +492,6 @@
   color: var(--fic-wine-text);
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.fic-root .fic-p-confirm p {
-  margin: 8px 0 0;
-  font-size: 13px;
-  line-height: 1.8;
-  color: var(--fic-wine-text);
-}
-
-.fic-root .fic-p-confirm .fic-sheet-actions {
-  margin-top: 14px;
 }
 
 /* ---------- 序章页的「开始故事」 ---------- */
