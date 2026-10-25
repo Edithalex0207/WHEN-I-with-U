@@ -5117,4 +5117,14 @@ db.version(102).stores({
   pixelDollGifts: '++id, chatId, status, createdAt, [chatId+createdAt]',
 });
 
+// 互动文游（src/apps/fiction/）：存档、剧情节点、配图元数据、配图本体。
+// fictionImageFiles 只放 Blob，和 imageGenerationFiles 一样要排除在备份之外，
+// 第 7 轮开始存图之前，要把它加进 backupService.js 的 BACKUP_EXCLUDED_TABLES。
+db.version(103).stores({
+  fictionSaves: '++id, updatedAt, mode',
+  fictionNodes: '++id, saveId, parentId, [saveId+parentId]',
+  fictionImages: '++id, saveId, nodeId',
+  fictionImageFiles: '++id',
+});
+
 export default db;

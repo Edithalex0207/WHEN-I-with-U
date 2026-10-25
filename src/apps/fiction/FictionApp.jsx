@@ -1,0 +1,364 @@
+// src/apps/fiction/FictionApp.jsx
+//
+// 互动文游（第 1 轮：骨架）。只有存档书架：空状态、存档列表、「最近游玩」大卡、
+// 每份存档的更多操作（删除，带二次确认）。新建向导和游玩页后面几轮再接。
+//
+// 版式照 textgame-visual-preview.html 的「存档书架」画板；颜色全部走
+// fiction.css 里从 themes.css 映射来的变量，不在这里写死。
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, MoreHorizontal, Plus } from 'lucide-react';
+
+import {
+  FICTION_IMAGE_MODES,
+  FICTION_MODES,
+  createSave,
+  deleteSave,
+  listSaveSummaries,
+} from './fictionService';
+import './fiction.css';
+
+// 第 1 轮验收只要求「新建存档」弹提示。但这样书架里永远没有存档，
+// 列表和删除都没法试。想测的时候把它改成 true：点「新建存档」会直接插入一份空白存档。
+// 第 2 轮接上向导之后，这个开关和相关分支一起删掉。
+const DEV_CREATE_BLANK_SAVE = false;
+
+const FILTERS = {
+  ALL: 'all',
+  CHOICE: FICTION_MODES.CHOICE,
+  NOVEL: FICTION_MODES.NOVEL,
+};
+
+const MODE_LABEL = {
+  [FICTION_MODES.CHOICE]: '选择式',
+  [FICTION_MODES.NOVEL]: '小说式',
+};
+
+const IMAGE_LABEL = {
+  [FICTION_IMAGE_MODES.MANUAL]: '手动配图',
+  [FICTION_IMAGE_MODES.AUTO]: '自动配图',
+};
+
+const pad2 = (value) => String(value).padStart(2, '0');
+
+const formatRelative = (timestamp) => {
+  const diff = Date.now() - Number(timestamp || 0);
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diff < minute) return '刚刚';
+  if (diff < hour) return `${Math.floor(diff / minute)} 分钟前`;
+  if (diff < day) return `${Math.floor(diff / hour)} 小时前`;
+  if (diff < 30 * day) return `${Math.floor(diff / day)} 天前`;
+
+  return new Date(timestamp).toLocaleDateString('zh-CN');
+};
+
+const buildMetaLine = (save) => {
+  const parts = [MODE_LABEL[save.mode] || '选择式'];
+
+  if (save.segmentCount > 0) {
+    parts.push(save.mode === FICTION_MODES.NOVEL ? `第 ${save.segmentCount} 节` : `第 ${save.segmentCount} 段`);
+  } else {
+    parts.push('还没开始');
+  }
+
+  parts.push(formatRelative(save.updatedAt));
+
+  return parts.join(' · ');
+};
+
+const buildTags = (save) => {
+  const tags = [];
+
+  if (save.branchCount > 0) tags.push(`${save.branchCount} 条分支`);
+  if (Array.isArray(save.stats) && save.stats.length > 0) tags.push('有数值');
+  if (IMAGE_LABEL[save.imageMode]) tags.push(IMAGE_LABEL[save.imageMode]);
+
+  return tags;
+};
+
+const FictionApp = ({ onBackHub }) => {
+  const [saves, setSaves] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [filter, setFilter] = useState(FILTERS.ALL);
+  const [menuSave, setMenuSave] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const toastTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
+
+  const showToast = useCallback((message) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+
+    setToast(message);
+    toastTimerRef.current = setTimeout(() => setToast(''), 2200);
+  }, []);
+
+  const reload = useCallback(async () => {
+    try {
+      setSaves(await listSaveSummaries());
+    } catch (error) {
+      console.warn('[Fiction] 读取存档失败：', error);
+      setSaves([]);
+      showToast('读取存档失败，请退出重进一次');
+    } finally {
+      setLoaded(true);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  const counts = useMemo(() => ({
+    [FILTERS.ALL]: saves.length,
+    [FILTERS.CHOICE]: saves.filter((save) => save.mode === FICTION_MODES.CHOICE).length,
+    [FILTERS.NOVEL]: saves.filter((save) => save.mode === FICTION_MODES.NOVEL).length,
+  }), [saves]);
+
+  const visibleSaves = useMemo(
+    () => (filter === FILTERS.ALL ? saves : saves.filter((save) => save.mode === filter)),
+    [saves, filter],
+  );
+
+  // listSaveSummaries 已经按 updatedAt 倒序，第一份就是最近游玩的。
+  // 只有真正开始过的存档才配当「继续」大卡。
+  const latestSave = saves.find((save) => save.segmentCount > 0) || null;
+
+  const handleNew = async () => {
+    if (!DEV_CREATE_BLANK_SAVE) {
+      showToast('新建向导下一轮开放');
+      return;
+    }
+
+    try {
+      await createSave({ title: `测试存档 ${pad2(saves.length + 1)}` });
+      await reload();
+    } catch (error) {
+      console.warn('[Fiction] 新建存档失败：', error);
+      showToast('新建失败，请再试一次');
+    }
+  };
+
+  const handleOpenSave = () => {
+    showToast('游玩页下一轮开放');
+  };
+
+  const closeMenu = () => {
+    if (busy) return;
+
+    setMenuSave(null);
+    setConfirming(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!menuSave || busy) return;
+
+    setBusy(true);
+
+    try {
+      await deleteSave(menuSave.id);
+      setMenuSave(null);
+      setConfirming(false);
+      await reload();
+      showToast('存档已删除');
+    } catch (error) {
+      console.warn('[Fiction] 删除存档失败：', error);
+      showToast('删除失败，请再试一次');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const filterItems = [
+    { id: FILTERS.ALL, label: '全部' },
+    { id: FILTERS.CHOICE, label: '选择式' },
+    { id: FILTERS.NOVEL, label: '小说式' },
+  ];
+
+  return (
+    <div className="fic-root">
+      <div className="fic-col">
+        <button
+          type="button"
+          className="fic-btn-reset fic-round-btn fic-back"
+          aria-label="返回主界面"
+          onClick={onBackHub}
+        >
+          <ArrowLeft size={18} strokeWidth={1.6} aria-hidden="true" />
+        </button>
+
+        <div className="fic-scroll">
+          <div className="fic-vol-row">
+            <span className="fic-vol">VOL. {pad2(saves.length)} SAVES</span>
+          </div>
+
+          <header className="fic-head">
+            <div className="fic-eyebrow">Interactive Fiction</div>
+            <h1 className="fic-title">
+              Story
+              <br />
+              Shelf
+            </h1>
+            <div className="fic-title-zh">互动文游</div>
+            <p className="fic-lead">每一份存档都是一条没走完的故事线。可以同时开着很多份，彼此互不影响。</p>
+          </header>
+
+          {saves.length > 0 && (
+            <div className="fic-filters" role="tablist" aria-label="按形式筛选">
+              {filterItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === item.id}
+                  className={`fic-btn-reset fic-filter ${filter === item.id ? 'is-on' : ''}`}
+                  onClick={() => setFilter(item.id)}
+                >
+                  {item.label} {counts[item.id]}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {latestSave && (
+            <section className="fic-resume" aria-label="最近游玩">
+              <div className="fic-resume-top">
+                <span className="fic-resume-no">No. 01 · 最近游玩</span>
+                <span className="fic-resume-time">{formatRelative(latestSave.updatedAt)}</span>
+              </div>
+              <div className="fic-resume-name">{latestSave.title}</div>
+              <div className="fic-resume-meta">
+                {MODE_LABEL[latestSave.mode]} · 第 {latestSave.segmentCount} {latestSave.mode === FICTION_MODES.NOVEL ? '节' : '段'}
+                {latestSave.branchCount > 0 ? ` · ${latestSave.branchCount} 条分支` : ''}
+              </div>
+              <button type="button" className="fic-btn-reset fic-resume-btn" onClick={handleOpenSave}>
+                继续
+              </button>
+            </section>
+          )}
+
+          {loaded && saves.length === 0 && (
+            <div className="fic-empty">
+              <div className="fic-empty-hand">书架还是空的。</div>
+              <p className="fic-empty-text">
+                新建一份存档，写下背景、挑几位角色，故事就会从第一段开始。
+              </p>
+            </div>
+          )}
+
+          {visibleSaves.length > 0 && (
+            <ol className="fic-list">
+              {visibleSaves.map((save, index) => {
+                const tags = buildTags(save);
+
+                return (
+                  <li key={save.id} className="fic-row">
+                    <span className="fic-row-no">{pad2(index + 1)}</span>
+                    <button type="button" className="fic-btn-reset fic-row-main" onClick={handleOpenSave}>
+                      <span className="fic-row-name">{save.title}</span>
+                      <span className="fic-row-meta">{buildMetaLine(save)}</span>
+                      {tags.length > 0 && (
+                        <span className="fic-tags">
+                          {tags.map((tag) => (
+                            <span key={tag} className="fic-tag">{tag}</span>
+                          ))}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="fic-btn-reset fic-more"
+                      aria-label={`${save.title} 的更多操作`}
+                      onClick={() => {
+                        setConfirming(false);
+                        setMenuSave(save);
+                      }}
+                    >
+                      <MoreHorizontal size={20} aria-hidden="true" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
+
+        <div className="fic-foot">
+          <button type="button" className="fic-btn-reset fic-new-btn" onClick={handleNew}>
+            <Plus size={18} strokeWidth={1.8} aria-hidden="true" />
+            新建存档
+          </button>
+        </div>
+
+        {menuSave && (
+          <>
+            <button
+              type="button"
+              className="fic-btn-reset fic-mask"
+              aria-label="关闭"
+              onClick={closeMenu}
+            />
+            <div className="fic-sheet" role="dialog" aria-label="存档操作">
+              <div className="fic-sheet-grab" />
+              <div className="fic-sheet-name">{menuSave.title}</div>
+              <div className="fic-sheet-meta">{buildMetaLine(menuSave)}</div>
+
+              {!confirming && (
+                <div className="fic-sheet-actions">
+                  <button
+                    type="button"
+                    className="fic-btn-reset fic-sheet-btn is-danger"
+                    onClick={() => setConfirming(true)}
+                  >
+                    删除存档
+                  </button>
+                  <button type="button" className="fic-btn-reset fic-sheet-btn" onClick={closeMenu}>
+                    取消
+                  </button>
+                </div>
+              )}
+
+              {confirming && (
+                <>
+                  <p className="fic-sheet-warn">
+                    会同时删掉这份存档的全部剧情、分支和配图，删除后无法恢复。
+                  </p>
+                  <div className="fic-sheet-actions">
+                    <button
+                      type="button"
+                      className="fic-btn-reset fic-sheet-btn is-danger-solid"
+                      disabled={busy}
+                      onClick={handleConfirmDelete}
+                    >
+                      {busy ? '正在删除' : '确认删除'}
+                    </button>
+                    <button
+                      type="button"
+                      className="fic-btn-reset fic-sheet-btn"
+                      disabled={busy}
+                      onClick={() => setConfirming(false)}
+                    >
+                      返回
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {toast && <div className="fic-toast" role="status">{toast}</div>}
+      </div>
+    </div>
+  );
+};
+
+export default FictionApp;

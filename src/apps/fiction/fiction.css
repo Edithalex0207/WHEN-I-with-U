@@ -1,0 +1,511 @@
+/* src/apps/fiction/fiction.css
+ *
+ * 互动文游。版式照 textgame-visual-preview.html（杂志编辑风），
+ * 颜色全部来自 src/styles/themes.css 的全局变量，切换主题自动跟随。
+ * 只有酒红 / 蓝是固定的语义点缀色，文字用时和主题文字色混合。
+ *
+ * 所有类名带 fic- 前缀，并嵌套在 .fic-root 下面，不会和其他子应用撞车。
+ * 不用 position: fixed：宽屏上它会跑出中间那条窄栏。定位都相对 .fic-root / .fic-col。
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,400;1,700&family=Noto+Serif+SC:wght@400;600;900&family=Ma+Shan+Zheng&display=swap');
+
+.fic-root {
+  --fic-paper: var(--bg-main);
+  --fic-sheet: var(--card-bg);
+  --fic-soft: var(--control-soft-bg);
+  --fic-ink: var(--text-main);
+  --fic-sub: var(--text-sub);
+  --fic-muted: var(--text-muted);
+  --fic-line: var(--divider);
+  --fic-border: var(--card-border);
+  --fic-btn-bg: var(--accent-color);
+  --fic-btn-fg: var(--accent-foreground);
+  --fic-wine: #8e1f2f;
+  --fic-blue: #2c4a6b;
+  --fic-wine-text: color-mix(in srgb, var(--fic-wine) 62%, var(--fic-ink));
+  --fic-blue-text: color-mix(in srgb, var(--fic-blue) 58%, var(--fic-ink));
+  --fic-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fic-serif: 'Noto Serif SC', serif;
+  --fic-display: 'Playfair Display', serif;
+  --fic-hand: 'Ma Shan Zheng', serif;
+
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--fic-paper);
+  color: var(--fic-ink);
+  font-family: var(--fic-serif);
+}
+
+.fic-root *,
+.fic-root *::before,
+.fic-root *::after {
+  box-sizing: border-box;
+}
+
+/* 宽屏上内容收在一条居中的窄栏里，行不会拉得太长 */
+.fic-root .fic-col {
+  position: relative;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.fic-root .fic-btn-reset {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.fic-root .fic-btn-reset:focus-visible {
+  outline: 2px solid var(--fic-wine-text);
+  outline-offset: 2px;
+}
+
+.fic-root .fic-btn-reset:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* ---------- 返回按钮：悬浮圆形，不做整条顶栏 ---------- */
+
+.fic-root .fic-round-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--fic-ink);
+  background: var(--fic-sheet);
+  color: var(--fic-ink);
+}
+
+.fic-root .fic-back {
+  position: absolute;
+  left: 24px;
+  top: calc(24px + env(safe-area-inset-top, 0px));
+  z-index: 20;
+}
+
+/* ---------- 滚动区 ---------- */
+
+.fic-root .fic-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 24px calc(120px + env(safe-area-inset-bottom, 0px));
+  scrollbar-width: none;
+}
+
+.fic-root .fic-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.fic-root .fic-vol-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 44px;
+}
+
+.fic-root .fic-vol {
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--fic-muted);
+}
+
+/* ---------- 标题区（页面载入时只播这一段入场） ---------- */
+
+@keyframes fic-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.fic-root .fic-head {
+  margin-top: 22px;
+  animation: fic-rise 0.9s var(--fic-ease) both;
+}
+
+.fic-root .fic-eyebrow {
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-title {
+  margin: 8px 0 0;
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 58px;
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+}
+
+.fic-root .fic-title-zh {
+  margin-top: 14px;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.fic-root .fic-lead {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fic-sub);
+}
+
+/* ---------- 筛选药丸 ---------- */
+
+.fic-root .fic-filters {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fic-root .fic-filter {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  border: 1px solid var(--fic-ink);
+  background: var(--fic-sheet);
+  color: var(--fic-ink);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: background 0.35s ease, color 0.35s ease;
+}
+
+.fic-root .fic-filter.is-on {
+  background: var(--fic-btn-bg);
+  color: var(--fic-btn-fg);
+}
+
+/* ---------- 最近游玩大卡：深色块，颜色来自主题的 ink 变量 ---------- */
+
+.fic-root .fic-resume {
+  margin-top: 22px;
+  padding: 22px 22px 20px;
+  border-radius: 28px;
+  background: var(--ink-card-bg);
+  border: 1px solid var(--ink-card-border);
+  box-shadow: var(--ink-card-shadow);
+  color: var(--text-on-ink);
+}
+
+.fic-root .fic-resume-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fic-root .fic-resume-no {
+  font-family: var(--fic-display);
+  font-style: italic;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  color: var(--text-on-ink-muted);
+}
+
+.fic-root .fic-resume-time {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-on-ink-muted);
+}
+
+.fic-root .fic-resume-name {
+  margin-top: 14px;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  word-break: break-word;
+}
+
+.fic-root .fic-resume-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-on-ink-muted);
+}
+
+.fic-root .fic-resume-btn {
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin-top: 16px;
+  border-radius: 22px;
+  background: var(--text-on-ink);
+  color: var(--ink-a);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+
+/* ---------- 空状态 ---------- */
+
+.fic-root .fic-empty {
+  margin-top: 40px;
+  padding: 24px 0;
+  border-top: 1.5px solid var(--fic-ink);
+  border-bottom: 1px solid var(--fic-ink);
+}
+
+.fic-root .fic-empty-hand {
+  font-family: var(--fic-hand);
+  font-size: 24px;
+  color: var(--fic-blue-text);
+}
+
+.fic-root .fic-empty-text {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fic-sub);
+}
+
+/* ---------- 存档列表：粗线开头，细线分隔 ---------- */
+
+.fic-root .fic-list {
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1.5px solid var(--fic-ink);
+}
+
+.fic-root .fic-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--fic-ink);
+}
+
+.fic-root .fic-row-no {
+  width: 52px;
+  flex-shrink: 0;
+  font-family: var(--fic-display);
+  font-size: 30px;
+  font-style: italic;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-row-main {
+  display: block;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.fic-root .fic-row-name {
+  display: block;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fic-root .fic-row-meta {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--fic-muted);
+}
+
+.fic-root .fic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.fic-root .fic-tag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--fic-line);
+  font-size: 10.5px;
+  color: var(--fic-sub);
+}
+
+.fic-root .fic-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--fic-muted);
+}
+
+/* ---------- 底部新建按钮 ---------- */
+
+.fic-root .fic-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 36px 24px calc(26px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(transparent, var(--fic-paper) 42%);
+  pointer-events: none;
+}
+
+.fic-root .fic-new-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 54px;
+  border-radius: 27px;
+  background: var(--fic-btn-bg);
+  color: var(--fic-btn-fg);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  pointer-events: auto;
+}
+
+/* ---------- 底部抽屉：更多操作 / 删除确认 ---------- */
+
+@keyframes fic-mask-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fic-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+.fic-root .fic-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: block;
+  width: 100%;
+  background: var(--modal-overlay);
+  animation: fic-mask-in 0.4s ease both;
+}
+
+.fic-root .fic-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  padding: 0 24px calc(28px + env(safe-area-inset-bottom, 0px));
+  border-radius: 28px 28px 0 0;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-bottom: 0;
+  box-shadow: var(--modal-shadow);
+  animation: fic-sheet-up 0.6s var(--fic-ease) both;
+}
+
+.fic-root .fic-sheet-grab {
+  width: 36px;
+  height: 3px;
+  margin: 12px auto 18px;
+  border-radius: 2px;
+  background: var(--fic-border);
+}
+
+.fic-root .fic-sheet-name {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  word-break: break-word;
+}
+
+.fic-root .fic-sheet-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--fic-muted);
+}
+
+.fic-root .fic-sheet-warn {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-sheet-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fic-root .fic-sheet-btn {
+  display: block;
+  width: 100%;
+  height: 48px;
+  border-radius: 24px;
+  border: 1px solid var(--fic-ink);
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+}
+
+.fic-root .fic-sheet-btn.is-danger {
+  border-color: var(--fic-wine-text);
+  color: var(--fic-wine-text);
+}
+
+.fic-root .fic-sheet-btn.is-danger-solid {
+  border-color: var(--fic-wine);
+  background: var(--fic-wine);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ---------- 小提示 ---------- */
+
+@keyframes fic-toast-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.fic-root .fic-toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  max-width: calc(100% - 48px);
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: var(--fic-btn-bg);
+  color: var(--fic-btn-fg);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  transform: translateX(-50%);
+  animation: fic-toast-in 0.4s var(--fic-ease) both;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fic-root *,
+  .fic-root *::before,
+  .fic-root *::after {
+    animation-duration: 0.01s !important;
+    transition-duration: 0.01s !important;
+  }
+}

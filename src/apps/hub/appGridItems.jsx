@@ -41,7 +41,8 @@ import {
   Palette,
  Dices,
   Plane,
-  Map as MapIcon,
+    Map as MapIcon,
+  BookMarked,
 } from 'lucide-react';
 import GlassCard from '../../components/GlassCard';
 import AppTitle from './AppTitle';
@@ -910,6 +911,35 @@ export const buildAppGridItems = ({
   },
 
 
+
+  {
+    id: 'fiction',
+    colSpan: 1,
+    content: (
+      <GlassCard
+        blur={false}
+        onClick={() => onOpenApp('fiction')}
+        className="group flex h-full cursor-pointer flex-col justify-between p-4 text-left"
+      >
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: 'var(--control-soft-bg)' }}
+        >
+          <BookMarked
+            className="h-5 w-5 opacity-90"
+            style={{ color: 'var(--text-main)' }}
+          />
+        </div>
+
+        <div>
+          <AppTitle en="Fiction" zh="互动文游" ko="인터랙티브 소설" mode={nameMode} />
+          <p className="mt-0.5 text-[10px] uppercase tracking-wider opacity-50">
+            Story Shelf
+          </p>
+        </div>
+      </GlassCard>
+    ),
+  },
 
   {
     id: 'tripHome',

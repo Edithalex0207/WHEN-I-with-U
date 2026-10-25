@@ -147,6 +147,7 @@ const SweetStreetApp = lazyWithRetry(() => import('./apps/sweetstreet/SweetStree
 const TripHomeApp = lazyWithRetry(() => import('./apps/tripHome/TripApp'), 'TripHomeApp');
 const FlightChessApp = lazyWithRetry(() => import('./apps/flightchess/FlightChessApp'), 'FlightChessApp');
 const FootprintMapApp = lazyWithRetry(() => import('./apps/footprintMap/FootprintMapApp'), 'FootprintMapApp');
+const FictionApp = lazyWithRetry(() => import('./apps/fiction/FictionApp'), 'FictionApp');
 
 // 只是"这个模块的代码正在下载"那零点几秒到一两秒（视网络而定）的占位，
 // 不是常规的应用内 loading 状态，所以故意做得很轻，没有另起 CSS 文件。
@@ -243,6 +244,7 @@ const REGISTERED_APPS = [
     'textgames',
   'sweetstreet',
   'tripHome',
+  'fiction',
   'flightchess',
 ];
 
@@ -986,8 +988,9 @@ const isEmotionKitApp = currentApp === 'emotionkit';
   // 空白。
 const isTextGameHallApp = currentApp === 'textgames';
 const isFootprintMapApp = currentApp === 'footprintMap';
+const isFictionApp = currentApp === 'fiction';
 
-  const mainClassName = currentApp === 'footprintMap'
+  const mainClassName = currentApp === 'footprintMap' || isFictionApp
     ? 'relative z-10 w-full h-[100dvh] overflow-hidden'
     : isInsideChatRoom
     ? 'relative z-10 mx-auto h-[100dvh] w-full max-w-[420px] overflow-hidden'
@@ -1096,12 +1099,12 @@ const isFootprintMapApp = currentApp === 'footprintMap';
         className={mainClassName}
         style={{
           paddingTop:
-                                           isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp || isFootprintMapApp || isFootprintMapApp
+                                           isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp || isFootprintMapApp || isFictionApp
               ? '0'
               : 'calc(1.5rem + env(safe-area-inset-top, 0px))',
 
           paddingBottom:
-            isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp || isFootprintMapApp || isFootprintMapApp
+            isInsideChatRoom || isMarginNotesApp || isShellApp || isTextGameHallApp || isFootprintMapApp || isFictionApp
               ? '0'
               : 'calc(5rem + env(safe-area-inset-bottom, 0px))',
         }}
@@ -1339,6 +1342,16 @@ const isFootprintMapApp = currentApp === 'footprintMap';
                 onChatRoomStateChange={
                   setIsInsideChatRoom
                 }
+              />
+            </React.Suspense>
+          </ErrorBoundary>
+        )}
+
+                {currentApp === 'fiction' && (
+          <ErrorBoundary>
+            <React.Suspense fallback={<AppLoadingFallback />}>
+              <FictionApp
+                onBackHub={() => openApp('hub')}
               />
             </React.Suspense>
           </ErrorBoundary>
