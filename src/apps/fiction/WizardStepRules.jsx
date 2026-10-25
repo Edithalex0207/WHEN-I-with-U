@@ -420,7 +420,7 @@ const WizardStepRules = ({ form, onChange, onToast }) => {
                 </span>
                 <span className="fic-w-pick-text">
                   <span className="fic-w-pick-name">{book.name || '未命名世界书'}</span>
-                  <span className="fic-w-pick-sub">{count} 条 · 关键词触发时才会带入</span>
+                  <span className="fic-w-pick-sub">{count} 条 · 关键词留空的每轮都带，其余按关键词触发</span>
                 </span>
               </button>
             );

@@ -33,6 +33,11 @@ import {
 } from './fictionService';
 import { getStylePreset } from './fictionWizardService';
 import {
+  buildWorldBookScanText,
+  matchWorldBookEntries,
+  renderWorldBookBlock,
+} from './fictionWorldBook';
+import {
   ACTION_TYPES,
   buildActionKey,
   buildFictionRequest,
@@ -209,6 +214,29 @@ const resolveAction = (parentNode, userAction) => {
   return { type: ACTION_TYPES.OPTION, optionKey: option.key, text: option.text, deltas: option.deltas || {} };
 };
 
+// 第 5B 轮：取出这份存档能用的全部世界书条目（全局世界书在前，本存档专属条目在后）。
+// 世界书是聊天里共用的 rpWorldBooks，被删掉的书直接跳过，不报错。
+const loadWorldBookEntries = async (save) => {
+  const ids = (Array.isArray(save.worldBookIds) ? save.worldBookIds : []).map(Number).filter(Number.isFinite);
+  let books = [];
+
+  if (ids.length > 0) {
+    try {
+      const rows = await db.rpWorldBooks.where('id').anyOf(ids).toArray();
+
+      // 按存档里勾选的顺序排，而不是数据库返回的顺序
+      books = ids.map((id) => rows.find((row) => row.id === id)).filter(Boolean);
+    } catch (bookError) {
+      console.warn('[Fiction] 读取世界书失败，这一轮不带全局世界书：', bookError);
+    }
+  }
+
+  return [
+    ...books.flatMap((book) => (Array.isArray(book.entries) ? book.entries : [])),
+    ...(Array.isArray(save.localEntries) ? save.localEntries : []),
+  ];
+};
+
 const logRequest = (label, request, result) => {
   // 项目之前出现过主聊天 token 暴涨，这里每次生成都留一行日志，方便排查。
   console.info('[Fiction]', label, {
@@ -217,6 +245,8 @@ const logRequest = (label, request, result) => {
     historyOmitted: request.meta.historyOmitted,
     summaryBatches: request.meta.summaryBatches,
     summarizedTo: request.meta.summarizedTo,
+    userChars: request.userMessage.length,
+    worldBook: request.worldBook,
     maxTokens: request.maxTokens,
     finishReason: result.finishReason,
     usage: result.usage,
@@ -240,14 +270,28 @@ const runGeneration = async ({ save, parentNode, action, signal, label }) => {
 
   const pathNodes = parentNode ? await getPathToNode(parentNode.id) : [];
 
+  const worldBook = matchWorldBookEntries(
+    await loadWorldBookEntries(save),
+    buildWorldBookScanText(pathNodes, action),
+  );
+
   const request = buildFictionRequest({
     save,
     pathNodes,
     action,
     statsSnapshot: promptSnapshot,
     stylePrompt: buildStylePrompt(save),
-    worldBookText: '',
+    worldBookText: renderWorldBookBlock(worldBook.picked),
   });
+
+  // 日志用：这一轮带了几条世界书（常驻几条、关键词命中几条、因上限没带几条）
+  request.worldBook = {
+    picked: worldBook.picked.length,
+    always: worldBook.always,
+    byKeyword: worldBook.byKeyword,
+    skippedByLimit: worldBook.skippedByLimit,
+    chars: worldBook.chars,
+  };
 
   const result = await callFictionApi({
     systemPrompt: request.systemPrompt,
