@@ -1,0 +1,535 @@
+// src/apps/fiction/FictionPlayRoom.jsx
+//
+// 互动文游的游玩页（选择式）。第 3 轮：
+//   - 没有开场时先显示序章页，点「开始故事」生成开场
+//   - 当前路径上的每一段从上往下排，打开时自动滚到最新一段
+//   - 顶部数值条；底部「Your move」抽屉：选项、自由输入、重新生成
+//   - 生成期间显示「正在生成中」，可以取消（取消不会写入任何东西）
+//   - 解析不出选项 / 输出被截断时给提示，可以重新生成
+// 回看、故事线、真正的重 roll（保留旧版本）、配图在后面几轮。
+//
+// 生成函数都在 fictionAiService.js 里：写库发生在 AI 返回之后，
+// 所以中途取消或失败不会留下半截节点。
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
+
+import { getPathToNode, getSave } from './fictionService';
+import {
+  FICTION_ERROR,
+  generateNext,
+  generateOpening,
+  regenerateNode,
+} from './fictionAiService';
+import { PARSE_WARNING, normalizeStatDefs } from './fictionParser';
+import { ACTION_TYPES } from './fictionPromptAssembler';
+import './fictionPlay.css';
+
+const FREE_TEXT_MAX = 300;
+const BACKGROUND_PREVIEW_MAX = 220;
+
+const splitParagraphs = (text) => String(text || '')
+  .split('\n')
+  .map((line) => line.trim())
+  .filter(Boolean);
+
+const describeUserAction = (action) => {
+  if (!action?.text) return '';
+
+  if (action.type === ACTION_TYPES.OPTION) return `你选了：${action.text}`;
+  if (action.type === ACTION_TYPES.FREE) return `你写下：${action.text}`;
+
+  return '';
+};
+
+const formatDelta = (value) => `${value > 0 ? '+' : '−'}${Math.abs(value)}`;
+
+const statPercent = (stat, value) => {
+  const span = stat.max - stat.min;
+
+  if (span <= 0) return 0;
+
+  return Math.min(100, Math.max(0, ((value - stat.min) / span) * 100));
+};
+
+const GeneratingDots = () => (
+  <span className="fic-p-dots" aria-hidden="true">
+    <span>.</span>
+    <span>.</span>
+    <span>.</span>
+  </span>
+);
+
+const FictionPlayRoom = ({ saveId, onExit }) => {
+  const [save, setSave] = useState(null);
+  const [path, setPath] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(null); // null | 'opening' | 'next' | 'regen'
+  const [error, setError] = useState(null); // { message, retry }
+  const [confirmRegen, setConfirmRegen] = useState(false);
+  const [freeText, setFreeText] = useState('');
+
+  const abortRef = useRef(null);
+  const busyRef = useRef(null);
+  const mountedRef = useRef(true);
+  const scrollRef = useRef(null);
+  const sectionRefs = useRef(new Map());
+  const scrolledOnceRef = useRef(false);
+  // onExit 每次渲染都是新函数，放进 ref 里，避免它进依赖数组后反复重新读存档。
+  const onExitRef = useRef(onExit);
+
+  onExitRef.current = onExit;
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, []);
+
+  // ---------- 读存档 ----------
+
+  useEffect(() => {
+    let alive = true;
+
+    const load = async () => {
+      try {
+        const found = await getSave(saveId);
+
+        if (!found || found.isDraft) {
+          if (alive) onExitRef.current?.({ message: '这份存档现在不能游玩' });
+          return;
+        }
+
+        const nodes = found.currentNodeId ? await getPathToNode(found.currentNodeId) : [];
+
+        if (!alive) return;
+
+        setSave(found);
+        setPath(nodes);
+      } catch (loadError) {
+        console.warn('[Fiction] 读取存档失败：', loadError);
+        if (alive) onExitRef.current?.({ message: '读取存档失败，请再试一次' });
+      } finally {
+        if (alive) setLoaded(true);
+      }
+    };
+
+    void load();
+
+    return () => {
+      alive = false;
+    };
+  }, [saveId]);
+
+  // ---------- 派生数据 ----------
+
+  const current = path.length > 0 ? path[path.length - 1] : null;
+  const stats = useMemo(() => normalizeStatDefs(save?.stats), [save]);
+  const snapshot = current?.statsSnapshot || {};
+  const showStats = save?.mode === 'choice' && stats.length > 0;
+  const warnings = current?.parseWarnings || [];
+  const options = current?.options || [];
+  const noOptions = Boolean(current) && save?.mode === 'choice' && options.length === 0;
+  const truncated = warnings.some((warning) => warning.code === PARSE_WARNING.TRUNCATED);
+  const generating = busy === 'opening' || busy === 'next';
+
+  // 新一段出现（或重新生成覆盖了内容）时，滚到这一段的开头。
+  useEffect(() => {
+    if (!loaded || !current) return;
+
+    const section = sectionRefs.current.get(current.id);
+    const box = scrollRef.current;
+
+    if (!section || !box) return;
+
+    box.scrollTo({
+      top: Math.max(0, section.offsetTop - 12),
+      behavior: scrolledOnceRef.current ? 'smooth' : 'auto',
+    });
+    scrolledOnceRef.current = true;
+  }, [loaded, current?.id, current?.text]);
+
+  // ---------- 生成 ----------
+
+  // 统一的执行入口：同一时间只跑一个任务；取消不算错误；失败时记下「重试」要做什么。
+  const execute = async (kind, task, onDone, retry) => {
+    if (busyRef.current) return;
+
+    const controller = new AbortController();
+
+    busyRef.current = kind;
+    abortRef.current = controller;
+    setBusy(kind);
+    setError(null);
+    setConfirmRegen(false);
+
+    try {
+      const { node } = await task(controller.signal);
+
+      if (mountedRef.current) onDone(node);
+    } catch (taskError) {
+      if (!mountedRef.current || taskError?.code === FICTION_ERROR.ABORTED) return;
+
+      console.warn('[Fiction] 生成失败：', taskError);
+      setError({ message: taskError?.message || '生成失败，请再试一次。', retry });
+    } finally {
+      busyRef.current = null;
+      abortRef.current = null;
+      if (mountedRef.current) setBusy(null);
+    }
+  };
+
+  const startOpening = () => execute(
+    'opening',
+    (signal) => generateOpening(saveId, { signal }),
+    (node) => setPath([node]),
+    startOpening,
+  );
+
+  const takeAction = (action) => {
+    if (!current) return;
+
+    const parentId = current.id;
+
+    execute(
+      'next',
+      (signal) => generateNext(saveId, parentId, action, { signal }),
+      (node) => {
+        setPath((previous) => [...previous, node]);
+        if (action.type === ACTION_TYPES.FREE) setFreeText('');
+      },
+      () => takeAction(action),
+    );
+  };
+
+  const handleRegenerate = () => {
+    if (!current) return;
+
+    const targetId = current.id;
+
+    execute(
+      'regen',
+      (signal) => regenerateNode(saveId, targetId, { signal }),
+      (node) => setPath((previous) => previous.map((item) => (item.id === node.id ? node : item))),
+      handleRegenerate,
+    );
+  };
+
+  const handleCancel = () => {
+    if (abortRef.current) abortRef.current.abort();
+  };
+
+  const handleSendFree = () => {
+    const text = freeText.trim();
+
+    if (!text || busyRef.current) return;
+
+    takeAction({ type: ACTION_TYPES.FREE, text });
+  };
+
+  const handleFreeKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      handleSendFree();
+    }
+  };
+
+  const handleBack = () => {
+    if (abortRef.current) abortRef.current.abort();
+
+    onExitRef.current?.();
+  };
+
+  // ---------- 渲染片段 ----------
+
+  const renderStats = () => (
+    <div className="fic-p-stats" aria-label="当前数值">
+      {stats.map((stat) => {
+        const value = snapshot[stat.id] !== undefined ? snapshot[stat.id] : stat.initial;
+
+        return (
+          <div key={stat.id} className="fic-p-stat">
+            <span className="fic-p-stat-name">{stat.name}</span>
+            <span className="fic-p-stat-value">{value}</span>
+            <span className="fic-p-stat-bar" aria-hidden="true">
+              <span style={{ width: `${statPercent(stat, value)}%` }} />
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderIntro = () => (
+    <div className="fic-p-intro">
+      <div className="fic-p-eyebrow">Prologue</div>
+      <h2 className="fic-p-intro-title">{save.title}</h2>
+      <p className="fic-p-intro-bg">
+        {save.background.length > BACKGROUND_PREVIEW_MAX
+          ? `${save.background.slice(0, BACKGROUND_PREVIEW_MAX)}…`
+          : save.background}
+      </p>
+      <div className="fic-p-intro-tags">
+        <span className="fic-tag">每段不少于 {save.wordMin} 字</span>
+        <span className="fic-tag">每次至少 {save.optionMin} 个选项</span>
+        {stats.length > 0 && <span className="fic-tag">{stats.length} 项数值</span>}
+      </div>
+    </div>
+  );
+
+  const renderSegments = () => path.map((node, index) => {
+    const note = describeUserAction(node.userAction);
+    const isLast = index === path.length - 1;
+
+    return (
+      <section
+        key={node.id}
+        ref={(element) => {
+          if (element) sectionRefs.current.set(node.id, element);
+          else sectionRefs.current.delete(node.id);
+        }}
+        className={`fic-p-seg ${isLast && busy === 'regen' ? 'is-dim' : ''}`}
+      >
+        <div className="fic-p-seg-head">
+          <span className="fic-p-seg-no">第 {index + 1} 段</span>
+          <span className="fic-p-seg-line" />
+        </div>
+        {note && <div className="fic-p-act">{note}</div>}
+        {splitParagraphs(node.text).map((paragraph, paragraphIndex) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <p key={paragraphIndex} className="fic-p-para">{paragraph}</p>
+        ))}
+      </section>
+    );
+  });
+
+  const renderPending = () => (
+    <section className="fic-p-seg is-pending" aria-live="polite">
+      <div className="fic-p-seg-head">
+        <span className="fic-p-seg-no">第 {path.length + 1} 段</span>
+        <span className="fic-p-seg-line" />
+      </div>
+      <p className="fic-p-pending-text">正在写这一段<GeneratingDots /></p>
+    </section>
+  );
+
+  const renderError = () => error && (
+    <div className="fic-p-error" role="alert">
+      <p>{error.message}</p>
+      <button type="button" className="fic-btn-reset fic-sheet-btn" onClick={error.retry}>
+        重试
+      </button>
+    </div>
+  );
+
+  const renderOptionList = () => (
+    <div className="fic-p-options">
+      {options.map((option) => {
+        const pills = save.showDeltas
+          ? stats
+            .filter((stat) => option.deltas && option.deltas[stat.id])
+            .map((stat) => `${stat.name} ${formatDelta(option.deltas[stat.id])}`)
+          : [];
+
+        return (
+          <button
+            key={option.key}
+            type="button"
+            className="fic-btn-reset fic-p-option"
+            disabled={Boolean(busy)}
+            onClick={() => takeAction({ type: ACTION_TYPES.OPTION, optionKey: option.key })}
+          >
+            <span className="fic-p-option-key">{option.key}</span>
+            <span className="fic-p-option-body">
+              <span className="fic-p-option-text">{option.text}</span>
+              {pills.length > 0 && (
+                <span className="fic-p-pills">
+                  {pills.map((pill) => <span key={pill} className="fic-p-pill">{pill}</span>)}
+                </span>
+              )}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderSheetBody = () => {
+    if (generating) {
+      return (
+        <div className="fic-p-gen" role="status" aria-live="polite">
+          <div className="fic-p-gen-text">正在生成中<GeneratingDots /></div>
+          <div className="fic-p-gen-hint">每段要写上千字，请稍等一会儿</div>
+          <button type="button" className="fic-btn-reset fic-p-link" onClick={handleCancel}>
+            取消
+          </button>
+        </div>
+      );
+    }
+
+    if (busy === 'regen') {
+      return (
+        <div className="fic-p-gen" role="status" aria-live="polite">
+          <div className="fic-p-gen-text">正在重新生成这一段<GeneratingDots /></div>
+          <button type="button" className="fic-btn-reset fic-p-link" onClick={handleCancel}>
+            取消
+          </button>
+        </div>
+      );
+    }
+
+    if (confirmRegen) {
+      return (
+        <div className="fic-p-confirm">
+          <p>重新生成会覆盖这一段，选项也会一起换掉，旧的内容找不回来。</p>
+          <div className="fic-sheet-actions">
+            <button
+              type="button"
+              className="fic-btn-reset fic-sheet-btn is-danger"
+              onClick={handleRegenerate}
+            >
+              覆盖重写
+            </button>
+            <button
+              type="button"
+              className="fic-btn-reset fic-sheet-btn"
+              onClick={() => setConfirmRegen(false)}
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {renderError()}
+        {noOptions && (
+          <div className="fic-p-note">
+            <span>选项没生成出来，可以重新生成。</span>
+            <button type="button" className="fic-btn-reset fic-p-link" onClick={handleRegenerate}>
+              重新生成
+            </button>
+          </div>
+        )}
+        {truncated && (
+          <div className="fic-p-note">
+            <span>这一段可能被截断了（输出长度不够）。</span>
+            <button type="button" className="fic-btn-reset fic-p-link" onClick={handleRegenerate}>
+              重新生成
+            </button>
+          </div>
+        )}
+        {options.length > 0 && renderOptionList()}
+      </>
+    );
+  };
+
+  const renderSheet = () => {
+    if (!current) {
+      return (
+        <div className="fic-p-sheet is-start">
+          {renderError()}
+          <button
+            type="button"
+            className="fic-btn-reset fic-p-start"
+            disabled={Boolean(busy)}
+            onClick={startOpening}
+          >
+            {busy === 'opening' ? <>正在生成开场<GeneratingDots /></> : '开始故事'}
+          </button>
+          {busy === 'opening' && (
+            <button type="button" className="fic-btn-reset fic-p-link is-center" onClick={handleCancel}>
+              取消
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="fic-p-sheet">
+        <div className="fic-p-sheet-grab" />
+        <div className="fic-p-sheet-head">
+          <span className="fic-p-sheet-title">Your move</span>
+          <button
+            type="button"
+            className="fic-btn-reset fic-p-icon-btn"
+            aria-label="重新生成这一段"
+            disabled={Boolean(busy)}
+            onClick={() => setConfirmRegen((value) => !value)}
+          >
+            <RotateCcw size={19} strokeWidth={1.6} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="fic-p-sheet-body">{renderSheetBody()}</div>
+
+        {save.allowFreeInput && (
+          <div className="fic-p-free">
+            <input
+              type="text"
+              className="fic-p-free-input"
+              value={freeText}
+              maxLength={FREE_TEXT_MAX}
+              placeholder="或者，写下你自己的行动……"
+              enterKeyHint="send"
+              disabled={Boolean(busy)}
+              aria-label="自由输入你的行动"
+              onChange={(event) => setFreeText(event.target.value)}
+              onKeyDown={handleFreeKeyDown}
+            />
+            <button
+              type="button"
+              className="fic-btn-reset fic-p-send"
+              aria-label="发送"
+              disabled={Boolean(busy) || !freeText.trim()}
+              onClick={handleSendFree}
+            >
+              <ArrowRight size={20} strokeWidth={1.8} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ---------- 页面 ----------
+
+  return (
+    <div className="fic-col fic-p-col">
+      <button
+        type="button"
+        className="fic-btn-reset fic-round-btn fic-back"
+        aria-label="返回书架"
+        onClick={handleBack}
+      >
+        <ArrowLeft size={18} strokeWidth={1.6} aria-hidden="true" />
+      </button>
+
+      {loaded && save && (
+        <>
+          <div className="fic-p-top">
+            <div className="fic-p-title">{save.title}</div>
+            <div className="fic-p-sub">选择式</div>
+          </div>
+
+          {showStats && renderStats()}
+
+          <div className="fic-p-scroll" ref={scrollRef}>
+            {current ? renderSegments() : renderIntro()}
+            {generating && current && renderPending()}
+          </div>
+
+          {renderSheet()}
+        </>
+      )}
+    </div>
+  );
+};
+
+export default FictionPlayRoom;

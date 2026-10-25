@@ -1,7 +1,8 @@
 // src/apps/fiction/FictionApp.jsx
 //
 // 互动文游。书架页：空状态、存档列表、「最近游玩」大卡、更多操作（删除，带二次确认）。
-// 第 2 轮：「新建存档」进入新建向导；草稿存档点开后回到向导继续填。游玩页下一轮接。
+// 第 2 轮：「新建存档」进入新建向导；草稿存档点开后回到向导继续填。
+// 第 3 轮：正式存档点开进入游玩页（选择式）；纯小说式的游玩页第 6 轮再做。
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, MoreHorizontal, Plus } from 'lucide-react';
@@ -14,6 +15,7 @@ import {
 } from './fictionService';
 import { WIZARD_STEP_COUNT } from './fictionWizardService';
 import FictionWizard from './FictionWizard';
+import FictionPlayRoom from './FictionPlayRoom';
 import './fiction.css';
 
 const FILTERS = {
@@ -89,6 +91,8 @@ const FictionApp = ({ onBackHub }) => {
   const [toast, setToast] = useState('');
   // null = 书架；{ draftId } = 新建向导（draftId 为 null 表示全新开始）
   const [wizard, setWizard] = useState(null);
+  // null = 不在游玩页；{ saveId } = 正在玩这份存档
+  const [play, setPlay] = useState(null);
 
   const toastTimerRef = useRef(null);
 
@@ -144,11 +148,23 @@ const FictionApp = ({ onBackHub }) => {
       return;
     }
 
-    showToast('游玩页下一轮开放');
+    if (save?.mode === FICTION_MODES.NOVEL) {
+      showToast('纯小说式的游玩页下一阶段开放');
+      return;
+    }
+
+    setPlay({ saveId: save.id });
   };
 
   const handleWizardExit = async (result = {}) => {
     setWizard(null);
+    await reload();
+
+    if (result.message) showToast(result.message);
+  };
+
+  const handlePlayExit = async (result = {}) => {
+    setPlay(null);
     await reload();
 
     if (result.message) showToast(result.message);
@@ -190,6 +206,14 @@ const FictionApp = ({ onBackHub }) => {
     return (
       <div className="fic-root">
         <FictionWizard draftId={wizard.draftId} onExit={handleWizardExit} />
+      </div>
+    );
+  }
+
+  if (play) {
+    return (
+      <div className="fic-root">
+        <FictionPlayRoom saveId={play.saveId} onExit={handlePlayExit} />
       </div>
     );
   }
