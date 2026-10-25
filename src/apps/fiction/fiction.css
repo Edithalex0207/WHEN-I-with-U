@@ -53,27 +53,29 @@
   margin: 0 auto;
 }
 
-/* reset 用 :where() 把优先级降到最低（0,1,0），
- * 这样 .fic-root .fic-w-chip 之类组件自己的 padding / border / background 才不会被它清零。 */
-:where(.fic-root) .fic-btn-reset {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  text-align: inherit;
-}
+/* reset 放进 @layer：没分层的样式（所有组件自己的 padding / border / background）
+ * 无论选择器优先级多高、加载顺序如何，都一定盖过它。 */
+@layer fic-reset {
+  .fic-root .fic-btn-reset {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    text-align: inherit;
+  }
 
-:where(.fic-root) .fic-btn-reset:focus-visible {
-  outline: 2px solid var(--fic-wine-text);
-  outline-offset: 2px;
-}
+  .fic-root .fic-btn-reset:focus-visible {
+    outline: 2px solid var(--fic-wine-text);
+    outline-offset: 2px;
+  }
 
-:where(.fic-root) .fic-btn-reset:disabled {
-  cursor: default;
-  opacity: 0.5;
+  .fic-root .fic-btn-reset:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
 }
 
 /* ---------- 返回按钮：悬浮圆形，不做整条顶栏 ---------- */
@@ -150,14 +152,14 @@
   font-family: var(--fic-display);
   font-style: italic;
   font-weight: 700;
-  font-size: 48px;
+  font-size: 42px;
   line-height: 0.98;
   letter-spacing: -0.015em;
 }
 
 .fic-root .fic-title-zh {
-  margin-top: 14px;
-  font-size: 19px;
+  margin-top: 12px;
+  font-size: 17px;
   font-weight: 900;
   letter-spacing: 0.12em;
 }

@@ -58,7 +58,7 @@
 }
 
 .fic-root .fic-w-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.08em;
 }
@@ -133,7 +133,7 @@
   align-items: center;
   gap: 12px;
   min-height: 56px;
-  padding: 12px 18px;
+  padding: 12px 20px;
   border-radius: 20px;
   border: 1px solid var(--fic-ink);
   background: var(--fic-sheet);
@@ -161,7 +161,7 @@
 
 .fic-root .fic-w-mode-name {
   display: block;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 900;
   letter-spacing: 0.06em;
 }
@@ -184,7 +184,7 @@
 
 .fic-root .fic-w-chip {
   min-height: 36px;
-  padding: 0 16px;
+  padding: 0 18px;
   border-radius: 18px;
   border: 1px solid var(--fic-ink);
   background: var(--fic-sheet);
@@ -237,7 +237,7 @@
   border-radius: 23px;
   background: var(--fic-btn-bg);
   color: var(--fic-btn-fg);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.2em;
 }
