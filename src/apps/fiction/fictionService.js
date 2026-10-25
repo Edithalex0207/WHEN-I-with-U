@@ -9,6 +9,12 @@
 //    IndexedDB 的索引键不能是 null，parentId 为 null 的记录不会进
 //    parentId 索引，也不会进 [saveId+parentId] 复合索引，按父节点查子节点时会漏掉开场。
 // 2. 所有时间戳都存毫秒数（Date.now()），updatedAt 要拿来排序。
+//
+// 第 3 轮起：存档上冗余 segmentCount（当前路径长度）和 branchCount（分支数）
+// 两个数字，书架直接读它们，不再把全部节点读出来现算。凡是改动节点结构的
+// 操作（新增节点、切换当前节点）都要在同一个事务里更新这两个数字。
+// 分支数算法：同一父节点下「不同 actionKey」的个数减一，累加；
+// actionKey 相同的是重 roll 版本，不算分支。
 
 import db from '../../db';
 
@@ -49,6 +55,8 @@ export const buildBlankSave = (overrides = {}) => ({
   stats: [],
   currentNodeId: null,
   coverImageId: null,
+  segmentCount: 0,
+  branchCount: 0,
   ...overrides,
 });
 
@@ -128,6 +136,17 @@ export const listChildren = (saveId, parentId) => (
   db.fictionNodes.where('[saveId+parentId]').equals([saveId, parentId]).toArray()
 );
 
+export const hasChildren = async (saveId, nodeId) => (
+  (await db.fictionNodes.where('[saveId+parentId]').equals([saveId, nodeId]).count()) > 0
+);
+
+// 开场节点（可能有多个，那是重 roll 出来的版本，取最早的一个）。
+export const getRootNode = async (saveId) => {
+  const roots = await listChildren(saveId, ROOT_PARENT_ID);
+
+  return roots.sort((a, b) => a.id - b.id)[0] || null;
+};
+
 // 从某个节点一路往上走到开场，返回从开场到该节点的顺序数组。
 // 提示词组装、故事线、回看都靠它取「当前路径」。
 export const getPathToNode = async (nodeId) => {
@@ -144,49 +163,99 @@ export const getPathToNode = async (nodeId) => {
   return path.reverse();
 };
 
+// 路径长度（只数节点个数，不把正文读出来之外的东西带走）。
+const countPathLength = async (nodeId) => (await getPathToNode(nodeId)).length;
+
+/**
+ * 新增一个节点，并把它设为存档的当前节点。节点写入和存档上
+ * currentNodeId / segmentCount / branchCount 的更新在同一个事务里，
+ * 要么都成功要么都不动。返回新节点的 id。
+ *
+ * data 里至少要有 parentId（开场用 ROOT_PARENT_ID）和 actionKey。
+ */
+export const appendNode = (saveId, data) => (
+  db.transaction('rw', db.fictionSaves, db.fictionNodes, async () => {
+    const save = await db.fictionSaves.get(saveId);
+
+    if (!save) throw new Error('存档不存在');
+
+    const parentId = data.parentId ?? ROOT_PARENT_ID;
+    const actionKey = data.actionKey || '';
+
+    const siblings = await listChildren(saveId, parentId);
+    const isNewBranch = siblings.length > 0 && !siblings.some((node) => (node.actionKey || '') === actionKey);
+
+    const depth = parentId === ROOT_PARENT_ID ? 1 : (await countPathLength(parentId)) + 1;
+
+    const nodeId = await createNode(saveId, { ...data, parentId, actionKey });
+
+    await db.fictionSaves.update(saveId, {
+      currentNodeId: nodeId,
+      segmentCount: depth,
+      branchCount: (save.branchCount || 0) + (isNewBranch ? 1 : 0),
+      updatedAt: now(),
+    });
+
+    return nodeId;
+  })
+);
+
+// 回退 / 切换到某个节点：更新当前节点和段数。分支数不变（节点都还在）。
+export const setCurrentNode = (saveId, nodeId) => (
+  db.transaction('rw', db.fictionSaves, db.fictionNodes, async () => {
+    const node = await db.fictionNodes.get(nodeId);
+
+    if (!node || node.saveId !== saveId) throw new Error('节点不存在');
+
+    await db.fictionSaves.update(saveId, {
+      currentNodeId: nodeId,
+      segmentCount: await countPathLength(nodeId),
+      updatedAt: now(),
+    });
+  })
+);
+
+// 兜底：把存档的 segmentCount / branchCount 按全部节点重新算一遍。
+// 平时不用调用（增量更新就够了）；删除节点或数据对不上时用。
+export const recomputeSaveCounters = (saveId) => (
+  db.transaction('rw', db.fictionSaves, db.fictionNodes, async () => {
+    const save = await db.fictionSaves.get(saveId);
+
+    if (!save) return;
+
+    const nodes = await listNodesBySave(saveId);
+    const keysByParent = new Map();
+
+    nodes.forEach((node) => {
+      const keys = keysByParent.get(node.parentId) || new Set();
+
+      keys.add(node.actionKey || `#${node.id}`);
+      keysByParent.set(node.parentId, keys);
+    });
+
+    let branchCount = 0;
+
+    keysByParent.forEach((keys) => {
+      branchCount += Math.max(0, keys.size - 1);
+    });
+
+    await db.fictionSaves.update(saveId, {
+      segmentCount: save.currentNodeId ? await countPathLength(save.currentNodeId) : 0,
+      branchCount,
+    });
+  })
+);
+
 // ---------- 书架用的汇总 ----------
 
-// 段数 = 当前路径长度；分支数 = 同一父节点下「不同 actionKey」的个数减一，
-// 累加。actionKey 相同的是重 roll 版本，不算分支。
-// 注意：这里会把存档的全部节点读出来（含正文）。第一轮存档都是空的没问题，
-// 到第 3 轮节点变多之后，改成在存档上冗余 segmentCount / branchCount 两个数字。
-const summarizeNodes = (save, nodes) => {
-  const byId = new Map(nodes.map((node) => [node.id, node]));
-  const seen = new Set();
-  let segmentCount = 0;
-  let cursor = save.currentNodeId ? byId.get(save.currentNodeId) : null;
-
-  while (cursor && !seen.has(cursor.id)) {
-    seen.add(cursor.id);
-    segmentCount += 1;
-    cursor = byId.get(cursor.parentId);
-  }
-
-  const keysByParent = new Map();
-
-  nodes.forEach((node) => {
-    const keys = keysByParent.get(node.parentId) || new Set();
-
-    keys.add(node.actionKey || `#${node.id}`);
-    keysByParent.set(node.parentId, keys);
-  });
-
-  let branchCount = 0;
-
-  keysByParent.forEach((keys) => {
-    branchCount += Math.max(0, keys.size - 1);
-  });
-
-  return { segmentCount, branchCount };
-};
-
+// 段数、分支数都直接读存档上的冗余字段；第 2 轮之前建的存档没有这两个字段，补 0。
 export const listSaveSummaries = async () => {
   const saves = await listSaves();
 
-  return Promise.all(saves.map(async (save) => {
-    const nodes = await listNodesBySave(save.id);
-
-    return { ...save, ...summarizeNodes(save, nodes) };
+  return saves.map((save) => ({
+    ...save,
+    segmentCount: save.segmentCount || 0,
+    branchCount: save.branchCount || 0,
   }));
 };
 
@@ -206,6 +275,11 @@ export default {
   updateNode,
   listNodesBySave,
   listChildren,
+  hasChildren,
+  getRootNode,
   getPathToNode,
+  appendNode,
+  setCurrentNode,
+  recomputeSaveCounters,
   listSaveSummaries,
 };

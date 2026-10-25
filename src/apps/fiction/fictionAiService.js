@@ -1,0 +1,414 @@
+// src/apps/fiction/fictionAiService.js
+//
+// 互动文游的 AI 层：调用接口 → 解析 → 数值结算 → 写入节点。
+//
+// 为什么不直接用 aiService.generateResponse：它不接受 max_tokens（输出长度
+// 会落在服务商的默认值上，2000 字的段落很容易被截断），也不能中止。
+// 这里自己发请求，读法和主聊天一致：先读 settings 里的 apiConfig，
+// 网络错误 / HTTP 错误时再试 apiConfigBackup（有配置才试）。
+//
+// 对外三个入口，都返回 { node, warnings }，失败抛出带 code 的 Error：
+//   generateOpening(saveId, { signal })               生成开场，写入开场节点
+//   generateNext(saveId, parentNodeId, action, ...)   在某个节点后续写一段
+//   regenerateNode(saveId, nodeId, { signal })        重新生成一个「还没有后续」的节点（覆盖原内容）
+//
+// 数值在这里结算：点选项 = 父节点快照 + 该选项的增减量；自由输入 = 父节点
+// 快照 + AI 在 [DELTA] 里给的增减量；都截断到 [min, max]。快照用数值 id 做 key。
+
+import db from '../../db';
+import {
+  ROOT_PARENT_ID,
+  getSave,
+  getNode,
+  getPathToNode,
+  getRootNode,
+  hasChildren,
+  appendNode,
+  updateNode,
+  touchSave,
+} from './fictionService';
+import { getStylePreset } from './fictionWizardService';
+import {
+  ACTION_TYPES,
+  buildActionKey,
+  buildFictionRequest,
+} from './fictionPromptAssembler';
+import {
+  PARSE_WARNING,
+  applyDeltas,
+  buildInitialSnapshot,
+  parseFictionReply,
+} from './fictionParser';
+
+export const FICTION_ERROR = {
+  CONFIG_MISSING: 'CONFIG_MISSING',
+  NETWORK: 'NETWORK_ERROR',
+  HTTP: 'HTTP_ERROR',
+  EMPTY: 'EMPTY_RESPONSE',
+  NO_STORY: 'NO_STORY',
+  ABORTED: 'ABORTED',
+  BAD_STATE: 'BAD_STATE',
+};
+
+const fail = (code, message) => {
+  const error = new Error(message);
+
+  error.code = code;
+  return error;
+};
+
+// ---------------- 调用接口 ----------------
+
+const attemptOnce = async ({ apiConfig, systemPrompt, userMessage, maxTokens, signal, tokenParam }) => {
+  if (!apiConfig?.baseUrl || !apiConfig?.apiKey) {
+    return { error: fail(FICTION_ERROR.CONFIG_MISSING, '请先在系统设置中配置有效的 API Base URL 与 API Key。') };
+  }
+
+  const baseUrl = String(apiConfig.baseUrl).replace(/\/$/, '');
+
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiConfig.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: apiConfig.model || 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        [tokenParam]: maxTokens,
+      }),
+      signal,
+    });
+
+    if (!response.ok) {
+      let detail = response.statusText || '请求未成功';
+
+      try {
+        const data = await response.json();
+
+        detail = data?.error?.message || data?.message || detail;
+      } catch {
+        // 返回的不是 JSON（HTML 错误页之类），保留状态文本。
+      }
+
+      const error = fail(FICTION_ERROR.HTTP, `[API Error ${response.status}] ${detail}`);
+
+      error.status = response.status;
+      return { error };
+    }
+
+    const data = await response.json();
+    const choice = data?.choices?.[0];
+    const content = String(choice?.message?.content || '').trim();
+
+    if (!content) {
+      return { error: fail(FICTION_ERROR.EMPTY, 'AI 返回内容为空，请检查当前模型或 API 服务状态。') };
+    }
+
+    return {
+      content,
+      finishReason: choice?.finish_reason || '',
+      usage: data?.usage || null,
+    };
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return { error: fail(FICTION_ERROR.ABORTED, '已取消本次生成') };
+    }
+
+    return { error: fail(FICTION_ERROR.NETWORK, `网络请求失败: ${error?.message || '未知错误'}`) };
+  }
+};
+
+// 部分新模型不认 max_tokens，要求写成 max_completion_tokens；服务商会返回 400
+// 并在报错里点名这个参数。遇到这种情况换个参数名重试一次。
+const attemptWithTokenFallback = async (args) => {
+  const first = await attemptOnce({ ...args, tokenParam: 'max_tokens' });
+
+  if (
+    first.error?.status === 400
+    && /max_tokens|max_completion_tokens/i.test(first.error.message)
+  ) {
+    return attemptOnce({ ...args, tokenParam: 'max_completion_tokens' });
+  }
+
+  return first;
+};
+
+const isBackupWorthy = (error) => (
+  error.code === FICTION_ERROR.NETWORK
+  || error.code === FICTION_ERROR.CONFIG_MISSING
+  || error.code === FICTION_ERROR.HTTP
+);
+
+const callFictionApi = async ({ systemPrompt, userMessage, maxTokens, signal }) => {
+  const primarySetting = await db.settings.get('apiConfig');
+  const primary = await attemptWithTokenFallback({
+    apiConfig: primarySetting?.value || {},
+    systemPrompt,
+    userMessage,
+    maxTokens,
+    signal,
+  });
+
+  if (!primary.error) return primary;
+  if (!isBackupWorthy(primary.error)) throw primary.error;
+
+  let backupConfig = null;
+
+  try {
+    backupConfig = (await db.settings.get('apiConfigBackup'))?.value || null;
+  } catch {
+    backupConfig = null;
+  }
+
+  if (!backupConfig?.baseUrl || !backupConfig?.apiKey) throw primary.error;
+
+  const backup = await attemptWithTokenFallback({
+    apiConfig: backupConfig,
+    systemPrompt,
+    userMessage,
+    maxTokens,
+    signal,
+  });
+
+  if (!backup.error) return backup;
+
+  const combined = fail(backup.error.code, `[主 API] ${primary.error.message}\n[备用 API] ${backup.error.message}`);
+
+  throw combined;
+};
+
+// ---------------- 组装与生成 ----------------
+
+const buildStylePrompt = (save) => {
+  const preset = getStylePreset(save.style?.presetId);
+
+  return [preset?.prompt, String(save.style?.custom || '').trim()].filter(Boolean).join('\n');
+};
+
+// 根据节点上记录的 userAction 找回完整的「行动」。点选项的行动里只存了
+// 选项字母，选项文字和增减量要回父节点的 options 里取。
+const resolveAction = (parentNode, userAction) => {
+  if (!userAction) return { type: ACTION_TYPES.START };
+
+  if (userAction.type !== ACTION_TYPES.OPTION) return { ...userAction };
+
+  const option = (parentNode?.options || []).find((item) => item.key === userAction.optionKey);
+
+  if (!option) throw fail(FICTION_ERROR.BAD_STATE, '找不到这个选项，可能是上一段已经被重新生成了。');
+
+  return { type: ACTION_TYPES.OPTION, optionKey: option.key, text: option.text, deltas: option.deltas || {} };
+};
+
+const logRequest = (label, request, result) => {
+  // 项目之前出现过主聊天 token 暴涨，这里每次生成都留一行日志，方便排查。
+  console.info('[Fiction]', label, {
+    systemChars: request.meta.systemChars,
+    historySegments: request.meta.historySegments,
+    historyOmitted: request.meta.historyOmitted,
+    maxTokens: request.maxTokens,
+    finishReason: result.finishReason,
+    usage: result.usage,
+  });
+};
+
+/**
+ * 跑一次「组装 → 调用 → 解析 → 结算」，不写库。
+ * parentNode 为 null 表示写开场。
+ */
+const runGeneration = async ({ save, parentNode, action, signal, label }) => {
+  const stats = save.stats || [];
+  const parentSnapshot = parentNode?.statsSnapshot && Object.keys(parentNode.statsSnapshot).length > 0
+    ? parentNode.statsSnapshot
+    : buildInitialSnapshot(stats);
+
+  // 点选项：先把选项的增减量算进去，AI 看到的是选择之后的数值。
+  const promptSnapshot = action.type === ACTION_TYPES.OPTION
+    ? applyDeltas(stats, parentSnapshot, action.deltas)
+    : parentSnapshot;
+
+  const pathNodes = parentNode ? await getPathToNode(parentNode.id) : [];
+
+  const request = buildFictionRequest({
+    save,
+    pathNodes,
+    action,
+    statsSnapshot: promptSnapshot,
+    stylePrompt: buildStylePrompt(save),
+    worldBookText: '',
+    summaryText: '',
+  });
+
+  const result = await callFictionApi({
+    systemPrompt: request.systemPrompt,
+    userMessage: request.userMessage,
+    maxTokens: request.maxTokens,
+    signal,
+  });
+
+  logRequest(label, request, result);
+
+  const parsed = parseFictionReply(result.content, {
+    mode: save.mode,
+    stats,
+    optionMin: save.optionMin,
+  });
+
+  if (!parsed.story) {
+    throw fail(FICTION_ERROR.NO_STORY, 'AI 没有返回可用的正文，可以重新生成。');
+  }
+
+  const warnings = [...parsed.warnings];
+
+  if (result.finishReason === 'length') {
+    warnings.push({ code: PARSE_WARNING.TRUNCATED });
+  }
+
+  // 自由输入：本步增减量由 AI 在 [DELTA] 里给；点选项在上面已经算进了 promptSnapshot。
+  const statsSnapshot = action.type === ACTION_TYPES.FREE
+    ? applyDeltas(stats, parentSnapshot, parsed.freeDelta)
+    : promptSnapshot;
+
+  return {
+    fields: {
+      text: parsed.story,
+      options: parsed.options,
+      statsSnapshot,
+      imagePrompt: parsed.imagePrompt,
+      parseWarnings: warnings,
+    },
+    warnings,
+  };
+};
+
+const loadPlayableSave = async (saveId) => {
+  const save = await getSave(saveId);
+
+  if (!save) throw fail(FICTION_ERROR.BAD_STATE, '存档不存在。');
+  if (save.isDraft) throw fail(FICTION_ERROR.BAD_STATE, '草稿还没有完成创建，不能开始游玩。');
+
+  return save;
+};
+
+// ---------------- 对外入口 ----------------
+
+export const generateOpening = async (saveId, { signal } = {}) => {
+  const save = await loadPlayableSave(saveId);
+
+  if (await getRootNode(saveId)) {
+    throw fail(FICTION_ERROR.BAD_STATE, '这份存档已经有开场了。');
+  }
+
+  const { fields, warnings } = await runGeneration({
+    save,
+    parentNode: null,
+    action: { type: ACTION_TYPES.START },
+    signal,
+    label: '开场',
+  });
+
+  const nodeId = await appendNode(saveId, {
+    parentId: ROOT_PARENT_ID,
+    userAction: null,
+    actionKey: buildActionKey({ type: ACTION_TYPES.START }),
+    chapter: 1,
+    ...fields,
+  });
+
+  return { node: await getNode(nodeId), warnings };
+};
+
+/**
+ * 在 parentNodeId 之后续写一段。
+ * action: { type: 'option', optionKey: 'B' }
+ *       | { type: 'free', text }
+ *       | { type: 'continue' } | { type: 'guide', text } | { type: 'nextChapter' }（后三种留给纯小说式）
+ */
+export const generateNext = async (saveId, parentNodeId, action, { signal } = {}) => {
+  const save = await loadPlayableSave(saveId);
+  const parentNode = await getNode(parentNodeId);
+
+  if (!parentNode || parentNode.saveId !== saveId) {
+    throw fail(FICTION_ERROR.BAD_STATE, '找不到要接着写的那一段。');
+  }
+
+  if (action?.type === ACTION_TYPES.FREE) {
+    if (!save.allowFreeInput) throw fail(FICTION_ERROR.BAD_STATE, '这份存档没有开启自由输入。');
+    if (!String(action.text || '').trim()) throw fail(FICTION_ERROR.BAD_STATE, '请先写下你的行动。');
+  }
+
+  const fullAction = resolveAction(parentNode, action);
+  const { fields, warnings } = await runGeneration({
+    save,
+    parentNode,
+    action: fullAction,
+    signal,
+    label: `第 ${(save.segmentCount || 0) + 1} 段`,
+  });
+
+  // 节点上只存「玩家做了什么」，不存选项的增减量（那在父节点的 options 里）。
+  const userAction = fullAction.type === ACTION_TYPES.OPTION
+    ? { type: ACTION_TYPES.OPTION, optionKey: fullAction.optionKey, text: fullAction.text }
+    : { type: fullAction.type, text: String(fullAction.text || '').trim() };
+
+  const nodeId = await appendNode(saveId, {
+    parentId: parentNode.id,
+    userAction,
+    actionKey: buildActionKey(fullAction),
+    chapter: parentNode.chapter || 1,
+    ...fields,
+  });
+
+  return { node: await getNode(nodeId), warnings };
+};
+
+/**
+ * 简单的「重新生成」：用同样的行动再请求一次，直接覆盖这个节点的内容。
+ * 只允许对「还没有后续」的节点用——有后续的话，后续是接着旧内容写的，
+ * 覆盖会让剧情对不上。真正保留旧版本、可以左右切换的重 roll 在第 4 轮做。
+ */
+export const regenerateNode = async (saveId, nodeId, { signal } = {}) => {
+  const save = await loadPlayableSave(saveId);
+  const node = await getNode(nodeId);
+
+  if (!node || node.saveId !== saveId) {
+    throw fail(FICTION_ERROR.BAD_STATE, '找不到这一段。');
+  }
+
+  if (await hasChildren(saveId, nodeId)) {
+    throw fail(FICTION_ERROR.BAD_STATE, '这一段后面已经接着写了，只能重新生成最后一段。');
+  }
+
+  const parentNode = node.parentId === ROOT_PARENT_ID ? null : await getNode(node.parentId);
+  const action = resolveAction(parentNode, node.userAction);
+
+  const { fields, warnings } = await runGeneration({
+    save,
+    parentNode,
+    action,
+    signal,
+    label: '重新生成',
+  });
+
+  await updateNode(nodeId, fields);
+  await touchSave(saveId);
+
+  return { node: await getNode(nodeId), warnings };
+};
+
+// 控制台调试入口：在页面控制台里直接试，例如
+//   await __fictionAi.generateOpening(存档id)
+if (typeof window !== 'undefined') {
+  window.__fictionAi = { generateOpening, generateNext, regenerateNode };
+}
+
+export default {
+  FICTION_ERROR,
+  generateOpening,
+  generateNext,
+  regenerateNode,
+};
